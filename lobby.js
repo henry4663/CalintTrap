@@ -1,105 +1,112 @@
-import { createAccount, loginAccount, getSession } from "./authLocal.js";
+import { getCurrentNick, logout } from "./authLocal.js";
+import { saveJsonToFile, loadJsonFromFile } from "./saveFile.js";
 
-const form = document.getElementById("authForm");
-const usernameInput = document.getElementById("username");
-const loginUsernameInput = document.getElementById("loginUsername");
-const passwordInput = document.getElementById("password");
+const boasVindas = document.getElementById("boasVindas");
+const btnSair = document.getElementById("btnSair");
+const btnPerfil = document.getElementById("btnPerfil");
+const btnSalvarDados = document.getElementById("btnSalvarDados");
+const toast = document.getElementById("toast");
+const inputSave = document.getElementById("inputSave");
 
-const nameGroup = document.getElementById("nameGroup");
-const message = document.getElementById("message");
-const submitButton = document.getElementById("submitButton");
-const switchModeButton = document.getElementById("switchMode");
-const switchText = document.getElementById("switchText");
+function mostrarToast(msg, tipo = "info") {
+  if (!toast) return;
 
-let registerMode = false;
-let loading = false;
+  toast.textContent = msg;
+  toast.className = `toast show ${tipo}`;
 
-const LOBBY = "./lobby.html";
-
-function showMessage(text, success = false) {
-  message.textContent = text;
-  message.style.color = success ? "#55ee99" : "#ff5555";
+  clearTimeout(mostrarToast.timer);
+  mostrarToast.timer = setTimeout(() => {
+    toast.className = "toast";
+  }, 2500);
 }
 
-function setLoading(value) {
-  loading = value;
-  submitButton.disabled = value;
-  submitButton.textContent = value
-    ? "AGUARDE..."
-    : registerMode ? "CRIAR CONTA" : "ENTRAR";
-}
+function verificarSessao() {
+  const nick = getCurrentNick();
 
-function getUsernameValue() {
-  const raw = registerMode ? usernameInput.value : loginUsernameInput.value;
-  return String(raw || "").trim();
-}
-
-function isValidUsername(username) {
-  return /^[a-zA-Z0-9_]{3,20}$/.test(username);
-}
-
-switchModeButton.addEventListener("click", () => {
-  if (loading) return;
-
-  registerMode = !registerMode;
-
-  nameGroup.hidden = !registerMode;
-  usernameInput.required = registerMode;
-  loginUsernameInput.required = !registerMode;
-
-  submitButton.textContent = registerMode ? "CRIAR CONTA" : "ENTRAR";
-  switchText.textContent = registerMode ? "Já possui uma conta?" : "Não tem uma conta?";
-  switchModeButton.textContent = registerMode ? "Entrar" : "Criar conta";
-  message.textContent = "";
-});
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  if (loading) return;
-
-  const nick = getUsernameValue();
-  const password = String(passwordInput.value || "").trim();
-
-  if (!isValidUsername(nick)) {
-    showMessage("Nick inválido. Use 3 a 20 letras, números ou _.");
-    return;
+  if (!nick) {
+    window.location.href = "lock.html";
+    return null;
   }
 
-  if (password.length < 6) {
-    showMessage("Senha precisa ter pelo menos 6 caracteres.");
-    return;
+  if (boasVindas) {
+    boasVindas.textContent = `Olá, ${nick}!`;
   }
 
-  setLoading(true);
+  return nick;
+}
+
+function salvarDadosDoJogo() {
+  const nick = getCurrentNick();
+
+  const saveData = {
+    nick: nick || "Jogador",
+    vida: 100,
+    moedas: 120,
+    nivel: 1,
+    inventario: [
+      { id: "pocao", nome: "Poção" },
+      { id: "espada", nome: "Espada" }
+    ],
+    posicao: { x: 0, y: 2, z: 0 }
+  };
+
+  saveJsonToFile(saveData, `${(nick || "save").toLowerCase()}.fxkey`)
+    .then(() => {
+      mostrarToast("Save salvo com sucesso!", "success");
+    })
+    .catch(() => {
+      mostrarToast("Erro ao salvar o save.", "error");
+    });
+}
+
+async function carregarDadosDoArquivo(file) {
+  if (!file) return;
 
   try {
-    if (registerMode) {
-      createAccount(nick, password);
-      showMessage("Conta criada com sucesso!", true);
+    const data = await loadJsonFromFile(file);
 
-      setTimeout(() => {
-        window.location.assign(LOBBY);
-      }, 500);
-
-      return;
+    if (!data) {
+      throw new Error("Arquivo inválido");
     }
 
-    loginAccount(nick, password);
-    showMessage("Login realizado com sucesso!", true);
-
-    setTimeout(() => {
-      window.location.assign(LOBBY);
-    }, 500);
-
-  } catch (error) {
-    showMessage(error.message || "Erro ao autenticar.");
-  } finally {
-    setLoading(false);
+    console.log("Dados carregados:", data);
+    mostrarToast("Save carregado com sucesso!", "success");
+  } catch {
+    mostrarToast("Arquivo inválido ou corrompido.", "error");
   }
-});
-
-const session = getSession();
-if (session && session.nick) {
-  window.location.replace(LOBBY);
 }
+
+function configurarEventos() {
+  btnSair?.addEventListener("click", () => {
+    logout();
+  });
+
+  btnPerfil?.addEventListener("click", () => {
+    mostrarToast("Tela de perfil em construção!", "info");
+  });
+
+  btnSalvarDados?.addEventListener("click", () => {
+    salvarDadosDoJogo();
+  });
+
+  inputSave?.addEventListener("change", (event) => {
+    const file = event.target.files?.[0];
+    carregarDadosDoArquivo(file);
+  });
+
+  document.querySelectorAll(".game-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const nome = card.dataset.game || "Jogo";
+      mostrarToast(`${nome} em desenvolvimento!`, "warning");
+    });
+  });
+}
+
+window.abrirJogo = (nomeJogo) => {
+  mostrarToast(`${nomeJogo} estará disponível em breve!`, "warning");
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  verificarSessao();
+  configurarEventos();
+});
