@@ -20,41 +20,53 @@
 <main class="container">
   <div class="welcome">
     <h1 id="boasVindas">Olá, Jogador!</h1>
-    <p>Pronto para jogar?</p>
+    <p>Pronto para a ação?</p>
   </div>
 
-  <h2 class="section-title">Jogos Disponíveis</h2>
+  <h2 class="section-title">🔥 Populares no Goblox</h2>
   
   <div class="game-grid">
-    <!-- Card Jogo 3D -->
-    <a href="jogo-3d.html" class="game-card card-3d">
-      <div class="card-badge">NOVO</div>
-      <div class="card-icon">🎮</div>
-      <div class="card-info">
+    
+    <!-- Jogo 1: Arena FPS -->
+    <div class="game-card card-fps" onclick="abrirJogo('FPS Arena')">
+      <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop" class="card-img" alt="FPS">
+      <div class="card-badge badge-blue">AÇÃO</div>
+      <div class="card-content">
+        <h3>FPS Arena</h3>
+        <p>Combate tático 3D</p>
+      </div>
+    </div>
+
+    <!-- Jogo 2: Pique Esconde -->
+    <div class="game-card card-esconde" onclick="abrirJogo('Pique Esconde 3D')">
+      <img src="https://images.unsplash.com/photo-1511882150382-421056c89033?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Pique Esconde">
+      <div class="card-badge badge-green">MULTIPLAYER</div>
+      <div class="card-content">
+        <h3>Pique Esconde 3D</h3>
+        <p>Fuja ou procure</p>
+      </div>
+    </div>
+
+    <!-- Jogo 3: Parkour -->
+    <div class="game-card card-parkour" onclick="abrirJogo('Parkour Extremo')">
+      <img src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Parkour">
+      <div class="card-badge badge-purple">NOVO</div>
+      <div class="card-content">
+        <h3>Parkour Extremo</h3>
+        <p>Pule e alcance o topo</p>
+      </div>
+    </div>
+
+    <!-- Jogo 4: Arena PvP (aquele que já fizemos) -->
+    <a href="jogo-3d.html" class="game-card card-arena">
+      <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Arena 3D">
+      <div class="card-badge badge-yellow">JOGAR AGORA</div>
+      <div class="card-content">
         <h3>Arena 3D</h3>
-        <p>Multiplayer Online</p>
+        <p>Explore o mapa</p>
       </div>
     </a>
 
-    <!-- Card Jogo da Velha -->
-    <div class="game-card card-velha" onclick="emBreve()">
-      <div class="card-badge">EM BREVE</div>
-      <div class="card-icon">⭕</div>
-      <div class="card-info">
-        <h3>Jogo da Velha</h3>
-        <p>Clássico 1v1</p>
-      </div>
-    </div>
-
-    <!-- Card Snake -->
-    <div class="game-card card-snake" onclick="emBreve()">
-      <div class="card-badge">EM BREVE</div>
-      <div class="card-icon">🐍</div>
-      <div class="card-info">
-        <h3>Snake</h3>
-        <p>Arcade</p>
-      </div>
-    </div>
   </div>
 </main>
 
