@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goblox - Login</title>
+    <title>GOBLOX - Login</title>
     <link rel="stylesheet" href="global.css">
     <link rel="stylesheet" href="lock.css">
 </head>
@@ -12,44 +12,34 @@
 <div class="lock-background"></div>
 
 <main class="lock-container">
-
     <div class="logo">GO<span>BLOX</span></div>
     <p class="subtitle">Seu universo começa aqui.</p>
 
     <form id="authForm">
 
         <div id="nameGroup" hidden>
-            <label>Nome de usuário</label>
-            <input id="username" type="text"
-                placeholder="Escolha seu usuário"
-                maxlength="20">
+            <label>Escolha seu usuário</label>
+            <input id="username" type="text" maxlength="20"
+                   placeholder="Seu usuário">
         </div>
 
         <label>Usuário</label>
-        <input id="loginUsername" type="text"
-            placeholder="Seu nome de usuário"
-            maxlength="20" required>
+        <input id="loginUsername" type="text" maxlength="20"
+               placeholder="Seu nome de usuário" required>
 
         <label>Senha</label>
         <input id="password" type="password"
-            placeholder="Sua senha"
-            minlength="6" required>
+               placeholder="Sua senha" required>
 
-        <button id="submitButton" type="submit">
-            ENTRAR
-        </button>
-
+        <button type="submit" id="submitButton">ENTRAR</button>
     </form>
 
     <p id="message"></p>
 
     <div class="links">
-        <p>
-            <span id="switchText">Não tem uma conta?</span>
-            <button id="switchMode" type="button">Criar conta</button>
-        </p>
+        <span id="switchText">Não tem uma conta?</span>
+        <button type="button" id="switchMode">Criar conta</button>
     </div>
-
 </main>
 
 <script type="module" src="lock.js"></script>
