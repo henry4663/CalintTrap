@@ -4,75 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GOBLOX — Lobby</title>
-  <link rel="stylesheet" href="global.css" />
-  <link rel="stylesheet" href="lobby.css" />
+  <link rel="stylesheet" href="./global.css" />
+  <link rel="stylesheet" href="./lobby.css" />
 </head>
 <body>
-  <div class="background-glow"></div>
+  <div class="bg"></div>
 
   <header class="topbar">
-    <div class="brand">GO<span>BLOX</span></div>
+    <div class="logo">GOBLOX</div>
 
-    <div class="user-panel">
+    <div class="user-box">
       <span id="boasVindas">Carregando...</span>
-      <button id="btnPerfil" class="btn btn-ghost">Perfil</button>
-      <button id="btnSair" class="btn btn-danger">Sair</button>
+      <button id="btnPerfil" class="btn btn-light">Perfil</button>
+      <button id="btnSair" class="btn btn-dark">Sair</button>
     </div>
   </header>
 
-  <main class="lobby-container">
-    <section class="hero">
-      <div class="hero-text">
-        <p class="eyebrow">Modo de jogo</p>
-        <h1>Escolha sua arena</h1>
-      </div>
+  <main class="container">
+    <section class="panel">
+      <p class="label">Modo de jogo</p>
+      <h1>Escolha sua arena</h1>
 
       <div class="stats">
-        <div class="stat-card">
-          <span>Rank</span>
-          <strong>Bronze</strong>
-        </div>
-        <div class="stat-card">
-          <span>Vitórias</span>
-          <strong>0</strong>
-        </div>
-        <div class="stat-card">
-          <span>Moedas</span>
-          <strong>120</strong>
-        </div>
+        <span>Rank: Bronze</span>
+        <span>Vitórias: 0</span>
+        <span>Moedas: 120</span>
+      </div>
+
+      <div class="game-list">
+        <button class="game-card active" data-game="FPS">
+          <span class="tag">Multiplayer</span>
+          <strong>FPS Arena</strong>
+          <small>Modo de combate rápido com mira e tempo real.</small>
+        </button>
+
+        <button class="game-card" data-game="Parkour">
+          <span class="tag">Parkour</span>
+          <strong>Parkour</strong>
+          <small>Pule, corra e domine plataformas em movimento.</small>
+        </button>
+
+        <button class="game-card" data-game="Arena">
+          <span class="tag">3D</span>
+          <strong>Arena 3D</strong>
+          <small>Mapa com arena e mecânicas modernas.</small>
+        </button>
+
+        <button class="game-card" data-game="Esconde">
+          <span class="tag">Hide & Seek</span>
+          <strong>Esconde</strong>
+          <small>Entrar em modo suspense e esconderijo.</small>
+        </button>
       </div>
     </section>
-
-    <section class="games-grid">
-      <button class="game-card" data-game="FPS">
-        <span class="game-tag">Multiplayer</span>
-        <h2>FPS Arena</h2>
-        <p>Modo de combate rápido com mira e tempo real.</p>
-      </button>
-
-      <button class="game-card" data-game="Parkour">
-        <span class="game-tag">Parkour</span>
-        <h2>Parkour</h2>
-        <p>Pule, corra e domine plataformas em movimento.</p>
-      </button>
-
-      <button class="game-card" data-game="3D">
-        <span class="game-tag">3D</span>
-        <h2>Arena 3D</h2>
-        <p>Mapa com arena e mecânicas de sobrevivência.</p>
-      </button>
-
-      <button class="game-card" data-game="Esconde">
-        <span class="game-tag">Hide & Seek</span>
-        <h2>Esconde</h2>
-        <p>Entre no modo de suspense e esconderijo.</p>
-      </button>
-    </section>
-
-    <div class="actions-panel">
-      <button id="btnSalvarDados" class="btn btn-primary">Salvar dados</button>
-      <input id="inputSave" type="file" accept=".fxkey,.json" />
-    </div>
   </main>
 
   <div id="toast" class="toast" aria-live="polite"></div>
