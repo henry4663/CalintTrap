@@ -114,9 +114,11 @@
     // ==========================================
     // FÍSICA BÁSICA DO JOGADOR
     // ==========================================
-    const player = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshStandardMaterial({ color: 0x7c3aed })
+   import { criarPersonagem } from './personagem.js';
+   const player = // Cria o personagem personalizado usando o seu arquivo personagem.js
+const player = criarPersonagem();
+scene.add(player);
+     player.position.set(playerState.x, playerState.y, playerState.z);
     );
     player.castShadow = true;
     scene.add(player);
