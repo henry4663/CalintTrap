@@ -64,7 +64,6 @@ export function loginAccount(nick, password) {
   }
 
   setSession(cleanNick);
-
   return { nick: cleanNick };
 }
 
@@ -93,5 +92,7 @@ export function getCurrentNick() {
 
 export function logout() {
   localStorage.removeItem(SESSION_KEY);
-  window.location.href = "lock.html";
+  if (window.location) {
+    window.location.href = "lock.html";
+  }
 }
