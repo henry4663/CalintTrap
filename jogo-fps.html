@@ -89,8 +89,8 @@
     position: absolute;
     bottom: 30px;
     left: 30px;
-    width: 110px;
-    height: 110px;
+    width: 120px;
+    height: 120px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
@@ -100,8 +100,8 @@
   }
   #joystickStick {
     position: absolute;
-    top: 30px;
-    left: 30px;
+    top: 35px;
+    left: 35px;
     width: 50px;
     height: 50px;
     background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
@@ -333,7 +333,7 @@ function criarBot(x, y, z) {
 criarBot(-35, 2, -35);
 criarBot(35, 2, 35);
 
-// ESCUTA OUTROS JOGADORES (AJUSTE DA ALTURA Y - 1.6 PARA TOCAR NO CHÃO)
+// ESCUTA OUTROS JOGADORES
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
   for (let id in outrosJogadores) {
@@ -351,7 +351,6 @@ onValue(todosJogadoresRef, (snapshot) => {
       outrosJogadores[id] = { id: id, mesh: meshOutro, vida: pos.vida || 100 };
     }
     if (pos && typeof pos.x === 'number') {
-      // AJUSTADO: pos.y - 1.6 coloca o boneco no chão e impede que fique a voar
       outrosJogadores[id].mesh.position.set(pos.x, pos.y - 1.6, pos.z);
       outrosJogadores[id].vida = pos.vida || 100;
     }
@@ -376,7 +375,7 @@ function atirar() {
   projetes.push({ mesh: bullet, dir: dir, life: 120, dano: armaAtual === 1 ? 2 : 1 });
 }
 
-// 5. CONTROLES DE MOUSE E TOQUE
+// 5. CONTROLES MULTI-TOQUE LIVRE PARA MOBILE E MOUSE PARA PC
 if (!isMobile) {
   renderer.domElement.addEventListener('click', () => {
     if (document.pointerLockElement !== renderer.domElement) {
@@ -397,49 +396,77 @@ document.addEventListener('mousemove', (e) => {
   }
 });
 
-// Joystick Mobile
+// SISTEMA MULTI-TOQUE CORRIGIDO PARA MOBILE (Permite andar e olhar em simultâneo)
 const joystickBase = document.getElementById('joystickBase');
 const joystickStick = document.getElementById('joystickStick');
-let joystickAtivo = false;
+let joystickTouchId = null;
+let cameraTouchId = null;
 let joyX = 0, joyY = 0;
-
-joystickBase.addEventListener('touchstart', () => { joystickAtivo = true; });
-window.addEventListener('touchmove', (e) => {
-  if (!joystickAtivo) return;
-  const touch = e.touches[0];
-  const rect = joystickBase.getBoundingClientRect();
-  const centroX = rect.left + rect.width / 2;
-  const centroY = rect.top + rect.height / 2;
-  let deltaX = touch.clientX - centroX;
-  let deltaY = touch.clientY - centroY;
-  const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-  const angulo = Math.atan2(deltaY, deltaX);
-  joyX = Math.cos(angulo) * (distancia / 50);
-  joyY = Math.sin(angulo) * (distancia / 50);
-  joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
-});
-window.addEventListener('touchend', () => {
-  joystickAtivo = false;
-  joyX = 0; joyY = 0;
-  joystickStick.style.transform = `translate(0px, 0px)`;
-});
-
 let lastTouchX = 0, lastTouchY = 0;
+
 window.addEventListener('touchstart', (e) => {
-  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnAtirar' && e.touches[0].target.id !== 'btnPular') {
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
+  if (!isMobile) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    // Se tocar na base do joystick ou perto dela no lado esquerdo da tela
+    if (joystickTouchId === null && touch.clientX < window.innerWidth / 2 && target && !target.closest('#btnPular') && !target.closest('#btnAtirar') && !target.closest('#inventario')) {
+      joystickTouchId = touch.identifier;
+    } 
+    // Se tocar no lado direito da tela (para girar a câmera livremente)
+    else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2 && target && !target.closest('#btnPular') && !target.closest('#btnAtirar') && !target.closest('#inventario')) {
+      cameraTouchId = touch.identifier;
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+    }
   }
-});
+}, { passive: false });
+
 window.addEventListener('touchmove', (e) => {
-  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnAtirar' && e.touches[0].target.id !== 'btnPular') {
-    const deltaX = e.touches[0].clientX - lastTouchX;
-    const deltaY = e.touches[0].clientY - lastTouchY;
-    rotationY -= deltaX * 0.004;
-    rotationX -= deltaY * 0.004;
-    rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
+  if (!isMobile) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+
+    // Movimento do Joystick
+    if (touch.identifier === joystickTouchId) {
+      const rect = joystickBase.getBoundingClientRect();
+      const centroX = rect.left + rect.width / 2;
+      const centroY = rect.top + rect.height / 2;
+      let deltaX = touch.clientX - centroX;
+      let deltaY = touch.clientY - centroY;
+      const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+      const angulo = Math.atan2(deltaY, deltaX);
+      joyX = Math.cos(angulo) * (distancia / 50);
+      joyY = Math.sin(angulo) * (distancia / 50);
+      joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
+    }
+
+    // Rotação da Câmera
+    if (touch.identifier === cameraTouchId) {
+      const deltaX = touch.clientX - lastTouchX;
+      const deltaY = touch.clientY - lastTouchY;
+      rotationY -= deltaX * 0.004;
+      rotationX -= deltaY * 0.004;
+      rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+    }
+  }
+}, { passive: false });
+
+window.addEventListener('touchend', (e) => {
+  if (!isMobile) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    if (touch.identifier === joystickTouchId) {
+      joystickTouchId = null;
+      joyX = 0; joyY = 0;
+      joystickStick.style.transform = `translate(0px, 0px)`;
+    }
+    if (touch.identifier === cameraTouchId) {
+      cameraTouchId = null;
+    }
   }
 });
 
@@ -488,7 +515,7 @@ function animate(tempo) {
   if (keys['KeyA'] || keys['ArrowLeft']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
   if (keys['KeyD'] || keys['ArrowRight']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
 
-  if (joystickAtivo) {
+  if (joystickTouchId !== null) {
     playerPos.x += (dirFrente.x * (-joyY) + dirLado.x * joyX) * vel;
     playerPos.z += (dirFrente.z * (-joyY) + dirLado.z * joyX) * vel;
   }
