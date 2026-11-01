@@ -143,8 +143,6 @@ form.addEventListener("submit", async (event) => {
 });
 
 // Se já estiver conectado, vai direto para o lobby
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        window.location.replace(LOBBY);
+window.location.href = "lobby.html";
     }
 });
