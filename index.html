@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -96,7 +95,7 @@
             <div class="p-3 bg-fx-main/90 border border-fx-border rounded-xl flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <div class="w-2.5 h-2.5 rounded-full bg-fx-green animate-pulse"></div>
-                    <span class="text-[11px] font-bold text-white">Cloud Firestore Ativa</span>
+                    <span class="text-[11px] font-bold text-white">Rede Global em Nuvem</span>
                 </div>
                 <i class="fa-solid fa-cloud text-fx-accent text-sm"></i>
             </div>
@@ -397,46 +396,24 @@
             } catch (err) {
                 showNotification("Modo offline / erro ao ligar à nuvem.", "error");
             }
-
-            const saved = localStorage.getItem('fx_blox_active_username');
-            if (saved) {
-                window.localPlayer.username = saved;
-                applyUserDataToHUD();
-            } else {
-                openAuthModal();
-            }
-            updateFriendsBadge();
         });
 
-        function showNotification(msg, type = "success") {
-            const toast = document.getElementById('toast-notification');
-            const toastMsg = document.getElementById('toast-message');
-            const toastIcon = document.getElementById('toast-icon');
-
-            toastMsg.innerText = msg;
-            toastIcon.className = type === "success" ? "fa-solid fa-circle-check text-fx-green text-xl" : "fa-solid fa-triangle-exclamation text-fx-red text-xl";
-            
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => { toast.classList.add('translate-x-full'); }, 3000);
-        }
-
-        window.showNotification = showNotification;
-
-        function applyUserDataToHUD() {
-            document.getElementById('user-profile-display').innerText = window.localPlayer.username || "Convidado";
-            document.getElementById('user-coins').innerText = window.localPlayer.fbux || 1000;
-            document.getElementById('hud-avatar-icon').innerText = window.localPlayer.avatar || "😎";
-            localStorage.setItem('fx_blox_active_username', window.localPlayer.username);
-        }
-
-        async function saveUserDataToCloud() {
+        window.saveUserDataToCloud = async function() {
             if (!currentUserUid || !window.localPlayer.username) return;
             try {
-                // Correção do documento: Usando coleção válida e documento com par de segmentos correto
                 const userRef = doc(db, 'artifacts', appId, 'users', window.localPlayer.username);
-                await setDoc(userRef, window.localPlayer, { merge: true });
+                await setDoc(userRef, {
+                    username: window.localPlayer.username,
+                    avatar: window.localPlayer.avatar || "😎",
+                    fbux: window.localPlayer.fbux || 1000,
+                    x: window.localPlayer.x || 400,
+                    y: window.localPlayer.y || 250,
+                    friends: window.localPlayer.friends || [],
+                    requests: window.localPlayer.requests || [],
+                    lastSeen: Date.now()
+                }, { merge: true });
             } catch(e) {}
-        }
+        };
 
         async function loadUserDataFromCloud() {
             if (!window.localPlayer.username) return;
@@ -444,14 +421,70 @@
                 const userRef = doc(db, 'artifacts', appId, 'users', window.localPlayer.username);
                 const snap = await getDoc(userRef);
                 if (snap.exists()) {
-                    window.localPlayer = { ...window.localPlayer, ...snap.data() };
+                    const data = snap.data();
+                    window.localPlayer.avatar = data.avatar || "😎";
+                    window.localPlayer.fbux = data.fbux || 1000;
+                    window.localPlayer.friends = Array.isArray(data.friends) ? data.friends : [];
+                    window.localPlayer.requests = Array.isArray(data.requests) ? data.requests : [];
                     applyUserDataToHUD();
+                    updateFriendsBadge();
+                } else {
+                    await saveUserDataToCloud();
                 }
+
+                // Escutar mudanças no perfil em tempo real (pedidos de amizade recebidos)
+                onSnapshot(userRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const updated = docSnap.data();
+                        window.localPlayer.friends = Array.isArray(updated.friends) ? updated.friends : [];
+                        window.localPlayer.requests = Array.isArray(updated.requests) ? updated.requests : [];
+                        updateFriendsBadge();
+                        
+                        const reqModalHidden = document.getElementById('friends-modal').classList.contains('hidden');
+                        if (!reqModalHidden) {
+                            renderFriendsList();
+                            renderRequestsList();
+                        }
+                    }
+                }, (error) => {});
             } catch(e) {}
+        }
+
+        function applyUserDataToHUD() {
+            const disp = document.getElementById('user-profile-display');
+            const coins = document.getElementById('user-coins');
+            const avatar = document.getElementById('hud-avatar-icon');
+
+            if (disp) disp.innerText = window.localPlayer.username || "Convidado";
+            if (coins) coins.innerText = window.localPlayer.fbux || 1000;
+            if (avatar) avatar.innerText = window.localPlayer.avatar || "😎";
+        }
+
+        function showNotification(msg, type = "info") {
+            const toast = document.getElementById('toast-notification');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!toast || !toastMsg) return;
+            toastMsg.innerText = msg;
+
+            if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-fx-red text-xl";
+            } else if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-fx-green text-xl";
+            } else {
+                toastIcon.className = "fa-solid fa-bell text-fx-accent text-xl";
+            }
+
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
         }
 
         window.renderGamesGrid = function(games) {
             const container = document.getElementById('games-container');
+            if (!container) return;
             container.innerHTML = games.map(g => `
                 <div onclick="joinGameRoom('${g.title}', '${g.thumb}')" class="bg-fx-card border border-fx-border hover:border-fx-accent rounded-2xl overflow-hidden cursor-pointer transform hover:-translate-y-1.5 transition-all duration-300 shadow-xl flex flex-col">
                     <div class="h-36 bg-gradient-to-br from-purple-900/40 to-fx-main flex items-center justify-center text-5xl">
@@ -478,6 +511,14 @@
             renderGamesGrid(filtered);
         };
 
+        window.switchTab = function(tabName) {
+            if (tabName === 'home') {
+                leaveGameRoom();
+                closeModals();
+                showNotification("Retornado à página inicial da Nuvem!");
+            }
+        };
+
         window.openAuthModal = function() {
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
@@ -492,22 +533,22 @@
             const formReg = document.getElementById('auth-register-form');
             const formImp = document.getElementById('auth-import-form');
 
-            btnLogin.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            btnReg.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            btnImp.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            formLogin.classList.add('hidden');
-            formReg.classList.add('hidden');
-            formImp.classList.add('hidden');
+            if (btnLogin) btnLogin.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
+            if (btnReg) btnReg.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
+            if (btnImp) btnImp.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
+            if (formLogin) formLogin.classList.add('hidden');
+            if (formReg) formReg.classList.add('hidden');
+            if (formImp) formImp.classList.add('hidden');
 
             if (tab === 'login') {
-                btnLogin.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                formLogin.classList.remove('hidden');
+                if (btnLogin) btnLogin.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
+                if (formLogin) formLogin.classList.remove('hidden');
             } else if (tab === 'register') {
-                btnReg.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                formReg.classList.remove('hidden');
+                if (btnReg) btnReg.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
+                if (formReg) formReg.classList.remove('hidden');
             } else {
-                btnImp.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                formImp.classList.remove('hidden');
+                if (btnImp) btnImp.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
+                if (formImp) formImp.classList.remove('hidden');
             }
         };
 
@@ -590,7 +631,7 @@
 
         window.openProfileModal = function() {
             closeModals();
-            document.getElementById('profile-username-input').value = window.localPlayer.username;
+            document.getElementById('profile-username-input').value = window.localPlayer.username || '';
             document.getElementById('profile-modal').classList.remove('hidden');
             document.getElementById('profile-modal').classList.add('flex');
         };
@@ -649,30 +690,46 @@
 
         function renderFriendsList() {
             const container = document.getElementById('friends-tab-list');
-            document.getElementById('friends-count').innerText = window.localPlayer.friends.length;
-            if (window.localPlayer.friends.length === 0) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Nenhum amigo na nuvem.</p>`;
+            const friends = window.localPlayer.friends || [];
+            document.getElementById('friends-count').innerText = friends.length;
+
+            if (friends.length === 0) {
+                container.innerHTML = `<p class="text-xs text-fx-textMuted py-6 text-center">Ainda não adicionou nenhum amigo na nuvem.</p>`;
                 return;
             }
-            container.innerHTML = window.localPlayer.friends.map(f => `
+
+            container.innerHTML = friends.map(f => `
                 <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                    <span class="text-xs font-bold text-white">👤 ${f}</span>
-                    <span class="text-[10px] text-fx-green font-bold">🟢 Online Nuvem</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-white">👤 ${f}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-fx-green font-bold bg-fx-green/10 border border-fx-green/30 px-2 py-0.5 rounded-md">🟢 Online</span>
+                        <button onclick="removeCloudFriend('${f}')" class="text-fx-red hover:bg-fx-red/10 p-1.5 rounded-lg text-xs" title="Remover Amigo"><i class="fa-solid fa-user-minus"></i></button>
+                    </div>
                 </div>
             `).join('');
         }
 
         function renderRequestsList() {
             const container = document.getElementById('friends-tab-requests');
-            if (!window.localPlayer.requests || window.localPlayer.requests.length === 0) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Nenhuma solicitação pendente.</p>`;
+            const requests = window.localPlayer.requests || [];
+
+            if (requests.length === 0) {
+                container.innerHTML = `<p class="text-xs text-fx-textMuted py-6 text-center">Nenhuma solicitação de amizade pendente.</p>`;
                 return;
             }
-            container.innerHTML = window.localPlayer.requests.map(reqUser => `
+
+            container.innerHTML = requests.map(reqUser => `
                 <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                    <span class="text-xs font-bold text-white">${reqUser}</span>
+                    <span class="text-xs font-bold text-white">📩 ${reqUser}</span>
                     <div class="flex gap-2">
-                        <button onclick="acceptCloudFriend('${reqUser}')" class="bg-fx-green text-white text-[10px] font-bold px-3 py-1 rounded-lg">Aceitar</button>
+                        <button onclick="acceptCloudFriend('${reqUser}')" class="bg-fx-green hover:bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Aceitar
+                        </button>
+                        <button onclick="rejectCloudFriend('${reqUser}')" class="bg-fx-main border border-fx-border hover:bg-fx-red hover:border-fx-red text-fx-textMuted hover:text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -687,65 +744,147 @@
 
         window.searchCloudUsers = async function(query) {
             const container = document.getElementById('search-results-container');
+            container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center"><i class="fa-solid fa-spinner animate-spin"></i> Buscando na nuvem...</p>`;
+
             try {
                 const colRef = collection(db, 'artifacts', appId, 'users');
                 const snap = await getDocs(colRef);
                 let html = '';
+                const friendsList = window.localPlayer.friends || [];
+
                 snap.forEach(docSnap => {
                     const uData = docSnap.data();
-                    if (uData.username && uData.username !== window.localPlayer.username && uData.username.toLowerCase().includes(query.toLowerCase())) {
+                    const targetName = uData.username || docSnap.id;
+
+                    if (targetName && targetName !== window.localPlayer.username && targetName.toLowerCase().includes(query.toLowerCase())) {
+                        const isAlreadyFriend = friendsList.includes(targetName);
+                        
                         html += `
                             <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                                <span class="text-xs font-bold text-white">👤 ${uData.username}</span>
-                                <button onclick="sendCloudFriendRequest('${uData.username}')" class="bg-fx-accent text-white text-[10px] font-bold px-3 py-1 rounded-lg">Solicitar</button>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">${uData.avatar || '😎'}</span>
+                                    <span class="text-xs font-bold text-white">${targetName}</span>
+                                </div>
+                                ${isAlreadyFriend ? 
+                                    `<span class="text-[10px] text-fx-accent font-bold bg-fx-accent/10 px-2 py-1 rounded-lg">Amigos</span>` :
+                                    `<button onclick="sendCloudFriendRequest('${targetName}')" class="bg-fx-accent hover:bg-fx-accentHover text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                                        <i class="fa-solid fa-user-plus"></i> Solicitar
+                                    </button>`
+                                }
                             </div>
                         `;
                     }
                 });
-                container.innerHTML = html || `<p class="text-xs text-fx-textMuted py-4 text-center">Nenhum utilizador encontrado na nuvem.</p>`;
+                container.innerHTML = html || `<p class="text-xs text-fx-textMuted py-4 text-center">Nenhum jogador encontrado.</p>`;
             } catch(e) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Erro ao buscar na nuvem.</p>`;
+                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Erro ao buscar utilizadores.</p>`;
             }
         };
 
         window.sendCloudFriendRequest = async function(targetUser) {
+            if (!window.localPlayer.username) {
+                showNotification("Inicie sessão para adicionar amigos!", "error");
+                openAuthModal();
+                return;
+            }
+
             try {
                 const targetRef = doc(db, 'artifacts', appId, 'users', targetUser);
                 const snap = await getDoc(targetRef);
+
                 if (snap.exists()) {
                     let targetData = snap.data();
-                    if (!targetData.requests) targetData.requests = [];
-                    if (!targetData.requests.includes(window.localPlayer.username)) {
-                        targetData.requests.push(window.localPlayer.username);
-                        await setDoc(targetRef, targetData, { merge: true });
-                        showNotification(`Pedido enviado para ${targetUser}!`, "success");
+                    let targetRequests = Array.isArray(targetData.requests) ? targetData.requests : [];
+
+                    if (!targetRequests.includes(window.localPlayer.username)) {
+                        targetRequests.push(window.localPlayer.username);
+                        await updateDoc(targetRef, { requests: targetRequests });
+                        showNotification(`Solicitação enviada para ${targetUser}!`, "success");
+                    } else {
+                        showNotification(`Solicitação já enviada anteriormente!`);
                     }
+                } else {
+                    showNotification("Jogador não encontrado na nuvem.", "error");
                 }
             } catch(e) {
-                showNotification("Erro ao enviar pedido.", "error");
+                showNotification("Erro ao enviar pedido de amizade.", "error");
             }
         };
 
         window.acceptCloudFriend = async function(fromUser) {
-            if (!window.localPlayer.friends.includes(fromUser)) window.localPlayer.friends.push(fromUser);
-            window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== fromUser);
-            await saveUserDataToCloud();
-            updateFriendsBadge();
-            renderRequestsList();
-            showNotification(`Agora você e ${fromUser} são amigos na nuvem!`, "success");
+            try {
+                if (!window.localPlayer.friends.includes(fromUser)) {
+                    window.localPlayer.friends.push(fromUser);
+                }
+                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== fromUser);
+
+                await saveUserDataToCloud();
+
+                const senderRef = doc(db, 'artifacts', appId, 'users', fromUser);
+                const senderSnap = await getDoc(senderRef);
+
+                if (senderSnap.exists()) {
+                    let senderData = senderSnap.data();
+                    let senderFriends = Array.isArray(senderData.friends) ? senderData.friends : [];
+
+                    if (!senderFriends.includes(window.localPlayer.username)) {
+                        senderFriends.push(window.localPlayer.username);
+                        await updateDoc(senderRef, { friends: senderFriends });
+                    }
+                }
+
+                updateFriendsBadge();
+                renderFriendsList();
+                renderRequestsList();
+                showNotification(`Você e ${fromUser} agora são amigos!`, "success");
+            } catch(e) {
+                showNotification("Erro ao aceitar pedido.", "error");
+            }
+        };
+
+        window.rejectCloudFriend = async function(fromUser) {
+            try {
+                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== fromUser);
+                await saveUserDataToCloud();
+                updateFriendsBadge();
+                renderRequestsList();
+                showNotification(`Solicitação de ${fromUser} recusada.`);
+            } catch(e) {}
+        };
+
+        window.removeCloudFriend = async function(friendName) {
+            try {
+                window.localPlayer.friends = window.localPlayer.friends.filter(f => f !== friendName);
+                await saveUserDataToCloud();
+
+                const friendRef = doc(db, 'artifacts', appId, 'users', friendName);
+                const friendSnap = await getDoc(friendRef);
+
+                if (friendSnap.exists()) {
+                    let friendData = friendSnap.data();
+                    let updatedFriends = (friendData.friends || []).filter(f => f !== window.localPlayer.username);
+                    await updateDoc(friendRef, { friends: updatedFriends });
+                }
+
+                renderFriendsList();
+                showNotification(`Removido ${friendName} dos amigos.`);
+            } catch(e) {}
         };
 
         function updateFriendsBadge() {
-            const reqCount = window.localPlayer.requests ? window.localPlayer.requests.length : 0;
+            const reqCount = (window.localPlayer.requests || []).length;
             const badge1 = document.getElementById('pending-requests-badge');
             const badge2 = document.getElementById('modal-requests-badge');
+
             if (reqCount > 0) {
-                badge1.classList.remove('hidden');
-                badge1.innerText = reqCount;
-                badge2.innerText = reqCount;
+                if (badge1) {
+                    badge1.classList.remove('hidden');
+                    badge1.innerText = reqCount;
+                }
+                if (badge2) badge2.innerText = reqCount;
             } else {
-                badge1.classList.add('hidden');
-                badge2.innerText = '0';
+                if (badge1) badge1.classList.add('hidden');
+                if (badge2) badge2.innerText = '0';
             }
         }
 
@@ -862,9 +1001,8 @@
                     if (change.type === "added") {
                         const msg = change.doc.data();
                         if (msg && msg.sender && msg.text) {
-                            // Evitar duplicatas locais
                             if (msg.sender !== window.localPlayer.username || Date.now() - msg.timestamp < 3000) {
-                                // Add chat message if needed
+                                // Chat message handling
                             }
                         }
                     }
@@ -889,7 +1027,6 @@
                 });
             } catch(e) {}
 
-            input.value = {};
             input.value = '';
         };
 
