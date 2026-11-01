@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — FPS Arena Perfeita</title>
+<title>Goblox — FPS Arena PC & Mobile</title>
 <link rel="stylesheet" href="global.css">
 <style>
   body {
@@ -48,7 +48,7 @@
     border-radius: 50%;
   }
 
-  /* BOTÃO DE ATIRAR NO TOUCH */
+  /* BOTÃO DE ATIRAR */
   #btnAtirar {
     position: absolute;
     bottom: 40px;
@@ -103,6 +103,7 @@
     z-index: 30;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.2);
+    display: none; /* Só aparece no PC */
   }
 </style>
 
@@ -122,7 +123,7 @@
 </div>
 
 <div id="mira"></div>
-<div id="instrucaoMouse">Clica na tela para jogar<br><small style="font-size: 0.9rem; color: #aaa;">Pressiona ESC a qualquer momento para voltar ao lobby</small></div>
+<div id="instrucaoMouse">Clica na tela para controlar a mira com o rato<br><small style="font-size: 0.9rem; color: #aaa;">Pressiona ESC para voltar ao lobby</small></div>
 <button id="btnAtirar">🔫 FIRE</button>
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
@@ -131,6 +132,9 @@ import * as THREE from 'three';
 import { db as database } from './firebase.js';
 import { ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { criarPersonagem } from './personagem.js';
+
+// Detecta se é dispositivo móvel ou PC
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 // 1. CENA, CÂMERA E RENDERER
 const scene = new THREE.Scene();
@@ -152,7 +156,7 @@ dirLight.position.set(50, 80, 50);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// 2. MAPA EXPANDIDO E CORRIGIDO
+// 2. MAPA E PLATAFORMAS
 const plataformas = [];
 
 function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
@@ -168,10 +172,7 @@ function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
   plataformas.push(mesh);
 }
 
-// Chão Principal Gigante (100x100)
 criarPlataforma(0, 0, 0, 100, 2, 100, 0x181824);
-
-// Plataformas e Ilhas Elevadas ao Redor
 criarPlataforma(-35, 5, -35, 25, 2, 25, 0x312e81);
 criarPlataforma(35, 5, 35, 25, 2, 25, 0x312e81);
 criarPlataforma(-35, 8, 35, 25, 2, 25, 0x4c1d95);
@@ -212,7 +213,7 @@ const outrosJogadores = {};
 set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
 onDisconnect(jogadorRef).remove();
 
-// ARMA 3D NA CÂMERA
+// ARMA 3D
 const gunGroup = new THREE.Group();
 const gunBody = new THREE.Mesh(
   new THREE.BoxGeometry(0.15, 0.2, 0.7),
@@ -229,7 +230,7 @@ gunGroup.add(gunBody, gunBarrel);
 camera.add(gunGroup);
 scene.add(camera);
 
-// BOTS INIMIGOS
+// BOTS
 const bots = [];
 function criarBot(x, y, z) {
   const botGroup = new THREE.Group();
@@ -247,7 +248,7 @@ function criarBot(x, y, z) {
 criarBot(-30, 2, -30);
 criarBot(30, 2, 30);
 
-// ESCUTA OUTROS JOGADORES NO FIREBASE
+// ESCUTA OUTROS JOGADORES
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
 
@@ -275,7 +276,7 @@ onValue(todosJogadoresRef, (snapshot) => {
   }
 });
 
-// 4. SISTEMA DE TIROS CORRIGIDO E IMEDIATO
+// 4. TIROS
 const projetes = [];
 
 function atirar() {
@@ -289,41 +290,64 @@ function atirar() {
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
 
-  // Posiciona o projétil exatamente na frente da câmara
   bullet.position.copy(camera.position).add(dir.clone().multiplyScalar(0.8));
   scene.add(bullet);
 
   projetes.push({ mesh: bullet, dir: dir, life: 120 });
 }
 
-// 5. CONTROLES DE MOUSE E TECLA ESC
+// 5. CONTROLES ESPECÍFICOS PARA PC (POINTER LOCK)
 const instrucaoMouse = document.getElementById('instrucaoMouse');
 
-renderer.domElement.addEventListener('click', () => {
-  renderer.domElement.requestPointerLock();
-});
+if (!isMobile) {
+  instrucaoMouse.style.display = 'block';
 
-document.addEventListener('pointerlockchange', () => {
-  if (document.pointerLockElement === renderer.domElement) {
-    instrucaoMouse.style.display = 'none';
-  } else {
-    instrucaoMouse.style.display = 'block';
-  }
-});
+  renderer.domElement.addEventListener('click', () => {
+    renderer.domElement.requestPointerLock();
+  });
+
+  document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === renderer.domElement) {
+      instrucaoMouse.style.display = 'none';
+    } else {
+      instrucaoMouse.style.display = 'block';
+    }
+  });
+}
 
 let rotationX = 0, rotationY = 0;
 
 document.addEventListener('mousemove', (e) => {
-  if (document.pointerLockElement === renderer.domElement) {
+  if (!isMobile && document.pointerLockElement === renderer.domElement) {
     rotationY -= e.movementX * 0.002;
     rotationX -= e.movementY * 0.002;
     rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
   }
 });
 
+// Controles Touch para Telemóvel
+let lastTouchX = 0, lastTouchY = 0;
+window.addEventListener('touchstart', (e) => {
+  if (isMobile && e.touches[0].target.id !== 'btnAtirar') {
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+window.addEventListener('touchmove', (e) => {
+  if (isMobile && e.touches[0].target.id !== 'btnAtirar') {
+    const deltaX = e.touches[0].clientX - lastTouchX;
+    const deltaY = e.touches[0].clientY - lastTouchY;
+    rotationY -= deltaX * 0.005;
+    rotationX -= deltaY * 0.005;
+    rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Escape') {
-    if (document.pointerLockElement) document.exitPointerLock();
+    if (!isMobile && document.pointerLockElement) document.exitPointerLock();
     window.location.href = 'lobby.html';
   }
   if (e.code === 'Space' || e.code === 'KeyF') atirar();
@@ -341,7 +365,6 @@ let ultimoEnvio = 0;
 function animate(tempo) {
   requestAnimationFrame(animate);
 
-  // Aplica a rotação de forma limpa na câmara
   camera.rotation.set(0, 0, 0);
   camera.rotation.y = rotationY;
   camera.rotation.x = rotationX;
@@ -388,15 +411,13 @@ function animate(tempo) {
     ultimoEnvio = tempo;
   }
 
-  // ATUALIZAÇÃO DOS TIROS E DETECÇÃO DE IMPACTO
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
-    p.mesh.position.add(p.dir.clone().multiplyScalar(1.2)); // Tiro mais rápido e preciso
+    p.mesh.position.add(p.dir.clone().multiplyScalar(1.2));
     p.life--;
 
     let acertou = false;
 
-    // Acerto nos Bots
     for (let j = bots.length - 1; j >= 0; j--) {
       const b = bots[j];
       if (p.mesh.position.distanceTo(b.mesh.position) < 1.8) {
@@ -414,7 +435,6 @@ function animate(tempo) {
       }
     }
 
-    // Acerto em Outros Jogadores
     if (!acertou) {
       for (let id in outrosJogadores) {
         const outro = outrosJogadores[id];
