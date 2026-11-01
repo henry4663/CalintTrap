@@ -1,5 +1,5 @@
 // multiplayer.js
-import { database } from './firebase.js'; // Ajuste o caminho se necessário para o seu firebase.js
+import { db as database } from './firebase.js'; // Ajuste o caminho se necessário para o seu firebase.js
 import { ref, set, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { criarPersonagem } from './personagem.js';
 
