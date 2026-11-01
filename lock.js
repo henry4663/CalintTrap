@@ -2,8 +2,8 @@ import { db, ref, set, get, toast } from "./firebase.js";
 
 const $ = id => document.getElementById(id);
 
-// --- LOGIN ---
-async function login() {
+// --- FUNÇÕES ---
+async function fazerLogin() {
   const u = $("inUser").value.trim();
   const p = $("inPass").value;
   const m = $("msgLogin");
@@ -28,7 +28,6 @@ async function login() {
     m.style.color = "var(--success)";
     m.textContent = "Logado! Redirecionando...";
     
-    // Redirecionamento forçado
     setTimeout(() => {
       window.location.replace("lobby.html");
     }, 800);
@@ -40,8 +39,7 @@ async function login() {
   }
 }
 
-// --- REGISTRO ---
-async function registrar() {
+async function fazerRegistro() {
   const u = $("inUser").value.trim();
   const p = $("inPass").value;
   const m = $("msgLogin");
@@ -74,11 +72,23 @@ async function registrar() {
   }
 }
 
-// Exporta para o HTML conseguir enxergar
-window.fazerLogin = login;
-window.fazerRegistro = registrar;
+// --- ESPERA O HTML CARREGAR E CONECTA OS BOTÕES ---
+document.addEventListener("DOMContentLoaded", () => {
+  const btnLogin = $("btnLogin");
+  const btnRegistrar = $("btnRegistrar");
+  const inPass = $("inPass");
 
-// Permite apertar Enter
-$("inPass").addEventListener("keydown", e => {
-  if (e.key === "Enter") login();
+  if (btnLogin) btnLogin.addEventListener("click", fazerLogin);
+  if (btnRegistrar) btnRegistrar.addEventListener("click", fazerRegistro);
+  
+  if (inPass) {
+    inPass.addEventListener("keydown", e => {
+      if (e.key === "Enter") fazerLogin();
+    });
+  }
 });
+
+// Se já estiver logado, vai pro lobby
+if (localStorage.getItem("goblox_user")) {
+  window.location.replace("lobby.html");
+}
