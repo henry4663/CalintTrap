@@ -1,4 +1,3 @@
-javascript
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
@@ -62,11 +61,20 @@ export function toast(msg, tipo = "") {
 
     if (!t) return;
 
+    const normalizedType = String(tipo).trim().toLowerCase();
+    const safeTipo =
+        normalizedType === "sucesso" || normalizedType === "success"
+            ? "success"
+            : normalizedType === "erro" || normalizedType === "error"
+                ? "error"
+                : normalizedType === "aviso" || normalizedType === "warning"
+                    ? "warning"
+                    : normalizedType;
+
     t.textContent = msg;
-    t.className = "toast show " + tipo;
+    t.className = `toast show ${safeTipo}`.trim();
 
     setTimeout(() => {
-        t.className = "toast " + tipo;
+        t.className = `toast ${safeTipo}`.trim();
     }, 2500);
 }
-
