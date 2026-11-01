@@ -139,7 +139,7 @@ form.addEventListener("submit", async (event) => {
 // Verificar sessão existente
 onAuthStateChanged(auth, (user) => {
     if (user && !loading) {
-        window.location.replace(LOBBY);
+        window.location.replace(lobby);
     }
 });
 
