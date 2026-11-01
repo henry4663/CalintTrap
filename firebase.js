@@ -1,4 +1,4 @@
-```javascript
+javascript
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
@@ -69,4 +69,4 @@ export function toast(msg, tipo = "") {
         t.className = "toast " + tipo;
     }, 2500);
 }
-```
+
