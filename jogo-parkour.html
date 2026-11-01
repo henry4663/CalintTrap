@@ -1,488 +1,460 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — Parkour Multiplayer</title>
-<link rel="stylesheet" href="global.css">
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #87caff;
-    user-select: none;
-    touch-action: none;
-    font-family: Arial, sans-serif;
-  }
-  #status {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    color: #fff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    z-index: 10;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-  }
-  #btnVoltar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 10px 18px;
-    background: #1e1e2d;
-    border: 1px solid rgba(255,255,255,0.3);
-    color: #fff;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 20;
-    text-decoration: none;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Goblox — Parkour</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #9ad9ff;
+      font-family: Arial, Helvetica, sans-serif;
+      user-select: none;
+      touch-action: none;
+    }
 
-  /* BOTÕES DE CONTROLE MOBILE */
-  #controlesMobile {
-    position: absolute;
-    bottom: 30px;
-    left: 30px;
-    display: none;
-    z-index: 20;
-    gap: 15px;
-    align-items: center;
-  }
-  .d-pad {
-    display: grid;
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 50px);
-    gap: 5px;
-  }
-  .move {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.6);
-    border-radius: 12px;
-    color: white;
-    font-size: 1.2rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .move:active { background: rgba(255, 255, 255, 0.6); }
-  
-  #btnPularMobile {
-    width: 85px;
-    height: 85px;
-    background: radial-gradient(circle, #35d995 0%, #047857 100%);
-    border: 3px solid #6ee7b7;
-    border-radius: 50%;
-    color: white;
-    font-weight: 900;
-    font-size: 1rem;
-    box-shadow: 0 0 20px rgba(53, 217, 149, 0.6);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    bottom: 40px;
-    right: 40px;
-    z-index: 20;
-  }
-  #btnPularMobile:active { transform: scale(0.92); }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(#aee8ff, #dff8ff);
+    }
 
-  #mensagem {
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.85);
-    color: #4ade80;
-    padding: 30px 50px;
-    border-radius: 20px;
-    font-size: 2rem;
-    font-weight: bold;
-    display: none;
-    z-index: 30;
-    text-align: center;
-    border: 2px solid #4ade80;
-    box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
-  }
-</style>
+    #status {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      z-index: 30;
+      background: rgba(10, 16, 24, 0.72);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: bold;
+      font-size: 14px;
+      display: none;
+    }
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.170.0/build/three.module.js"
-  }
-}
-</script>
+    #mensagem {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 18px 22px;
+      color: white;
+      font-weight: 700;
+      text-align: center;
+      display: none;
+    }
+
+    #btnVoltar {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 30;
+      text-decoration: none;
+      color: white;
+      background: rgba(10, 16, 24, 0.72);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+
+    .mobile-controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 150px;
+      display: none;
+      z-index: 25;
+    }
+
+    .move {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #moveW { left: 22px; bottom: 82px; }
+    #moveS { left: 22px; bottom: 12px; }
+    #moveA { left: 96px; bottom: 12px; }
+    #moveD { left: 96px; bottom: 82px; }
+
+    #pular {
+      position: absolute;
+      right: 26px;
+      bottom: 24px;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: white;
+      font-weight: 900;
+      font-size: 0.8rem;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-controls { display: block; }
+    }
+  </style>
 </head>
 <body>
+  <div id="status">Parkour</div>
+  <div id="mensagem">Você venceu!<br><small>Voltando ao lobby...</small></div>
+  <a href="lobby.html" id="btnVoltar">Sair</a>
 
-<div id="status">A carregar motor 3D...</div>
-<div id="mensagem">VICTORY! 🎉</div>
-<a href="lobby.html" id="btnVoltar">⎋ Sair</a>
-
-<!-- CONTROLES MOBILE -->
-<div id="controlesMobile">
-  <div class="d-pad">
-    <div></div>
-    <button class="move" data-key="KeyW" style="grid-column: 2; grid-row: 1;">▲</button>
-    <div></div>
-    <button class="move" data-key="KeyA" style="grid-column: 1; grid-row: 2;">◀</button>
-    <div></div>
-    <button class="move" data-key="KeyD" style="grid-column: 3; grid-row: 2;">▶</button>
-    <div></div>
-    <button class="move" data-key="KeyS" style="grid-column: 2; grid-row: 3;">▼</button>
-    <div></div>
+  <div class="mobile-controls">
+    <button id="moveW" class="move" data-key="KeyW">W</button>
+    <button id="moveS" class="move" data-key="KeyS">S</button>
+    <button id="moveA" class="move" data-key="KeyA">A</button>
+    <button id="moveD" class="move" data-key="KeyD">D</button>
+    <button id="pular">PULAR</button>
   </div>
-</div>
-<button id="btnPularMobile">PULAR</button>
 
-<script type="module">
-import * as THREE from 'three';
-import { db as database } from './firebase.js';
-import { ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { criarPersonagem } from './personagem.js';
+  <script type="module">
+    const status = document.getElementById("status");
+    const mensagem = document.getElementById("mensagem");
 
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    let THREE;
 
-if (isMobile) {
-  document.getElementById("controlesMobile").style.display = "flex";
-}
+    try {
+      THREE = await import("https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js");
+    } catch {
+      try {
+        THREE = await import("https://unpkg.com/three@0.170.0/build/three.module.js");
+      } catch {
+        if (status) {
+          status.style.display = "block";
+          status.textContent = "Erro ao carregar 3D.";
+        }
+        console.error("Three.js falhou ao carregar.");
+        return;
+      }
+    }
 
-(async function iniciarParkour() {
-  const status = document.getElementById("status");
-  status.textContent = "Preparando cenário...";
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
-  // CENA
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87caff);
-  scene.fog = new THREE.Fog(0x87caff, 35, 110);
+    status.style.display = "none";
 
-  const camera = new THREE.PerspectiveCamera(
-    70, innerWidth / innerHeight, 0.1, 200
-  );
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9ad9ff);
+    scene.fog = new THREE.Fog(0x9ad9ff, 30, 150);
 
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: "high-performance"
-  });
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 220);
+    scene.add(camera);
 
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
 
-  document.body.appendChild(renderer.domElement);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x7a8fa8, 1.5);
+    scene.add(hemi);
 
-  // ILUMINAÇÃO
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x53647d, 2));
+    const sol = new THREE.DirectionalLight(0xffffff, 2.2);
+    sol.position.set(-15, 25, 10);
+    sol.castShadow = true;
+    sol.shadow.mapSize.set(1024, 1024);
+    scene.add(sol);
 
-  const sol = new THREE.DirectionalLight(0xffffff, 2.5);
-  sol.position.set(-15, 25, 12);
-  sol.castShadow = true;
-  sol.shadow.mapSize.set(1024, 1024);
-  scene.add(sol);
+    function makeMaterial(color, roughness = 0.7, metalness = 0.1) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+    }
 
-  // MATERIAIS
-  function material(cor, metalness = 0) {
-    return new THREE.MeshStandardMaterial({
-      color: cor,
-      roughness: 0.75,
-      metalness
-    });
-  }
+    const cores = {
+      chao: makeMaterial(0x2d3b4d),
+      verde: makeMaterial(0x34d399),
+      roxo: makeMaterial(0x7c3aed),
+      azul: makeMaterial(0x2563eb),
+      amarelo: makeMaterial(0xfbbf24),
+      vermelho: makeMaterial(0xef4444),
+      branco: makeMaterial(0xffffff),
+      pele: makeMaterial(0xffd2a6),
+      roupa: makeMaterial(0x4f46e5),
+      calca: makeMaterial(0x1f2937),
+      cabelo: makeMaterial(0x2a1c20)
+    };
 
-  const cores = {
-    verde: material(0x35d995),
-    roxo: material(0x7955ff),
-    azul: material(0x269cff),
-    amarelo: material(0xffcb45),
-    vermelho: material(0xff5369),
-    branco: material(0xffffff),
-    chao: material(0x29394e)
-  };
+    function criarBloco(x, y, z, sx, sy, sz, mat) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      return mesh;
+    }
 
-  function criarBloco(x, y, z, sx, sy, sz, mat) {
-    const objeto = new THREE.Mesh(
-      new THREE.BoxGeometry(sx, sy, sz),
-      mat
+    const platforms = [];
+    function plataforma(x, y, z, sx, sy, sz, mat = cores.verde) {
+      const mesh = criarBloco(x, y, z, sx, sy, sz, mat);
+      platforms.push({ x, y, z, w: sx, h: sy, d: sz, top: y + sy / 2 });
+      return mesh;
+    }
+
+    criarBloco(0, -2, 0, 200, 1, 200, cores.chao);
+
+    plataforma(0, 0, 0, 10, 1, 10, cores.verde);
+    plataforma(0, 1.2, -10, 5, 1, 5, cores.roxo);
+    plataforma(5, 2.4, -17, 5, 1, 5, cores.azul);
+    plataforma(0, 3.6, -24, 4, 1, 4, cores.amarelo);
+    plataforma(-5, 4.8, -32, 5, 1, 5, cores.verde);
+    plataforma(-5, 5.9, -40, 6, 1, 6, cores.roxo);
+    plataforma(2, 7.2, -48, 6, 1, 6, cores.azul);
+    plataforma(8, 8.5, -56, 7, 1, 7, cores.amarelo);
+
+    const finish = criarBloco(8, 9.4, -56, 2.2, 0.3, 2.2, cores.verde);
+
+    const jogador = new THREE.Group();
+    scene.add(jogador);
+
+    const corpo = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1.4, 1),
+      new THREE.MeshStandardMaterial({
+        color: 0x8b5cf6,
+        emissive: 0x4c1d95,
+        emissiveIntensity: 0.2
+      })
     );
-    objeto.position.set(x, y, z);
-    objeto.castShadow = true;
-    objeto.receiveShadow = true;
-    scene.add(objeto);
-    return objeto;
-  }
+    corpo.position.y = 1.2;
+    corpo.castShadow = true;
+    corpo.receiveShadow = true;
+    jogador.add(corpo);
 
-  // CHÃO
-  criarBloco(0, -2, -25, 200, 1, 200, cores.chao);
+    const cabeca = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.8, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0xffd7b5 })
+    );
+    cabeca.position.y = 2.2;
+    cabeca.castShadow = true;
+    cabeca.receiveShadow = true;
+    jogador.add(cabeca);
 
-  // PLATAFORMAS
-  const plataformas = [];
+    const olhoMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+    const olhoEsq = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.04), olhoMat);
+    olhoEsq.position.set(-0.18, 2.25, 0.42);
+    jogador.add(olhoEsq);
 
-  function plataforma(x, y, z, largura, profundidade, mat) {
-    const objeto = criarBloco(x, y, z, largura, 0.7, profundidade, mat);
+    const olhoDir = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.04), olhoMat);
+    olhoDir.position.set(0.18, 2.25, 0.42);
+    jogador.add(olhoDir);
 
-    plataformas.push({
-      minX: x - largura/2 - 0.5,
-      maxX: x + largura/2 + 0.5,
-      minZ: z - profundidade/2 - 0.5,
-      maxZ: z + profundidade/2 + 0.5,
-      y: y + 0.35
+    function criarNomeNoPlayer(nome = "nick") {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 128;
+
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = "700 42px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(nome, canvas.width / 2, canvas.height / 2);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(2.8, 0.7, 1);
+      sprite.position.set(0, 3.2, 0);
+
+      return sprite;
+    }
+
+    const nameTag = criarNomeNoPlayer("nick");
+    jogador.add(nameTag);
+
+    jogador.position.set(0, 0.5, 6);
+
+    let velocidadeY = 0;
+    let noChao = false;
+    let anguloCamera = 0;
+    let venceu = false;
+    let tempo = 0;
+
+    const teclas = {};
+    const moveState = { forward: false, backward: false, left: false, right: false };
+
+    function pular() {
+      if (noChao && !venceu) {
+        velocidadeY = 10;
+        noChao = false;
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "KeyW" || e.code === "ArrowUp") moveState.forward = true;
+      if (e.code === "KeyS" || e.code === "ArrowDown") moveState.backward = true;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") moveState.left = true;
+      if (e.code === "KeyD" || e.code === "ArrowRight") moveState.right = true;
+      if (e.code === "Space") pular();
+      teclas[e.code] = true;
     });
 
-    criarBloco(x, y - 0.36, z, largura + 0.15, 0.12, profundidade + 0.15, cores.branco);
-    return objeto;
-  }
+    document.addEventListener("keyup", (e) => {
+      if (e.code === "KeyW" || e.code === "ArrowUp") moveState.forward = false;
+      if (e.code === "KeyS" || e.code === "ArrowDown") moveState.backward = false;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") moveState.left = false;
+      if (e.code === "KeyD" || e.code === "ArrowRight") moveState.right = false;
+      teclas[e.code] = false;
+    });
 
-  plataforma(0, 0, 0, 10, 10, cores.verde);
-  plataforma(0, 1, -10, 5, 5, cores.roxo);
-  plataforma(5, 2, -17, 4, 4, cores.azul);
-  plataforma(0, 3, -24, 4, 4, cores.amarelo);
-  plataforma(-5, 4, -31, 4, 4, cores.verde);
-  plataforma(-5, 5, -39, 6, 6, cores.roxo);
-  plataforma(2, 6, -47, 4, 4, cores.azul);
-  plataforma(8, 7, -55, 6, 6, cores.amarelo);
+    document.querySelectorAll(".move").forEach((botao) => {
+      const key = botao.dataset.key;
+      botao.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        moveState[key] = true;
+      });
+      botao.addEventListener("pointerup", () => {
+        moveState[key] = false;
+      });
+      botao.addEventListener("pointercancel", () => {
+        moveState[key] = false;
+      });
+      botao.addEventListener("pointerleave", () => {
+        moveState[key] = false;
+      });
+    });
 
-  // CHECKPOINT E BANDEIRA
-  criarBloco(-5, 5.4, -39, 1.7, 0.15, 1.7, cores.verde);
-  criarBloco(8, 7.42, -55, 2, 0.12, 2, cores.verde);
-  criarBloco(8, 9, -55, 0.25, 3, 0.25, cores.vermelho);
-  criarBloco(9, 10.2, -55, 2, 0.8, 0.15, cores.amarelo);
-
-  // MULTIPLAYER E ANTI-FANTASMA
-  const meuId = 'player_parkour_' + Math.random().toString(36).substr(2, 9);
-  const jogadorRef = ref(database, 'parkour_jogadores/' + meuId);
-  const todosJogadoresRef = ref(database, 'parkour_jogadores');
-  const outrosJogadores = {};
-
-  function sairDoJogoLimpo() {
-    remove(jogadorRef).catch(() => {});
-  }
-
-  onDisconnect(jogadorRef).remove();
-  window.addEventListener('beforeunload', sairDoJogoLimpo);
-  window.addEventListener('pagehide', sairDoJogoLimpo);
-
-  document.getElementById('btnVoltar').addEventListener('click', (e) => {
-    e.preventDefault();
-    sairDoJogoLimpo();
-    setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
-  });
-
-  // PERSONAGEM LOCAL
-  const jogador = criarPersonagem();
-  scene.add(jogador);
-  jogador.position.set(0, 0.36, 0);
-
-  set(jogadorRef, { x: 0, y: 0.36, z: 0 });
-
-  // ESCUTA OUTROS JOGADORES
-  onValue(todosJogadoresRef, (snapshot) => {
-    const data = snapshot.val() || {};
-
-    for (let id in outrosJogadores) {
-      if (!data[id]) {
-        scene.remove(outrosJogadores[id].mesh);
-        delete outrosJogadores[id];
-      }
-    }
-
-    for (let id in data) {
-      if (id === meuId) continue;
-      let pos = data[id];
-
-      if (!outrosJogadores[id]) {
-        const meshOutro = criarPersonagem();
-        scene.add(meshOutro);
-        outrosJogadores[id] = { id: id, mesh: meshOutro };
-      }
-
-      if (pos && typeof pos.x === 'number') {
-        outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
-      }
-    }
-  });
-
-  // ESTADO
-  let velocidadeY = 0;
-  let noChao = false;
-  let venceu = false;
-  let anguloCamera = 0;
-  let checkpoint = new THREE.Vector3(0, 0.36, 0);
-
-  const velocidade = 7;
-  const gravidade = 22;
-  const forcaPulo = 10;
-  const teclas = {};
-
-  // TECLADO
-  addEventListener("keydown", e => {
-    teclas[e.code] = true;
-    if (e.code === "Space") {
+    document.getElementById("pular").addEventListener("pointerdown", (e) => {
       e.preventDefault();
       pular();
-    }
-  });
-
-  addEventListener("keyup", e => {
-    teclas[e.code] = false;
-  });
-
-  function pular() {
-    if (noChao && !venceu) {
-      velocidadeY = forcaPulo;
-      noChao = false;
-    }
-  }
-
-  // CONTROLES MOBILE (D-PAD)
-  document.querySelectorAll(".move").forEach(botao => {
-    const tecla = botao.dataset.key;
-    botao.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      teclas[tecla] = true;
-      botao.setPointerCapture(e.pointerId);
     });
-    function soltar() { teclas[tecla] = false; }
-    botao.addEventListener("pointerup", soltar);
-    botao.addEventListener("pointercancel", soltar);
-    botao.addEventListener("lostpointercapture", soltar);
-  });
 
-  document.getElementById("btnPularMobile").addEventListener("pointerdown", e => {
-    e.preventDefault();
-    pular();
-  });
+    let drag = false;
+    let ultimaX = 0;
 
-  // ROTAÇÃO DE CÂMERA POR TOQUE / MOUSE
-  let arrastando = false;
-  let ultimaX = 0;
+    renderer.domElement.addEventListener("pointerdown", (e) => {
+      drag = true;
+      ultimaX = e.clientX;
+    });
 
-  renderer.domElement.addEventListener("pointerdown", e => {
-    arrastando = true;
-    ultimaX = e.clientX;
-    renderer.domElement.setPointerCapture(e.pointerId);
-  });
+    renderer.domElement.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const delta = e.clientX - ultimaX;
+      anguloCamera -= delta * 0.006;
+      ultimaX = e.clientX;
+    });
 
-  renderer.domElement.addEventListener("pointermove", e => {
-    if (!arrastando) return;
-    anguloCamera -= (e.clientX - ultimaX) * 0.006;
-    ultimaX = e.clientX;
-  });
+    renderer.domElement.addEventListener("pointerup", () => { drag = false; });
+    renderer.domElement.addEventListener("pointerleave", () => { drag = false; });
 
-  function pararCamera() { arrastando = false; }
-  renderer.domElement.addEventListener("pointerup", pararCamera);
-  renderer.domElement.addEventListener("pointercancel", pararCamera);
+    function atualizarJogador(dt) {
+      if (venceu) return;
 
-  // ATUALIZAÇÃO E COLISÃO
-  function atualizar(dt) {
-    if (venceu) return;
+      let dirX = 0;
+      let dirZ = 0;
 
-    const frente = (teclas.KeyW || teclas.ArrowUp ? 1 : 0) - (teclas.KeyS || teclas.ArrowDown ? 1 : 0);
-    const lado = (teclas.KeyD || teclas.ArrowRight ? 1 : 0) - (teclas.KeyA || teclas.ArrowLeft ? 1 : 0);
+      if (moveState.forward) dirZ -= 1;
+      if (moveState.backward) dirZ += 1;
+      if (moveState.left) dirX -= 1;
+      if (moveState.right) dirX += 1;
 
-    const direcao = new THREE.Vector3(lado, 0, -frente);
+      if (dirX !== 0 || dirZ !== 0) {
+        const len = Math.hypot(dirX, dirZ) || 1;
+        dirX /= len;
+        dirZ /= len;
 
-    if (direcao.lengthSq() > 0) {
-      direcao.normalize();
-      direcao.applyAxisAngle(new THREE.Vector3(0, 1, 0), anguloCamera);
+        const frente = new THREE.Vector3(Math.sin(anguloCamera), 0, Math.cos(anguloCamera)).normalize();
+        const lado = new THREE.Vector3(Math.cos(anguloCamera), 0, -Math.sin(anguloCamera)).normalize();
 
-      jogador.position.x += direcao.x * velocidade * dt;
-      jogador.position.z += direcao.z * velocidade * dt;
-      jogador.rotation.y = Math.atan2(direcao.x, direcao.z) + Math.PI;
-    }
+        const moveDir = new THREE.Vector3();
+        moveDir.addScaledVector(frente, -dirZ);
+        moveDir.addScaledVector(lado, dirX);
 
-    velocidadeY -= gravidade * dt;
-    jogador.position.y += velocidadeY * dt;
+        const speed = 8;
+        jogador.position.x += moveDir.x * speed * dt;
+        jogador.position.z += moveDir.z * speed * dt;
+      }
 
-    noChao = false;
+      velocidadeY -= 20 * dt;
+      jogador.position.y += velocidadeY * dt;
 
-    // COLISÕES COM PLATAFORMAS
-    for (const p of plataformas) {
-      if (
-        jogador.position.x >= p.minX && jogador.position.x <= p.maxX &&
-        jogador.position.z >= p.minZ && jogador.position.z <= p.maxZ &&
-        velocidadeY <= 0 &&
-        jogador.position.y >= p.y - 0.5 && jogador.position.y <= p.y + 0.5
-      ) {
-        jogador.position.y = p.y;
+      noChao = false;
+
+      for (const p of platforms) {
+        const dentroX = jogador.position.x >= p.x - p.w / 2 && jogador.position.x <= p.x + p.w / 2;
+        const dentroZ = jogador.position.z >= p.z - p.d / 2 && jogador.position.z <= p.z + p.d / 2;
+
+        const topo = p.top + 0.7;
+
+        if (dentroX && dentroZ && jogador.position.y <= topo && jogador.position.y >= topo - 1.4 && velocidadeY <= 0) {
+          jogador.position.y = topo;
+          velocidadeY = 0;
+          noChao = true;
+        }
+      }
+
+      if (jogador.position.y < -12) {
+        jogador.position.set(0, 0.5, 6);
         velocidadeY = 0;
-        noChao = true;
+        noChao = false;
+      }
+
+      if (jogador.position.distanceTo(new THREE.Vector3(8, 9.4, -56)) < 2.5) {
+        venceu = true;
+        mensagem.style.display = "block";
+        setTimeout(() => {
+          window.location.href = "jogo-3d.html";
+        }, 1200);
       }
     }
 
-    // CHECKPOINT
-    if (jogador.position.z < -36 && jogador.position.z > -42 && jogador.position.x < -2 && jogador.position.x > -8 && noChao) {
-      checkpoint.set(jogador.position.x, jogador.position.y, jogador.position.z);
-      status.textContent = "Checkpoint ativado!";
+    function atualizarCamera() {
+      const distancia = 8;
+      const alvo = new THREE.Vector3(
+        jogador.position.x + Math.sin(anguloCamera) * distancia,
+        jogador.position.y + 3.2,
+        jogador.position.z + Math.cos(anguloCamera) * distancia
+      );
+
+      camera.position.lerp(alvo, 1 - Math.exp(-8 * 0.016));
+      camera.lookAt(jogador.position.x, jogador.position.y + 1.3, jogador.position.z);
     }
 
-    // VITÓRIA
-    if (jogador.position.z < -57 && jogador.position.x > 5) {
-      venceu = true;
-      document.getElementById("mensagem").style.display = "block";
-      status.textContent = "Você venceu!";
+    let last = performance.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = Math.min(0.033, (performance.now() - last) / 1000);
+      last = performance.now();
+
+      tempo += delta;
+      document.getElementById("status").textContent = `Tempo: ${tempo.toFixed(1)}s`;
+
+      atualizarJogador(delta);
+      atualizarCamera();
+      renderer.render(scene, camera);
     }
 
-    // QUEDA
-    if (jogador.position.y < -12) {
-      jogador.position.copy(checkpoint);
-      velocidadeY = 0;
-      noChao = false;
-    }
-
-    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -20, 20);
-  }
-
-  // CÂMERA EM TERCEIRA PESSOA
-  function atualizarCamera(dt) {
-    const distancia = 8;
-    const destino = new THREE.Vector3(
-      jogador.position.x + Math.sin(anguloCamera) * distancia,
-      jogador.position.y + 3.5,
-      jogador.position.z + Math.cos(anguloCamera) * distancia
-    );
-
-    camera.position.lerp(destino, 1 - Math.exp(-6 * dt));
-    camera.lookAt(jogador.position.x, jogador.position.y + 1.5, jogador.position.z);
-  }
-
-  const relogio = new THREE.Clock();
-  let ultimoEnvio = 0;
-
-  function animar(tempo) {
-    requestAnimationFrame(animar);
-
-    const dt = Math.min(relogio.getDelta(), 0.04);
-
-    atualizar(dt);
-    atualizarCamera(dt);
-
-    if (tempo - ultimoEnvio > 50) {
-      set(jogadorRef, {
-        x: Number(jogador.position.x.toFixed(2)),
-        y: Number(jogador.position.y.toFixed(2)),
-        z: Number(jogador.position.z.toFixed(2))
-      }).catch(() => {});
-      ultimoEnvio = tempo;
-    }
-
-    renderer.render(scene, camera);
-  }
-
-  addEventListener("resize", () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
-
-  status.textContent = "Chegue até a bandeira final!";
-  animar(0);
-})();
-</script>
+    status.textContent = "Parkour ativo";
+    animate();
+  })();
+  </script>
 </body>
 </html>
