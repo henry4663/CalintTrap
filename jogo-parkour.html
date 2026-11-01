@@ -6,16 +6,14 @@
   <title>Goblox — Parkour</title>
   <style>
     :root {
-      --bg-top: #bfe8ff;
-      --bg-bottom: #dff7ff;
-      --panel: rgba(13, 17, 27, 0.7);
+      --bg1: #bfe8ff;
+      --bg2: #dff7ff;
+      --text: #ffffff;
+      --panel: rgba(16, 20, 30, 0.65);
       --line: rgba(255,255,255,0.12);
-      --text: #edf6ff;
-      --muted: #c9d8eb;
       --purple: #8b5cf6;
       --cyan: #38bdf8;
       --green: #22c55e;
-      --danger: #ef4444;
     }
 
     * { box-sizing: border-box; }
@@ -25,8 +23,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: linear-gradient(var(--bg-top), var(--bg-bottom));
-      color: var(--text);
+      background: linear-gradient(var(--bg1), var(--bg2));
       font-family: Arial, Helvetica, sans-serif;
       touch-action: none;
       user-select: none;
@@ -36,7 +33,7 @@
       display: block;
       width: 100vw;
       height: 100vh;
-      background: linear-gradient(#9fdcff, #dfefff);
+      background: linear-gradient(#aee8ff, #eafaff);
     }
 
     #hud {
@@ -44,19 +41,13 @@
       top: 18px;
       left: 18px;
       z-index: 20;
-      background: rgba(10, 16, 25, 0.56);
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 10px 14px;
-      backdrop-filter: blur(6px);
+      color: white;
       font-size: 0.95rem;
       line-height: 1.5;
-      color: var(--text);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-    }
-
-    #hud strong {
-      color: #fff;
     }
 
     #btnVoltar {
@@ -64,14 +55,13 @@
       top: 18px;
       right: 18px;
       z-index: 20;
-      background: rgba(10,16,25,0.72);
       color: white;
+      text-decoration: none;
+      background: rgba(12, 16, 24, 0.7);
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 10px 14px;
       font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
     }
 
     #joystickBase {
@@ -82,7 +72,7 @@
       height: 120px;
       border-radius: 50%;
       background: rgba(255,255,255,0.08);
-      border: 2px solid rgba(255,255,255,0.18);
+      border: 2px solid rgba(255,255,255,0.16);
       display: none;
       z-index: 20;
       touch-action: none;
@@ -90,29 +80,28 @@
 
     #joystickStick {
       position: absolute;
-      width: 52px;
-      height: 52px;
       left: 34px;
       top: 34px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      background: radial-gradient(circle, #8b5cf6 0%, #5b21b6 100%);
-      border: 2px solid rgba(255,255,255,0.2);
-      box-shadow: 0 0 20px rgba(139,92,246,.45);
+      background: radial-gradient(circle, var(--purple) 0%, #5b21b6 100%);
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 0 18px rgba(139,92,246,0.5);
     }
 
     #btnPular {
       position: absolute;
-      right: 28px;
+      right: 26px;
       bottom: 110px;
-      width: 86px;
-      height: 86px;
+      width: 84px;
+      height: 84px;
       border-radius: 50%;
       border: none;
-      background: radial-gradient(circle, #38bdf8 0%, #0ea5e9 100%);
+      background: radial-gradient(circle, var(--cyan) 0%, #0ea5e9 100%);
       color: white;
       font-weight: 900;
       font-size: 0.8rem;
-      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
       display: none;
       z-index: 20;
       touch-action: none;
@@ -123,15 +112,14 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 30;
-      background: rgba(10, 15, 20, 0.6);
+      background: rgba(10,15,20,0.65);
       border: 1px solid rgba(139,92,246,0.5);
-      border-radius: 18px;
-      padding: 20px 24px;
+      border-radius: 16px;
+      padding: 20px 26px;
       text-align: center;
-      color: white;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      color: white;
+      z-index: 30;
       display: none;
     }
 
@@ -166,7 +154,7 @@
 
   <div id="instrucao">
     Clique para iniciar<br>
-    <small style="color:#cbd5e1; font-weight: normal;">WASD / Mouse / Touch</small>
+    <small style="color:#dfe7f4; font-weight: normal;">WASD / Mouse / Touch</small>
   </div>
 
   <script type="module">
@@ -176,64 +164,59 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xbfe8ff);
-    scene.fog = new THREE.Fog(0xbfe8ff, 30, 160);
+    scene.fog = new THREE.Fog(0xbfe8ff, 40, 180);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+    camera.position.set(0, 3, 10);
     scene.add(camera);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
     const hemi = new THREE.HemisphereLight(0xffffff, 0x9bb2c5, 1.2);
     scene.add(hemi);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    sunLight.position.set(25, 40, 15);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.set(1024, 1024);
-    scene.add(sunLight);
-
-    const sun = new THREE.Mesh(
-      new THREE.SphereGeometry(4, 24, 24),
-      new THREE.MeshStandardMaterial({
-        color: 0xffd166,
-        emissive: 0xffc857,
-        emissiveIntensity: 0.8
-      })
-    );
-    sun.position.set(55, 45, -25);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    sun.position.set(30, 50, 15);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
     scene.add(sun);
 
-    const ground = new THREE.Mesh(
-      new THREE.BoxGeometry(200, 2, 200),
+    const skySun = new THREE.Mesh(
+      new THREE.SphereGeometry(4, 20, 20),
       new THREE.MeshStandardMaterial({
-        color: 0x9cd37e,
-        roughness: 0.95,
-        metalness: 0.05
+        color: 0xffd166,
+        emissive: 0xffb703,
+        emissiveIntensity: 0.5
       })
     );
-    ground.position.set(0, -1, 0);
-    ground.receiveShadow = true;
-    scene.add(ground);
+    skySun.position.set(40, 40, -30);
+    scene.add(skySun);
 
     const world = new THREE.Group();
     scene.add(world);
 
-    const platforms = [];
-    const checkpoints = [
-      { x: 0, y: 1.2, z: 0 },
-      { x: 8, y: 2.2, z: -10 },
-      { x: 18, y: 3.7, z: -20 },
-      { x: 28, y: 5.5, z: -32 },
-      { x: 38, y: 7.2, z: -44 }
-    ];
+    const ground = new THREE.Mesh(
+      new THREE.BoxGeometry(140, 2, 140),
+      new THREE.MeshStandardMaterial({
+        color: 0x9fe07d,
+        roughness: 0.95,
+        metalness: 0.04
+      })
+    );
+    ground.position.set(0, -1, 0);
+    ground.receiveShadow = true;
+    world.add(ground);
 
-    function addPlatform(x, y, z, w, h, d, color = 0x4b5563) {
-      const geo = new THREE.BoxGeometry(w, h, d);
-      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
-      const mesh = new THREE.Mesh(geo, mat);
+    const platforms = [];
+    function addPlatform(x, y, z, w, h, d, color = 0x7b8794) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.1 })
+      );
       mesh.position.set(x, y, z);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -241,19 +224,16 @@
 
       platforms.push({
         x, y, z, w, h, d,
-        minX: x - w / 2,
-        maxX: x + w / 2,
-        minZ: z - d / 2,
-        maxZ: z + d / 2,
         top: y + h / 2
       });
     }
 
-    addPlatform(0, 0.8, 0, 22, 1.4, 22, 0x7c8ca2);
-    addPlatform(7, 2.2, -10, 8, 1.1, 8, 0x7d8f9c);
-    addPlatform(16, 3.8, -20, 8, 1.1, 8, 0x7389ad);
-    addPlatform(26, 5.7, -32, 8, 1.2, 8, 0x7e8db8);
-    addPlatform(36, 7.5, -44, 10, 1.2, 10, 0x8196b3);
+    // subir em z negativo
+    addPlatform(0, 0.9, 0, 18, 1.4, 18, 0x7c8ca2);
+    addPlatform(4, 2.0, -8, 8, 1.1, 8, 0x7d8f9c);
+    addPlatform(10, 3.3, -16, 7, 1.1, 7, 0x7389ad);
+    addPlatform(18, 4.8, -26, 7, 1.1, 7, 0x7e8db8);
+    addPlatform(26, 6.5, -36, 9, 1.2, 9, 0x8196b3);
 
     const finish = new THREE.Mesh(
       new THREE.BoxGeometry(5, 1, 5),
@@ -263,14 +243,42 @@
         emissiveIntensity: 0.8
       })
     );
-    finish.position.set(42, 9.8, -52);
+    finish.position.set(32, 8.4, -48);
     finish.castShadow = true;
     finish.receiveShadow = true;
     scene.add(finish);
 
-    const playerGroup = new THREE.Group();
+    function makeNameTexture(name) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = "700 42px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      return tex;
+    }
+
+    const player = {
+      pos: new THREE.Vector3(0, 1.7, 6),
+      vel: new THREE.Vector3(),
+      yaw: 0,
+      grounded: false,
+      checkpoint: 1,
+      name: "nick"
+    };
+
+    const group = new THREE.Group();
     const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.45, 1.2, 4, 8),
+      new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshStandardMaterial({
         color: 0x8b5cf6,
         emissive: 0x4c1d95,
@@ -279,75 +287,66 @@
     );
     body.castShadow = true;
     body.receiveShadow = true;
-    body.position.y = 1.1;
-    playerGroup.add(body);
+    group.add(body);
 
-    const face = new THREE.Mesh(
-      new THREE.SphereGeometry(0.22, 12, 12),
-      new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+    const tagTexture = makeNameTexture(player.name);
+    const tag = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: tagTexture, transparent: true })
     );
-    face.position.set(0, 1.85, 0.18);
-    playerGroup.add(face);
+    tag.scale.set(3.2, 0.8, 1);
+    tag.position.set(0, 1.7, 0);
+    group.add(tag);
 
-    scene.add(playerGroup);
+    scene.add(group);
 
-    const player = {
-      pos: new THREE.Vector3(0, 1.7, 6),
-      velocity: new THREE.Vector3(),
-      yaw: 0,
-      pitch: 0,
-      grounded: false,
-      checkpointIndex: 0,
-      alive: true
-    };
+    const keyState = {};
+    document.addEventListener("keydown", (e) => {
+      keyState[e.code] = true;
+    });
+    document.addEventListener("keyup", (e) => {
+      keyState[e.code] = false;
+    });
 
+    let jumpQueued = false;
     let started = false;
     let elapsed = 0;
+    const moveState = { forward: false, backward: false, left: false, right: false };
 
-    const move = { forward: false, backward: false, left: false, right: false };
-    let jumpQueued = false;
-    let lastTime = performance.now();
-
-    const joystickBase = document.getElementById('joystickBase');
-    const joystickStick = document.getElementById('joystickStick');
-    const btnPular = document.getElementById('btnPular');
-    const instrucao = document.getElementById('instrucao');
+    const instrucao = document.getElementById("instrucao");
 
     function startGame() {
       started = true;
-      instrucao.style.display = 'none';
-      if (!isMobile) {
-        document.body.requestPointerLock?.();
+      instrucao.style.display = "none";
+      if (!isMobile && document.body.requestPointerLock) {
+        document.body.requestPointerLock();
       }
     }
 
-    if (isMobile) {
-      instrucao.style.display = 'block';
-      instrucao.addEventListener('click', startGame);
-    } else {
-      instrucao.style.display = 'block';
-      instrucao.addEventListener('click', startGame);
-      document.body.addEventListener('click', (e) => {
-        if (e.target.id !== 'btnVoltar' && document.pointerLockElement !== document.body) {
-          startGame();
-        }
-      });
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'KeyW' || e.code === 'ArrowUp') move.forward = true;
-      if (e.code === 'KeyS' || e.code === 'ArrowDown') move.backward = true;
-      if (e.code === 'KeyA' || e.code === 'ArrowLeft') move.left = true;
-      if (e.code === 'KeyD' || e.code === 'ArrowRight') move.right = true;
-      if (e.code === 'Space') jumpQueued = true;
+    instrucao.addEventListener("click", startGame);
+    document.body.addEventListener("click", (e) => {
+      if (!isMobile && e.target.id !== "btnVoltar" && document.pointerLockElement !== document.body) {
+        startGame();
+      }
     });
 
-    document.addEventListener('keyup', (e) => {
-      if (e.code === 'KeyW' || e.code === 'ArrowUp') move.forward = false;
-      if (e.code === 'KeyS' || e.code === 'ArrowDown') move.backward = false;
-      if (e.code === 'KeyA' || e.code === 'ArrowLeft') move.left = false;
-      if (e.code === 'KeyD' || e.code === 'ArrowRight') move.right = false;
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "KeyW" || e.code === "ArrowUp") moveState.forward = true;
+      if (e.code === "KeyS" || e.code === "ArrowDown") moveState.backward = true;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") moveState.left = true;
+      if (e.code === "KeyD" || e.code === "ArrowRight") moveState.right = true;
+      if (e.code === "Space") jumpQueued = true;
     });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.code === "KeyW" || e.code === "ArrowUp") moveState.forward = false;
+      if (e.code === "KeyS" || e.code === "ArrowDown") moveState.backward = false;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") moveState.left = false;
+      if (e.code === "KeyD" || e.code === "ArrowRight") moveState.right = false;
+    });
+
+    const joystickBase = document.getElementById("joystickBase");
+    const joystickStick = document.getElementById("joystickStick");
+    const btnPular = document.getElementById("btnPular");
 
     let joyActive = false;
     let joyX = 0;
@@ -360,7 +359,7 @@
 
       let dx = touch.clientX - cx;
       let dy = touch.clientY - cy;
-      const dist = Math.min(42, Math.hypot(dx, dy));
+      let dist = Math.min(42, Math.hypot(dx, dy));
       const ang = Math.atan2(dy, dx);
 
       joyX = Math.cos(ang) * (dist / 42);
@@ -372,53 +371,43 @@
       joystickStick.style.transform = `translate(${moveX}px, ${moveY}px)`;
     }
 
-    joystickBase.addEventListener('touchstart', (e) => {
+    joystickBase.addEventListener("touchstart", (e) => {
       joyActive = true;
       updateJoyFromTouch(e.touches[0]);
-    });
+    }, { passive: true });
 
-    joystickBase.addEventListener('touchmove', (e) => {
+    joystickBase.addEventListener("touchmove", (e) => {
       if (!joyActive) return;
       updateJoyFromTouch(e.touches[0]);
     }, { passive: true });
 
-    window.addEventListener('touchend', () => {
+    window.addEventListener("touchend", () => {
       joyActive = false;
       joyX = 0;
       joyY = 0;
-      joystickStick.style.transform = 'translate(0px, 0px)';
+      joystickStick.style.transform = "translate(0px, 0px)";
     });
 
-    btnPular.addEventListener('click', () => {
+    btnPular.addEventListener("click", () => {
       jumpQueued = true;
     });
 
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener("mousemove", (e) => {
       if (!isMobile && document.pointerLockElement === document.body && started) {
-        player.yaw -= e.movementX * 0.0025;
-        player.pitch -= e.movementY * 0.0024;
-        player.pitch = THREE.MathUtils.clamp(player.pitch, -1.15, 1.15);
+        player.yaw -= e.movementX * 0.0024;
       }
     });
 
-    document.addEventListener('pointerlockchange', () => {
-      if (!isMobile && document.pointerLockElement === document.body) {
-        instrucao.style.display = 'none';
-      } else if (!started) {
-        instrucao.style.display = 'block';
-      }
-    });
-
-    function handleMovement(dt) {
+    function updatePlayer(dt) {
       if (!started) return;
 
       let dirX = 0;
       let dirZ = 0;
 
-      if (move.forward) dirZ -= 1;
-      if (move.backward) dirZ += 1;
-      if (move.left) dirX -= 1;
-      if (move.right) dirX += 1;
+      if (moveState.forward) dirZ -= 1;
+      if (moveState.backward) dirZ += 1;
+      if (moveState.left) dirX -= 1;
+      if (moveState.right) dirX += 1;
 
       if (isMobile) {
         dirX += joyX;
@@ -433,102 +422,95 @@
         const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw)).normalize();
         const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw)).normalize();
 
-        const moveDir = new THREE.Vector3();
-        moveDir.addScaledVector(forward, -dirZ);
-        moveDir.addScaledVector(right, dirX);
+        const move = new THREE.Vector3();
+        move.addScaledVector(forward, -dirZ);
+        move.addScaledVector(right, dirX);
 
-        const speed = 9.5;
-        player.pos.x += moveDir.x * speed * dt;
-        player.pos.z += moveDir.z * speed * dt;
+        const speed = 8.5;
+        player.pos.x += move.x * speed * dt;
+        player.pos.z += move.z * speed * dt;
       }
 
       if (jumpQueued && player.grounded) {
-        player.velocity.y = 10.5;
+        player.vel.y = 9.7;
         player.grounded = false;
         jumpQueued = false;
       }
 
-      player.velocity.y -= 24 * dt;
-      player.pos.y += player.velocity.y * dt;
+      player.vel.y -= 20 * dt;
+      player.pos.y += player.vel.y * dt;
 
-      let onPlatformTop = null;
+      let groundedPlatform = null;
 
-      for (const plat of platforms) {
-        const inX = player.pos.x >= plat.minX && player.pos.x <= plat.maxX;
-        const inZ = player.pos.z >= plat.minZ && player.pos.z <= plat.maxZ;
+      for (const p of platforms) {
+        const inX = player.pos.x >= p.x - p.w / 2 && player.pos.x <= p.x + p.w / 2;
+        const inZ = player.pos.z >= p.z - p.d / 2 && player.pos.z <= p.z + p.d / 2;
 
         if (inX && inZ) {
-          const top = plat.top + 0.85;
+          const top = p.top + 0.7;
+
           if (player.pos.y <= top && player.pos.y >= top - 1.5) {
-            if (player.velocity.y < 0) {
+            if (player.vel.y < 0) {
               player.pos.y = top;
-              player.velocity.y = 0;
+              player.vel.y = 0;
               player.grounded = true;
-              onPlatformTop = plat;
+              groundedPlatform = p;
             }
           }
         }
       }
 
-      if (!player.grounded && player.pos.y < -20) {
-        player.pos.copy(checkpoints[player.checkpointIndex]);
-        player.velocity.set(0, 0, 0);
+      if (!player.grounded && player.pos.y < -10) {
+        player.pos.set(0, 1.7, 6);
+        player.vel.set(0, 0, 0);
         player.grounded = true;
       }
 
-      if (player.pos.y < -18) {
-        player.pos.copy(checkpoints[player.checkpointIndex]);
-        player.velocity.set(0, 0, 0);
-        player.grounded = true;
-      }
-
-      if (!onPlatformTop && player.pos.y < 0) {
+      if (!groundedPlatform && player.pos.y < 0.7) {
         player.pos.y = 0.8;
-        player.velocity.y = 0;
+        player.vel.y = 0;
         player.grounded = true;
       }
 
-      for (let i = 0; i < checkpoints.length; i++) {
-        const cp = checkpoints[i];
-        const d = player.pos.distanceTo(new THREE.Vector3(cp.x, cp.y, cp.z));
-        if (d < 2.4) {
-          player.checkpointIndex = i;
-        }
-      }
-
-      const finishDistance = player.pos.distanceTo(new THREE.Vector3(42, 9.8, -52));
+      const finishDistance = player.pos.distanceTo(new THREE.Vector3(32, 8.4, -48));
       if (finishDistance < 3) {
         alert("Você concluiu o Parkour!");
         window.location.href = "jogo-3d.html";
       }
+
+      group.position.copy(player.pos);
+      group.position.y = player.pos.y;
+      group.rotation.y = player.yaw;
     }
 
     function updateCamera() {
-      const targetPos = new THREE.Vector3(
-        player.pos.x - Math.sin(player.yaw) * 7,
+      const behind = new THREE.Vector3(
+        Math.sin(player.yaw) * -7,
+        3.5,
+        Math.cos(player.yaw) * -7
+      );
+
+      const target = new THREE.Vector3(
+        player.pos.x + behind.x,
         player.pos.y + 2.2,
-        player.pos.z - Math.cos(player.yaw) * 7
+        player.pos.z + behind.z
       );
 
-      const lookAt = new THREE.Vector3(
-        player.pos.x,
-        player.pos.y + 1.4,
-        player.pos.z
-      );
-
-      camera.position.lerp(targetPos, 0.12);
-      camera.lookAt(lookAt);
+      camera.position.lerp(target, 0.12);
+      camera.lookAt(player.pos.x, player.pos.y + 1.3, player.pos.z);
     }
 
+    let last = performance.now();
+
     function animate(now) {
-      const dt = Math.min(0.033, (now - lastTime) / 1000);
-      lastTime = now;
+      const dt = Math.min(0.03, (now - last) / 1000);
+      last = now;
 
       if (started) {
         elapsed += dt;
         document.getElementById("tempo").textContent = `${elapsed.toFixed(1)}s`;
-        document.getElementById("checkpoint").textContent = String(player.checkpointIndex + 1);
-        handleMovement(dt);
+        document.getElementById("checkpoint").textContent = String(player.checkpoint);
+        updatePlayer(dt);
       }
 
       updateCamera();
@@ -538,7 +520,7 @@
 
     requestAnimationFrame(animate);
 
-    window.addEventListener('resize', () => {
+    window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
