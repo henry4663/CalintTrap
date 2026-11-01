@@ -1,158 +1,57 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goblox - Login</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="lock.css">
+</head>
+<body>
 
-body {
-    min-height: 100vh;
-    background: #090711;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow-x: hidden;
-}
+<div class="lock-background"></div>
 
-.background,
-.lock-background {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background:
-        radial-gradient(circle at 15% 20%, #6725a855, transparent 40%),
-        radial-gradient(circle at 85% 80%, #a020dd44, transparent 40%),
-        #090711;
-}
+<main class="lock-container">
 
-/* CARTÃO */
+    <div class="logo">GO<span>BLOX</span></div>
+    <p class="subtitle">Seu universo começa aqui.</p>
 
-.login-container,
-.lock-container {
-    width: 410px;
-    max-width: 92%;
-    padding: 40px;
-    background: #171321;
-    border: 1px solid #63368a;
-    border-radius: 16px;
-    box-shadow: 0 15px 60px #0009, 0 0 35px #8b35d622;
-}
+    <form id="authForm">
 
-/* LOGO */
+        <div id="nameGroup" hidden>
+            <label>Nome de usuário</label>
+            <input id="username" type="text"
+                placeholder="Escolha seu usuário"
+                maxlength="20">
+        </div>
 
-.logo {
-    text-align: center;
-    font-size: 42px;
-    font-weight: 900;
-    font-family: Arial, sans-serif;
-    letter-spacing: 3px;
-}
+        <label>Usuário</label>
+        <input id="loginUsername" type="text"
+            placeholder="Seu nome de usuário"
+            maxlength="20" required>
 
-.logo span {
-    color: #a855f7;
-    text-shadow: 0 0 20px #a855f7;
-}
+        <label>Senha</label>
+        <input id="password" type="password"
+            placeholder="Sua senha"
+            minlength="6" required>
 
-.subtitle {
-    text-align: center;
-    color: #999;
-    margin: 12px 0 30px;
-}
+        <button id="submitButton" type="submit">
+            ENTRAR
+        </button>
 
-/* FORMULÁRIO */
+    </form>
 
-label {
-    display: block;
-    margin: 18px 0 8px;
-    color: #c9b8df;
-    font-size: 13px;
-}
+    <p id="message"></p>
 
-input {
-    width: 100%;
-    height: 48px;
-    padding: 12px;
-    background: #0c0a14;
-    color: white;
-    border: 1px solid #393044;
-    border-radius: 8px;
-    outline: none;
-}
+    <div class="links">
+        <p>
+            <span id="switchText">Não tem uma conta?</span>
+            <button id="switchMode" type="button">Criar conta</button>
+        </p>
+    </div>
 
-input:focus {
-    border-color: #a855f7;
-    box-shadow: 0 0 12px #a855f733;
-}
+</main>
 
-/* BOTÃO */
-
-button[type="submit"],
-#submitButton {
-    display: block;
-    width: 100%;
-    height: 49px;
-    margin-top: 25px;
-    background: linear-gradient(110deg, #7926bd, #a344e8);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: .2s;
-}
-
-button[type="submit"]:hover,
-#submitButton:hover {
-    filter: brightness(1.2);
-    box-shadow: 0 0 20px #a855f755;
-}
-
-/* MENSAGENS */
-
-#message {
-    text-align: center;
-    margin-top: 15px;
-    font-size: 13px;
-    overflow-wrap: anywhere;
-}
-
-/* LINKS */
-
-.footer,
-.links {
-    text-align: center;
-    margin-top: 25px;
-    color: #999;
-    font-size: 13px;
-}
-
-a,
-.links button {
-    color: #bd75ff;
-    text-decoration: none;
-}
-
-.links button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-a:hover,
-.links button:hover {
-    color: white;
-}
-
-[hidden] {
-    display: none !important;
-}
-
-@media(max-width: 450px) {
-    .login-container,
-    .lock-container {
-        padding: 28px;
-    }
-}
+<script type="module" src="lock.js"></script>
+</body>
+</html>
