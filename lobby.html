@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Goblox — Lobby</title>
+<link rel="stylesheet" href="global.css">
+<link rel="stylesheet" href="lobby.css">
+</head>
+<body>
+
+<header>
+  <div class="header-logo">GOBLOX</div>
+  <div class="header-right">
+    <button class="icon-btn" id="btnPerfil" title="Perfil">👤</button>
+    <button class="icon-btn" id="btnSair" title="Sair">⎋</button>
+  </div>
+</header>
+
+<main class="container">
+  <div class="welcome">
+    <h1 id="boasVindas">Olá, Jogador!</h1>
+    <p>Pronto para jogar?</p>
+  </div>
+
+  <h2 class="section-title">Jogos Disponíveis</h2>
+  
+  <div class="game-grid">
+    <!-- Card Jogo 3D -->
+    <a href="jogo-3d.html" class="game-card card-3d">
+      <div class="card-badge">NOVO</div>
+      <div class="card-icon">🎮</div>
+      <div class="card-info">
+        <h3>Arena 3D</h3>
+        <p>Multiplayer Online</p>
+      </div>
+    </a>
+
+    <!-- Card Jogo da Velha -->
+    <div class="game-card card-velha" onclick="emBreve()">
+      <div class="card-badge">EM BREVE</div>
+      <div class="card-icon">⭕</div>
+      <div class="card-info">
+        <h3>Jogo da Velha</h3>
+        <p>Clássico 1v1</p>
+      </div>
+    </div>
+
+    <!-- Card Snake -->
+    <div class="game-card card-snake" onclick="emBreve()">
+      <div class="card-badge">EM BREVE</div>
+      <div class="card-icon">🐍</div>
+      <div class="card-info">
+        <h3>Snake</h3>
+        <p>Arcade</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+<script type="module" src="lobby.js"></script>
+</body>
+</html>
