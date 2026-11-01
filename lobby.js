@@ -1,62 +1,105 @@
-import { getCurrentNick, logout } from "./authLocal.js";
+import { createAccount, loginAccount, getSession } from "./authLocal.js";
 
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => [...document.querySelectorAll(selector)];
+const form = document.getElementById("authForm");
+const usernameInput = document.getElementById("username");
+const loginUsernameInput = document.getElementById("loginUsername");
+const passwordInput = document.getElementById("password");
 
-const boasVindas = $("#boasVindas");
-const btnSair = $("#btnSair");
-const btnPerfil = $("#btnPerfil");
-const toast = $("#toast");
+const nameGroup = document.getElementById("nameGroup");
+const message = document.getElementById("message");
+const submitButton = document.getElementById("submitButton");
+const switchModeButton = document.getElementById("switchMode");
+const switchText = document.getElementById("switchText");
 
-function mostrarToast(msg, tipo = "info") {
-  if (!toast) return;
+let registerMode = false;
+let loading = false;
 
-  toast.textContent = msg;
-  toast.className = `toast show ${tipo}`;
+const LOBBY = "./lobby.html";
 
-  clearTimeout(mostrarToast.timer);
-  mostrarToast.timer = setTimeout(() => {
-    toast.className = "toast";
-  }, 2500);
+function showMessage(text, success = false) {
+  message.textContent = text;
+  message.style.color = success ? "#55ee99" : "#ff5555";
 }
 
-function verificarSessao() {
-  const nick = getCurrentNick();
-
-  if (!nick) {
-    window.location.href = "lock.html";
-    return null;
-  }
-
-  if (boasVindas) {
-    boasVindas.textContent = `Olá, ${nick}!`;
-  }
-
-  return nick;
+function setLoading(value) {
+  loading = value;
+  submitButton.disabled = value;
+  submitButton.textContent = value
+    ? "AGUARDE..."
+    : registerMode ? "CRIAR CONTA" : "ENTRAR";
 }
 
-function configurarEventos() {
-  btnSair?.addEventListener("click", () => {
-    logout();
-  });
-
-  btnPerfil?.addEventListener("click", () => {
-    mostrarToast("Tela de perfil em construção!", "info");
-  });
-
-  $$(".game-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const nome = card.dataset.game || "Jogo";
-      mostrarToast(`${nome} em desenvolvimento!`, "warning");
-    });
-  });
+function getUsernameValue() {
+  const raw = registerMode ? usernameInput.value : loginUsernameInput.value;
+  return String(raw || "").trim();
 }
 
-window.abrirJogo = (nomeJogo) => {
-  mostrarToast(`${nomeJogo} estará disponível em breve!`, "warning");
-};
+function isValidUsername(username) {
+  return /^[a-zA-Z0-9_]{3,20}$/.test(username);
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-  verificarSessao();
-  configurarEventos();
+switchModeButton.addEventListener("click", () => {
+  if (loading) return;
+
+  registerMode = !registerMode;
+
+  nameGroup.hidden = !registerMode;
+  usernameInput.required = registerMode;
+  loginUsernameInput.required = !registerMode;
+
+  submitButton.textContent = registerMode ? "CRIAR CONTA" : "ENTRAR";
+  switchText.textContent = registerMode ? "Já possui uma conta?" : "Não tem uma conta?";
+  switchModeButton.textContent = registerMode ? "Entrar" : "Criar conta";
+  message.textContent = "";
 });
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (loading) return;
+
+  const nick = getUsernameValue();
+  const password = String(passwordInput.value || "").trim();
+
+  if (!isValidUsername(nick)) {
+    showMessage("Nick inválido. Use 3 a 20 letras, números ou _.");
+    return;
+  }
+
+  if (password.length < 6) {
+    showMessage("Senha precisa ter pelo menos 6 caracteres.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    if (registerMode) {
+      createAccount(nick, password);
+      showMessage("Conta criada com sucesso!", true);
+
+      setTimeout(() => {
+        window.location.assign(LOBBY);
+      }, 500);
+
+      return;
+    }
+
+    loginAccount(nick, password);
+    showMessage("Login realizado com sucesso!", true);
+
+    setTimeout(() => {
+      window.location.assign(LOBBY);
+    }, 500);
+
+  } catch (error) {
+    showMessage(error.message || "Erro ao autenticar.");
+  } finally {
+    setLoading(false);
+  }
+});
+
+const session = getSession();
+if (session && session.nick) {
+  window.location.replace(LOBBY);
+}
