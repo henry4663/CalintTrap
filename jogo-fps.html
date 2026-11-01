@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — FPS Arena Multiplayer</title>
+<title>Goblox — FPS Tático</title>
 <link rel="stylesheet" href="global.css">
 <style>
   body {
@@ -48,13 +48,49 @@
     border-radius: 50%;
   }
 
+  /* MINI INVENTÁRIO EMBAIXO */
+  #inventario {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .slot-arma {
+    width: 65px;
+    height: 65px;
+    background: rgba(30, 30, 45, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .slot-arma.ativo {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  }
+
   /* BOTÕES MOBILE */
   #joystickBase {
     position: absolute;
-    bottom: 40px;
-    left: 40px;
-    width: 120px;
-    height: 120px;
+    bottom: 30px;
+    left: 30px;
+    width: 110px;
+    height: 110px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
@@ -64,29 +100,28 @@
   }
   #joystickStick {
     position: absolute;
-    top: 35px;
-    left: 35px;
+    top: 30px;
+    left: 30px;
     width: 50px;
     height: 50px;
     background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
     border: 2px solid #fca5a5;
     border-radius: 50%;
     pointer-events: none;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
   }
 
   #btnAtirar {
     position: absolute;
-    bottom: 40px;
-    right: 40px;
-    width: 85px;
-    height: 85px;
+    bottom: 30px;
+    right: 30px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
     border: 3px solid #fca5a5;
     color: white;
     font-weight: 900;
-    font-size: 1.1rem;
+    font-size: 1rem;
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
     cursor: pointer;
     z-index: 20;
@@ -98,24 +133,22 @@
 
   #btnPular {
     position: absolute;
-    bottom: 140px;
-    right: 50px;
-    width: 65px;
-    height: 65px;
+    bottom: 125px;
+    right: 40px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
     border: 2px solid #93c5fd;
     color: white;
     font-weight: 900;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     cursor: pointer;
     z-index: 20;
     display: none;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
   }
-  #btnPular:active { transform: scale(0.92); }
 
   #btnVoltar {
     position: absolute;
@@ -131,31 +164,12 @@
     z-index: 20;
     text-decoration: none;
   }
-  
-  #instrucaoMouse {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-size: 1.4rem;
-    font-weight: bold;
-    background: rgba(0,0,0,0.85);
-    padding: 24px 36px;
-    border-radius: 16px;
-    z-index: 30;
-    text-align: center;
-    border: 2px solid rgba(239, 68, 68, 0.5);
-    box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    cursor: pointer;
-    display: none;
-  }
 </style>
 
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js"
   }
 }
 </script>
@@ -168,14 +182,20 @@
 </div>
 
 <div id="mira"></div>
-<div id="instrucaoMouse">CLICA AQUI PARA JOGAR<br><small style="font-size: 0.9rem; color: #aaa;">Mova o rato • WASD para andar • ESC para sair</small></div>
+
+<!-- MINI INVENTÁRIO (Armas) -->
+<div id="inventario">
+  <div class="slot-arma ativo" data-index="0">🔫<br>Pistola</div>
+  <div class="slot-arma" data-index="1">🎯<br>Rifle</div>
+  <div class="slot-arma" data-index="2">⚡<br>SMG</div>
+</div>
 
 <!-- CONTROLES MOBILE -->
 <div id="joystickBase">
   <div id="joystickStick"></div>
 </div>
 <button id="btnPular">PULAR</button>
-<button id="btnAtirar">🔫</button>
+<button id="btnAtirar">FIRE</button>
 
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
@@ -191,14 +211,12 @@ if (isMobile) {
   document.getElementById('joystickBase').style.display = 'block';
   document.getElementById('btnPular').style.display = 'flex';
   document.getElementById('btnAtirar').style.display = 'flex';
-} else {
-  document.getElementById('instrucaoMouse').style.display = 'block';
 }
 
 // 1. CENA, CÂMERA E RENDERER
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a14);
-scene.fog = new THREE.FogExp2(0x0a0a14, 0.012);
+scene.background = new THREE.Color(0x0d0d1a);
+scene.fog = new THREE.FogExp2(0x0d0d1a, 0.012);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -206,21 +224,18 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-// ILUMINAÇÃO
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambientLight);
-
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const dirLight = new THREE.DirectionalLight(0xa855f7, 1.2);
-dirLight.position.set(50, 80, 50);
+dirLight.position.set(40, 70, 40);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// 2. MAPA E PLATAFORMAS (Movimentação livre sem travar)
+// 2. MAPA TÁTICO
 const plataformas = [];
 
-function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
+function criarBlocoTatico(x, y, z, w, h, d, cor = 0x1e1e2e) {
   const geo = new THREE.BoxGeometry(w, h, d);
-  const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.4 });
+  const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.5 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(x, y, z);
   mesh.receiveShadow = true;
@@ -231,19 +246,22 @@ function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
   plataformas.push(mesh);
 }
 
-criarPlataforma(0, 0, 0, 100, 2, 100, 0x181824);
-criarPlataforma(-35, 5, -35, 25, 2, 25, 0x312e81);
-criarPlataforma(35, 5, 35, 25, 2, 25, 0x312e81);
-criarPlataforma(-35, 8, 35, 25, 2, 25, 0x4c1d95);
-criarPlataforma(35, 8, -35, 25, 2, 25, 0x4c1d95);
-criarPlataforma(0, 12, 0, 30, 2, 30, 0x5b21b6);
+// Chão principal da Arena Tática
+criarBlocoTatico(0, 0, 0, 120, 2, 120, 0x14141f);
 
-// 3. MULTIPLAYER COM SISTEMA ANTI-FANTASMA BLINDADO
+// Paredes e Coberturas Táticas
+criarBlocoTatico(-30, 3, -30, 20, 4, 4, 0x3b82f6);
+criarBlocoTatico(30, 3, 30, 20, 4, 4, 0x3b82f6);
+criarBlocoTatico(-30, 3, 30, 4, 4, 20, 0x6366f1);
+criarBlocoTatico(30, 3, -30, 4, 4, 20, 0x6366f1);
+criarBlocoTatico(0, 5, 0, 16, 2, 16, 0x8b5cf6); // Torre central
+
+// 3. MULTIPLAYER E ANTI-FANTASMA
 const meuId = 'player_fps_' + Math.random().toString(36).substr(2, 9);
-const jogadorRef = ref(database, 'fps_jogadores/' + meuId);
-const todosJogadoresRef = ref(database, 'fps_jogadores');
+const jogadorRef = ref(database, 'fps_tatico/' + meuId);
+const todosJogadoresRef = ref(database, 'fps_tatico');
 
-let playerPos = { x: 0, y: 3, z: 40 };
+let playerPos = { x: 0, y: 3, z: 45 };
 let velY = 0;
 const gravidade = -0.012;
 const forcaPulo = 0.32;
@@ -268,24 +286,40 @@ document.getElementById('btnVoltar').addEventListener('click', (e) => {
 
 set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
 
-// ARMA 3D NA CÂMERA
+// ARMA 3D NA CÂMERA (COM O INVENTÁRIO)
 const gunGroup = new THREE.Group();
-const gunBody = new THREE.Mesh(
-  new THREE.BoxGeometry(0.15, 0.2, 0.7),
-  new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 })
+const materialArmas = [
+  new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 }), // Pistola
+  new THREE.MeshStandardMaterial({ color: 0x4f46e5, metalness: 0.8 }), // Rifle
+  new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 })  // SMG
+];
+
+const gunMesh = new THREE.Mesh(
+  new THREE.BoxGeometry(0.15, 0.2, 0.6),
+  materialArmas[0]
 );
-gunBody.position.set(0.3, -0.25, -0.5);
-const gunBarrel = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.04, 0.04, 0.4),
-  new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 })
-);
-gunBarrel.rotation.x = Math.PI / 2;
-gunBarrel.position.set(0.3, -0.2, -0.85);
-gunGroup.add(gunBody, gunBarrel);
+gunMesh.position.set(0.3, -0.25, -0.5);
+gunGroup.add(gunMesh);
 camera.add(gunGroup);
 scene.add(camera);
 
-// BOTS
+let armaAtual = 0; // 0: Pistola, 1: Rifle, 2: SMG
+function selecionarArma(index) {
+  armaAtual = index;
+  gunMesh.material = materialArmas[index];
+  document.querySelectorAll('.slot-arma').forEach((slot, i) => {
+    if (i === index) slot.classList.add('ativo');
+    else slot.classList.remove('ativo');
+  });
+}
+
+document.querySelectorAll('.slot-arma').forEach(slot => {
+  slot.addEventListener('click', () => {
+    selecionarArma(parseInt(slot.dataset.index));
+  });
+});
+
+// BOTS TÁTICOS
 const bots = [];
 function criarBot(x, y, z) {
   const botGroup = new THREE.Group();
@@ -297,33 +331,28 @@ function criarBot(x, y, z) {
   botGroup.add(corpo);
   botGroup.position.set(x, y, z);
   scene.add(botGroup);
-
-  bots.push({ mesh: botGroup, vida: 3, speed: 0.04 });
+  bots.push({ mesh: botGroup, vida: 3, speed: 0.035 });
 }
-criarBot(-30, 2, -30);
-criarBot(30, 2, 30);
+criarBot(-35, 2, -35);
+criarBot(35, 2, 35);
 
-// ESCUTA OUTROS JOGADORES (REMOVE FANTASMAS INSTANTANEAMENTE)
+// ESCUTA OUTROS JOGADORES
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
-
   for (let id in outrosJogadores) {
     if (!data[id]) {
       scene.remove(outrosJogadores[id].mesh);
       delete outrosJogadores[id];
     }
   }
-
   for (let id in data) {
     if (id === meuId) continue;
     let pos = data[id];
-
     if (!outrosJogadores[id]) {
       const meshOutro = criarPersonagem();
       scene.add(meshOutro);
       outrosJogadores[id] = { id: id, mesh: meshOutro, vida: pos.vida || 100 };
     }
-
     if (pos && typeof pos.x === 'number') {
       outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
       outrosJogadores[id].vida = pos.vida || 100;
@@ -333,55 +362,36 @@ onValue(todosJogadoresRef, (snapshot) => {
 
 // 4. TIROS
 const projetes = [];
-
 function atirar() {
   gunGroup.position.z += 0.08;
   setTimeout(() => gunGroup.position.z = 0, 80);
 
   const bulletGeo = new THREE.SphereGeometry(0.2, 8, 8);
-  const bulletMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+  const bulletMat = new THREE.MeshBasicMaterial({ color: armaAtual === 1 ? 0x6366f1 : (armaAtual === 2 ? 0x10b981 : 0xfacc15) });
   const bullet = new THREE.Mesh(bulletGeo, bulletMat);
 
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
-
   bullet.position.copy(camera.position).add(dir.clone().multiplyScalar(0.8));
   scene.add(bullet);
 
-  projetes.push({ mesh: bullet, dir: dir, life: 120 });
+  projetes.push({ mesh: bullet, dir: dir, life: 120, dano: armaAtual === 1 ? 2 : 1 });
 }
 
-// 5. CONTROLES DE MOUSE E ESC
-const instrucaoMouse = document.getElementById('instrucaoMouse');
-
-function solicitarPointerLock() {
-  if (!isMobile) {
-    document.body.requestPointerLock();
-  }
-}
-
-instrucaoMouse.addEventListener('click', solicitarPointerLock);
-document.body.addEventListener('click', (e) => {
-  if (!isMobile && e.target.id !== 'btnVoltar' && document.pointerLockElement !== document.body) {
-    solicitarPointerLock();
-  }
-});
-
-document.addEventListener('pointerlockchange', () => {
-  if (!isMobile) {
-    if (document.pointerLockElement === document.body) {
-      instrucaoMouse.style.display = 'none';
-    } else {
-      instrucaoMouse.style.display = 'block';
+// 5. CONTROLES DE MOUSE E TOQUE
+if (!isMobile) {
+  renderer.domElement.addEventListener('click', () => {
+    if (document.pointerLockElement !== renderer.domElement) {
+      renderer.domElement.requestPointerLock();
     }
-  }
-});
+  });
+}
 
 let rotationX = 0;
 let rotationY = 0;
 
 document.addEventListener('mousemove', (e) => {
-  if (!isMobile && document.pointerLockElement === document.body) {
+  if (!isMobile && document.pointerLockElement === renderer.domElement) {
     const sensitivity = 0.0022;
     rotationY -= e.movementX * sensitivity;
     rotationX -= e.movementY * sensitivity;
@@ -396,33 +406,26 @@ let joystickAtivo = false;
 let joyX = 0, joyY = 0;
 
 joystickBase.addEventListener('touchstart', () => { joystickAtivo = true; });
-
 window.addEventListener('touchmove', (e) => {
   if (!joystickAtivo) return;
   const touch = e.touches[0];
   const rect = joystickBase.getBoundingClientRect();
   const centroX = rect.left + rect.width / 2;
   const centroY = rect.top + rect.height / 2;
-  
   let deltaX = touch.clientX - centroX;
   let deltaY = touch.clientY - centroY;
   const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
   const angulo = Math.atan2(deltaY, deltaX);
-
   joyX = Math.cos(angulo) * (distancia / 50);
   joyY = Math.sin(angulo) * (distancia / 50);
-
   joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
 });
-
 window.addEventListener('touchend', () => {
   joystickAtivo = false;
-  joyX = 0;
-  joyY = 0;
+  joyX = 0; joyY = 0;
   joystickStick.style.transform = `translate(0px, 0px)`;
 });
 
-// Rotação de câmera por toque na tela (Mobile)
 let lastTouchX = 0, lastTouchY = 0;
 window.addEventListener('touchstart', (e) => {
   if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnAtirar' && e.touches[0].target.id !== 'btnPular') {
@@ -443,12 +446,8 @@ window.addEventListener('touchmove', (e) => {
 });
 
 document.getElementById('btnPular').addEventListener('click', () => {
-  if (noChao) {
-    velY = forcaPulo;
-    noChao = false;
-  }
+  if (noChao) { velY = forcaPulo; noChao = false; }
 });
-
 document.getElementById('btnAtirar').addEventListener('click', atirar);
 
 window.addEventListener('keydown', (e) => {
@@ -457,14 +456,14 @@ window.addEventListener('keydown', (e) => {
     if (!isMobile && document.pointerLockElement) document.exitPointerLock();
     setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
   }
-  if (e.code === 'Space' && noChao) {
-    velY = forcaPulo;
-    noChao = false;
-  }
+  if (e.code === 'Space' && noChao) { velY = forcaPulo; noChao = false; }
+  if (e.code === 'Digit1') selecionarArma(0);
+  if (e.code === 'Digit2') selecionarArma(1);
+  if (e.code === 'Digit3') selecionarArma(2);
 });
 
 window.addEventListener('mousedown', (e) => {
-  if (!isMobile && document.pointerLockElement === document.body && e.button === 0) {
+  if (!isMobile && document.pointerLockElement === renderer.domElement && e.button === 0) {
     atirar();
   }
 });
@@ -475,7 +474,6 @@ window.addEventListener('keyup', (e) => keys[e.code] = false);
 
 // 6. LOOP PRINCIPAL
 let ultimoEnvio = 0;
-
 function animate(tempo) {
   requestAnimationFrame(animate);
 
@@ -537,26 +535,24 @@ function animate(tempo) {
     ultimoEnvio = tempo;
   }
 
-  // ATUALIZAÇÃO DOS TIROS E IMPACTOS
+  // ATUALIZAÇÃO DOS TIROS
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
     p.mesh.position.add(p.dir.clone().multiplyScalar(1.2));
     p.life--;
 
     let acertou = false;
-
     for (let j = bots.length - 1; j >= 0; j--) {
       const b = bots[j];
       if (p.mesh.position.distanceTo(b.mesh.position) < 1.8) {
-        b.vida--;
+        b.vida -= p.dano;
         acertou = true;
-
         if (b.vida <= 0) {
           scene.remove(b.mesh);
           bots.splice(j, 1);
           kills++;
           document.getElementById('scoreKills').innerText = kills;
-          setTimeout(() => criarBot((Math.random() - 0.5) * 60, 4, (Math.random() - 0.5) * 60), 2000);
+          setTimeout(() => criarBot((Math.random() - 0.5) * 80, 2, (Math.random() - 0.5) * 80), 2000);
         }
         break;
       }
@@ -566,8 +562,8 @@ function animate(tempo) {
       for (let id in outrosJogadores) {
         const outro = outrosJogadores[id];
         if (p.mesh.position.distanceTo(outro.mesh.position) < 1.8) {
-          const outroRef = ref(database, 'fps_jogadores/' + id + '/vida');
-          set(outroRef, Math.max(0, outro.vida - 25)).catch(() => {});
+          const outroRef = ref(database, 'fps_tatico/' + id + '/vida');
+          set(outroRef, Math.max(0, outro.vida - (p.dano * 15))).catch(() => {});
           kills++;
           document.getElementById('scoreKills').innerText = kills;
           acertou = true;
