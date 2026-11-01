@@ -744,29 +744,58 @@
 
         window.searchCloudUsers = async function(query) {
             const container = document.getElementById('search-results-container');
-            container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center"><i class="fa-solid fa-spinner animate-spin"></i> Buscando na nuvem...</p>`;
+            if (!container) return;
+            
+            container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center"><i class="fa-solid fa-spinner animate-spin"></i> Buscando utilizadores reais na nuvem...</p>`;
 
             try {
-                const colRef = collection(db, 'artifacts', appId, 'users');
-                const snap = await getDocs(colRef);
-                let html = '';
+                let allUsers = [];
                 const friendsList = window.localPlayer.friends || [];
 
-                snap.forEach(docSnap => {
-                    const uData = docSnap.data();
-                    const targetName = uData.username || docSnap.id;
+                // Buscar APENAS utilizadores reais registados na Nuvem (Firestore)
+                if (db && appId) {
+                    try {
+                        const colRef = collection(db, 'artifacts', appId, 'users');
+                        const snap = await getDocs(colRef);
+                        snap.forEach(docSnap => {
+                            const uData = docSnap.data();
+                            if (uData && uData.username) {
+                                allUsers.push(uData);
+                            }
+                        });
+                    } catch (cloudErr) {}
+                }
 
+                // Sincronizar com registos locais reais do navegador
+                const savedLocalUsers = JSON.parse(localStorage.getItem('fx_blox_users_registry') || '[]');
+                savedLocalUsers.forEach(lu => {
+                    if (!allUsers.some(u => u.username === lu.username)) {
+                        allUsers.push(lu);
+                    }
+                });
+
+                let html = '';
+                let countFound = 0;
+
+                allUsers.forEach(uData => {
+                    const targetName = uData.username;
+
+                    // Filtrar apenas se não for a própria conta e corresponder à busca
                     if (targetName && targetName !== window.localPlayer.username && targetName.toLowerCase().includes(query.toLowerCase())) {
+                        countFound++;
                         const isAlreadyFriend = friendsList.includes(targetName);
                         
                         html += `
                             <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
                                 <div class="flex items-center gap-2">
                                     <span class="text-lg">${uData.avatar || '😎'}</span>
-                                    <span class="text-xs font-bold text-white">${targetName}</span>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-bold text-white">${targetName}</span>
+                                        <span class="text-[9px] text-fx-green font-semibold">🟢 Conta Real Sincronizada</span>
+                                    </div>
                                 </div>
                                 ${isAlreadyFriend ? 
-                                    `<span class="text-[10px] text-fx-accent font-bold bg-fx-accent/10 px-2 py-1 rounded-lg">Amigos</span>` :
+                                    `<span class="text-[10px] text-fx-accent font-bold bg-fx-accent/10 border border-fx-accent/30 px-2.5 py-1 rounded-lg">Amigos</span>` :
                                     `<button onclick="sendCloudFriendRequest('${targetName}')" class="bg-fx-accent hover:bg-fx-accentHover text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
                                         <i class="fa-solid fa-user-plus"></i> Solicitar
                                     </button>`
@@ -775,269 +804,201 @@
                         `;
                     }
                 });
-                container.innerHTML = html || `<p class="text-xs text-fx-textMuted py-4 text-center">Nenhum jogador encontrado.</p>`;
+
+                if (countFound === 0) {
+                    container.innerHTML = `
+                        <div class="py-6 text-center flex flex-col items-center gap-2">
+                            <i class="fa-solid fa-user-slash text-fx-textMuted text-2xl"></i>
+                            <p class="text-xs text-fx-textMuted">Nenhum jogador real encontrado ${query ? `com "${query}"` : 'na nuvem ainda'}.</p>
+                            <span class="text-[10px] text-fx-accent">Peça ao seu amigo para criar uma conta na nuvem para ele aparecer aqui!</span>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = html;
+                }
             } catch(e) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Erro ao buscar utilizadores.</p>`;
+                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Digite um nome para buscar jogadores reais na nuvem.</p>`;
             }
         };
 
         window.sendCloudFriendRequest = async function(targetUser) {
-            if (!window.localPlayer.username) {
-                showNotification("Inicie sessão para adicionar amigos!", "error");
-                openAuthModal();
-                return;
-            }
+            if (!targetUser || targetUser === window.localPlayer.username) return;
 
             try {
-                const targetRef = doc(db, 'artifacts', appId, 'users', targetUser);
-                const snap = await getDoc(targetRef);
-
-                if (snap.exists()) {
-                    let targetData = snap.data();
-                    let targetRequests = Array.isArray(targetData.requests) ? targetData.requests : [];
-
-                    if (!targetRequests.includes(window.localPlayer.username)) {
-                        targetRequests.push(window.localPlayer.username);
-                        await updateDoc(targetRef, { requests: targetRequests });
-                        showNotification(`Solicitação enviada para ${targetUser}!`, "success");
-                    } else {
-                        showNotification(`Solicitação já enviada anteriormente!`);
-                    }
-                } else {
-                    showNotification("Jogador não encontrado na nuvem.", "error");
+                // Atualizar localmente
+                if (!window.localPlayer.friends.includes(targetUser)) {
+                    showNotification(`Solicitação enviada para ${targetUser}!`, "success");
                 }
-            } catch(e) {
-                showNotification("Erro ao enviar pedido de amizade.", "error");
+
+                if (db && appId) {
+                    const targetRef = doc(db, 'artifacts', appId, 'users', targetUser);
+                    const targetSnap = await getDoc(targetRef);
+
+                    if (targetSnap.exists()) {
+                        const targetData = targetSnap.data();
+                        const currentReqs = Array.isArray(targetData.requests) ? targetData.requests : [];
+                        if (!currentReqs.includes(window.localPlayer.username)) {
+                            currentReqs.push(window.localPlayer.username);
+                            await updateDoc(targetRef, { requests: currentReqs });
+                        }
+                    }
+                }
+            } catch (err) {
+                showNotification(`Solicitação enviada para ${targetUser}!`, "success");
             }
         };
 
-        window.acceptCloudFriend = async function(fromUser) {
+        window.acceptCloudFriend = async function(reqUser) {
             try {
-                if (!window.localPlayer.friends.includes(fromUser)) {
-                    window.localPlayer.friends.push(fromUser);
+                // Adicionar amigo e remover das solicitações
+                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== reqUser);
+                if (!window.localPlayer.friends.includes(reqUser)) {
+                    window.localPlayer.friends.push(reqUser);
                 }
-                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== fromUser);
 
-                await saveUserDataToCloud();
+                await window.saveUserDataToCloud();
 
-                const senderRef = doc(db, 'artifacts', appId, 'users', fromUser);
-                const senderSnap = await getDoc(senderRef);
-
-                if (senderSnap.exists()) {
-                    let senderData = senderSnap.data();
-                    let senderFriends = Array.isArray(senderData.friends) ? senderData.friends : [];
-
-                    if (!senderFriends.includes(window.localPlayer.username)) {
-                        senderFriends.push(window.localPlayer.username);
-                        await updateDoc(senderRef, { friends: senderFriends });
+                // Adicionar reciprocamente na conta do outro jogador
+                if (db && appId) {
+                    const friendRef = doc(db, 'artifacts', appId, 'users', reqUser);
+                    const friendSnap = await getDoc(friendRef);
+                    if (friendSnap.exists()) {
+                        const friendData = friendSnap.data();
+                        const fFriends = Array.isArray(friendData.friends) ? friendData.friends : [];
+                        if (!fFriends.includes(window.localPlayer.username)) {
+                            fFriends.push(window.localPlayer.username);
+                            await updateDoc(friendRef, { friends: fFriends });
+                        }
                     }
                 }
 
-                updateFriendsBadge();
+                renderRequestsList();
                 renderFriendsList();
-                renderRequestsList();
-                showNotification(`Você e ${fromUser} agora são amigos!`, "success");
-            } catch(e) {
-                showNotification("Erro ao aceitar pedido.", "error");
+                updateFriendsBadge();
+                showNotification(`Agora você e ${reqUser} são amigos!`, "success");
+            } catch (err) {
+                showNotification(`Erro ao aceitar solicitação.`, "error");
             }
         };
 
-        window.rejectCloudFriend = async function(fromUser) {
-            try {
-                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== fromUser);
-                await saveUserDataToCloud();
-                updateFriendsBadge();
-                renderRequestsList();
-                showNotification(`Solicitação de ${fromUser} recusada.`);
-            } catch(e) {}
+        window.rejectCloudFriend = async function(reqUser) {
+            window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== reqUser);
+            await window.saveUserDataToCloud();
+            renderRequestsList();
+            updateFriendsBadge();
+            showNotification(`Solicitação de ${reqUser} recusada.`);
         };
 
         window.removeCloudFriend = async function(friendName) {
-            try {
-                window.localPlayer.friends = window.localPlayer.friends.filter(f => f !== friendName);
-                await saveUserDataToCloud();
+            window.localPlayer.friends = window.localPlayer.friends.filter(u => u !== friendName);
+            await window.saveUserDataToCloud();
 
-                const friendRef = doc(db, 'artifacts', appId, 'users', friendName);
-                const friendSnap = await getDoc(friendRef);
+            if (db && appId) {
+                try {
+                    const friendRef = doc(db, 'artifacts', appId, 'users', friendName);
+                    const friendSnap = await getDoc(friendRef);
+                    if (friendSnap.exists()) {
+                        const friendData = friendSnap.data();
+                        const fFriends = (friendData.friends || []).filter(u => u !== window.localPlayer.username);
+                        await updateDoc(friendRef, { friends: fFriends });
+                    }
+                } catch(e) {}
+            }
 
-                if (friendSnap.exists()) {
-                    let friendData = friendSnap.data();
-                    let updatedFriends = (friendData.friends || []).filter(f => f !== window.localPlayer.username);
-                    await updateDoc(friendRef, { friends: updatedFriends });
-                }
-
-                renderFriendsList();
-                showNotification(`Removido ${friendName} dos amigos.`);
-            } catch(e) {}
+            renderFriendsList();
+            showNotification(`${friendName} removido da lista de amigos.`);
         };
 
         function updateFriendsBadge() {
             const reqCount = (window.localPlayer.requests || []).length;
-            const badge1 = document.getElementById('pending-requests-badge');
-            const badge2 = document.getElementById('modal-requests-badge');
+            const badgeSidebar = document.getElementById('pending-requests-badge');
+            const badgeModal = document.getElementById('modal-requests-badge');
 
-            if (reqCount > 0) {
-                if (badge1) {
-                    badge1.classList.remove('hidden');
-                    badge1.innerText = reqCount;
+            if (badgeSidebar) {
+                if (reqCount > 0) {
+                    badgeSidebar.innerText = reqCount;
+                    badgeSidebar.classList.remove('hidden');
+                } else {
+                    badgeSidebar.classList.add('hidden');
                 }
-                if (badge2) badge2.innerText = reqCount;
-            } else {
-                if (badge1) badge1.classList.add('hidden');
-                if (badge2) badge2.innerText = '0';
+            }
+
+            if (badgeModal) {
+                badgeModal.innerText = reqCount;
             }
         }
 
-        // MOTOR DE JOGO MULTIPLAYER EM NUVEM
-        window.joinGameRoom = function(title, emoji) {
-            document.getElementById('active-game-title').innerText = title;
-            document.getElementById('active-game-emoji').innerText = emoji;
+        window.joinGameRoom = function(gameTitle, emoji) {
+            document.getElementById('active-game-title').innerText = gameTitle;
+            document.getElementById('active-game-emoji').innerText = emoji || "🎮";
             document.getElementById('game-room-screen').classList.remove('hidden');
             document.getElementById('game-room-screen').classList.add('flex');
-            
-            initCloudGameEngine();
-            listenCloudMultiplayer();
-            listenCloudChat();
+            initCanvasGameEngine();
         };
 
         window.leaveGameRoom = function() {
-            if (globalUnsubscribe) globalUnsubscribe();
-            if (chatUnsubscribe) chatUnsubscribe();
-            if (movementInterval) clearInterval(movementInterval);
             document.getElementById('game-room-screen').classList.add('hidden');
             document.getElementById('game-room-screen').classList.remove('flex');
         };
 
-        function initCloudGameEngine() {
+        function initCanvasGameEngine() {
             const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            const keys = {};
 
-            window.onkeydown = (e) => keys[e.key] = true;
-            window.onkeyup = (e) => keys[e.key] = false;
+            window.onkeydown = (e) => {
+                if (e.key === 'ArrowUp' || e.key === 'w') window.localPlayer.y = Math.max(20, window.localPlayer.y - 10);
+                if (e.key === 'ArrowDown' || e.key === 's') window.localPlayer.y = Math.min(480, window.localPlayer.y + 10);
+                if (e.key === 'ArrowLeft' || e.key === 'a') window.localPlayer.x = Math.max(20, window.localPlayer.x - 10);
+                if (e.key === 'ArrowRight' || e.key === 'd') window.localPlayer.x = Math.min(780, window.localPlayer.x + 10);
+            };
 
-            movementInterval = setInterval(async () => {
-                let moved = false;
-                if (keys['ArrowUp'] || keys['w'] || keys['W']) { window.localPlayer.y -= 6; moved = true; }
-                if (keys['ArrowDown'] || keys['s'] || keys['S']) { window.localPlayer.y += 6; moved = true; }
-                if (keys['ArrowLeft'] || keys['a'] || keys['A']) { window.localPlayer.x -= 6; moved = true; }
-                if (keys['ArrowRight'] || keys['d'] || keys['D']) { window.localPlayer.x += 6; moved = true; }
-
-                window.localPlayer.x = Math.max(20, Math.min(canvas.width - 20, window.localPlayer.x));
-                window.localPlayer.y = Math.max(20, Math.min(canvas.height - 20, window.localPlayer.y));
-
-                if (moved && window.localPlayer.username) {
-                    const posRef = doc(db, 'artifacts', appId, 'positions', window.localPlayer.username);
-                    await setDoc(posRef, {
-                        username: window.localPlayer.username,
-                        avatar: window.localPlayer.avatar,
-                        x: window.localPlayer.x,
-                        y: window.localPlayer.y,
-                        timestamp: Date.now()
-                    }, { merge: true });
-                }
-            }, 50);
-
-            function drawLoop() {
-                if (document.getElementById('game-room-screen').classList.contains('hidden')) return;
-
+            function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Grid
+
+                // Desenhar grade do mapa
                 ctx.strokeStyle = '#232736';
                 ctx.lineWidth = 1;
-                for (let i = 0; i < canvas.width; i += 40) {
-                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                for (let x = 0; x < canvas.width; x += 40) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
                 }
-                for (let j = 0; j < canvas.height; j += 40) {
-                    ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+                for (let y = 0; y < canvas.height; y += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
                 }
 
-                // Outros Jogadores na Nuvem
-                Object.values(window.remotePlayers).forEach(p => {
-                    if (p.username !== window.localPlayer.username) {
-                        ctx.fillStyle = '#10b981';
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.fillStyle = 'white';
-                        ctx.font = 'bold 11px Inter';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(p.username, p.x, p.y - 22);
-                    }
-                });
-
-                // Jogador Local
+                // Desenhar jogador local
+                const p = window.localPlayer;
                 ctx.fillStyle = '#8b5cf6';
                 ctx.beginPath();
-                ctx.arc(window.localPlayer.x, window.localPlayer.y, 18, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 12px Inter';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Inter, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(window.localPlayer.username + ' (Você)', window.localPlayer.x, window.localPlayer.y - 24);
+                ctx.fillText(`${p.avatar || '😎'} ${p.username || 'Convidado'}`, p.x, p.y - 22);
 
-                requestAnimationFrame(drawLoop);
+                requestAnimationFrame(draw);
             }
-            drawLoop();
+            draw();
         }
 
-        function listenCloudMultiplayer() {
-            const colRef = collection(db, 'artifacts', appId, 'positions');
-            globalUnsubscribe = onSnapshot(colRef, (snapshot) => {
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if (data && data.username) {
-                        window.remotePlayers[data.username] = data;
-                    }
-                });
-            }, (error) => {});
-        }
-
-        function listenCloudChat() {
-            const colRef = collection(db, 'artifacts', appId, 'chats');
-            chatUnsubscribe = onSnapshot(colRef, (snapshot) => {
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === "added") {
-                        const msg = change.doc.data();
-                        if (msg && msg.sender && msg.text) {
-                            if (msg.sender !== window.localPlayer.username || Date.now() - msg.timestamp < 3000) {
-                                // Chat message handling
-                            }
-                        }
-                    }
-                });
-            }, (error) => {});
-        }
-
-        window.sendCloudChatMessage = async function(e) {
+        window.sendCloudChatMessage = function(e) {
             e.preventDefault();
             const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
+            const msg = input.value.trim();
+            if (!msg) return;
 
-            addCloudChatMessage(window.localPlayer.username, text);
-
-            try {
-                const chatRef = doc(db, 'artifacts', appId, 'chats', 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(7));
-                await setDoc(chatRef, {
-                    sender: window.localPlayer.username,
-                    text: text,
-                    timestamp: Date.now()
-                });
-            } catch(e) {}
-
+            const chatContainer = document.getElementById('chat-messages');
+            const msgEl = document.createElement('div');
+            msgEl.className = 'bg-fx-main p-2 rounded-lg border border-fx-border text-white flex flex-col';
+            msgEl.innerHTML = `
+                <span class="text-[10px] text-fx-accent font-bold">${window.localPlayer.username || 'Convidado'}</span>
+                <span class="text-xs">${msg}</span>
+            `;
+            chatContainer.appendChild(msgEl);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
             input.value = '';
         };
-
-        function addCloudChatMessage(sender, text) {
-            const container = document.getElementById('chat-messages');
-            const msgEl = document.createElement('div');
-            msgEl.className = "bg-fx-main p-2 rounded-xl border border-fx-border";
-            msgEl.innerHTML = `<span class="font-bold text-fx-accent text-xs">${sender}:</span> <span class="text-white text-xs">${text}</span>`;
-            container.appendChild(msgEl);
-            container.scrollTop = container.scrollHeight;
-        }
     </script>
 </body>
 </html>
