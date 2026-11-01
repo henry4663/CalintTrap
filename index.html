@@ -1,349 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Goblox</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-  body { background: #0f0f14; color: #fff; min-height: 100vh; }
-  .center { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  .hidden { display: none !important; }
-  .login-box { background: #1a1a24; padding: 40px; border-radius: 16px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
-  .login-box h1 { font-size: 2rem; margin-bottom: 8px; }
-  .sub { color: #888; margin-bottom: 24px; }
-  input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #333; border-radius: 8px; background: #0f0f14; color: #fff; font-size: 1rem; }
-  button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #4ade80; color: #000; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 8px; }
-  button:hover { background: #22c55e; }
-  button.ghost { background: transparent; color: #4ade80; border: 1px solid #4ade80; }
-  .msg { margin-top: 12px; font-size: .9rem; color: #f87171; min-height: 20px; }
-  header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #1a1a24; flex-wrap: wrap; gap: 8px; }
-  header button { width: auto; padding: 8px 16px; margin: 0; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 32px; }
-  .card { background: #1a1a24; padding: 24px; border-radius: 12px; text-align: center; cursor: pointer; transition: .2s; border: 1px solid #222; }
-  .card:hover { transform: translateY(-4px); background: #22222e; border-color: #4ade80; }
-  .emoji { font-size: 2.5rem; margin-bottom: 8px; }
-  .card h2 { font-size: 1.1rem; margin-bottom: 4px; }
-  .card p { color: #888; font-size: .85rem; }
-  .game-wrap { max-width: 460px; margin: 20px auto; padding: 16px; text-align: center; }
-  #tabuleiro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
-  .cell { aspect-ratio: 1; background: #1a1a24; border: 1px solid #333; border-radius: 8px; font-size: 3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #4ade80; user-select: none; }
-  .cell:hover { background: #22222e; }
-  .cell.o { color: #f87171; }
-  #status { font-size: 1.1rem; margin: 16px 0; min-height: 24px; }
-  .room-info { background: #1a1a24; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: .9rem; }
-  .room-info code { color: #4ade80; font-size: 1.1rem; font-weight: bold; }
-  /* Memória */
-  #gridMemoria { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 20px 0; }
-  .carta { aspect-ratio: 1; background: #4ade80; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 2rem; user-select: none; transition: .3s; }
-  .carta.virada { background: #1a1a24; border: 1px solid #333; }
-  .carta.achada { background: #22c55e; cursor: default; opacity: .6; }
-  /* Snake */
-  #canvasSnake { background: #1a1a24; border-radius: 8px; display: block; margin: 20px auto; max-width: 100%; touch-action: none; }
-  .controls { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
-  .controls button { width: 60px; height: 60px; padding: 0; font-size: 1.5rem; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Goblox 3D - Teste</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+        #joystick-container {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1); border-radius: 50%;
+            touch-action: none;
+        }
+        #joystick-knob {
+            position: absolute; top: 50%; left: 50%;
+            width: 50px; height: 50px; background: #4ade80;
+            border-radius: 50%; transform: translate(-50%, -50%);
+        }
+    </style>
 </head>
 <body>
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
 
-<div id="telaLogin" class="center">
-  <div class="login-box">
-    <h1>🎮 Goblox</h1>
-    <p class="sub">Entre para jogar</p>
-    <input id="inUser" type="text" placeholder="Nome de usuário" maxlength="16">
-    <input id="inPass" type="password" placeholder="Senha">
-    <button onclick="login()">Entrar</button>
-    <button class="ghost" onclick="registrar()">Criar conta</button>
-    <p id="msgLogin" class="msg"></p>
-  </div>
-</div>
-
-<div id="telaLobby" class="hidden">
-  <header>
-    <h1>🎮 Goblox</h1>
-    <div><span id="nomeUser" style="margin-right:12px"></span><button class="ghost" onclick="sair()">Sair</button></div>
-  </header>
-  <div class="grid">
-    <div class="card" onclick="abrirJogo('velha')"><div class="emoji">⭕</div><h2>Jogo da Velha</h2><p>Online multiplayer</p></div>
-    <div class="card" onclick="abrirJogo('memoria')"><div class="emoji">🧠</div><h2>Memória</h2><p>Sozinho / vs tempo</p></div>
-    <div class="card" onclick="abrirJogo('snake')"><div class="emoji">🐍</div><h2>Snake</h2><p>Arcade</p></div>
-  </div>
-</div>
-
-<div id="telaJogo" class="hidden">
-  <header>
-    <button class="ghost" onclick="voltarLobby()">← Lobby</button>
-    <h1 id="tituloJogo">Jogo</h1>
-    <div style="width:80px"></div>
-  </header>
-  <div class="game-wrap">
-
-    <!-- ===== VELHA ===== -->
-    <div id="jogoVelha" class="hidden">
-      <div id="menuVelha">
-        <p style="margin-bottom:16px;color:#888">Escolha o modo:</p>
-        <button onclick="criarSala()">🎯 Criar sala</button>
-        <input id="inCodigo" type="text" placeholder="Código da sala" maxlength="6" style="text-transform:uppercase">
-        <button class="ghost" onclick="entrarSala()">Entrar em sala</button>
-        <p id="msgVelha" class="msg"></p>
-      </div>
-      <div id="painelVelha" class="hidden">
-        <div class="room-info">Sala: <code id="codigoSala">----</code> | Você: <span id="meuSimbolo">-</span></div>
-        <div id="statusVelha">Aguardando...</div>
-        <div id="tabuleiro"></div>
-        <button onclick="reiniciarVelha()">Reiniciar</button>
-      </div>
-    </div>
-
-    <!-- ===== MEMÓRIA ===== -->
-    <div id="jogoMemoria" class="hidden">
-      <div id="statusMemoria">Clique nas cartas</div>
-      <div id="gridMemoria"></div>
-      <button onclick="iniciarMemoria()">Novo jogo</button>
-    </div>
-
-    <!-- ===== SNAKE ===== -->
-    <div id="jogoSnake" class="hidden">
-      <div id="statusSnake">Use as setas / botões</div>
-      <canvas id="canvasSnake" width="320" height="320"></canvas>
-      <div class="controls">
-        <button onclick="dir('left')">←</button>
-        <button onclick="dir('up')">↑</button>
-        <button onclick="dir('down')">↓</button>
-        <button onclick="dir('right')">→</button>
-      </div>
-      <button onclick="iniciarSnake()" style="margin-top:12px">Novo jogo</button>
-    </div>
-
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-/* ===== COLE SEU firebaseConfig AQUI (o que já tá no seu site) ===== */
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU.firebaseapp.com",
-  databaseURL: "https://SEU-default-rtdb.firebaseio.com",
-  projectId: "SEU",
-  storageBucket: "SEU.appspot.com",
-  messagingSenderId: "SEU",
-  appId: "SEU"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const $ = id => document.getElementById(id);
-
-/* ===== AUTH ===== */
-async function registrar() {
-  const u = $("inUser").value.trim(), p = $("inPass").value, m = $("msgLogin");
-  if (!u || p.length < 4) { m.textContent = "Usuário vazio ou senha < 4"; return; }
-  const snap = await get(ref(db, "users/" + u));
-  if (snap.exists()) { m.textContent = "Usuário já existe"; return; }
-  await set(ref(db, "users/" + u), { pass: p, criado: Date.now() });
-  m.style.color = "#4ade80"; m.textContent = "Conta criada! Faça login.";
-}
-async function login() {
-  const u = $("inUser").value.trim(), p = $("inPass").value, m = $("msgLogin");
-  const snap = await get(ref(db, "users/" + u));
-  if (!snap.exists() || snap.val().pass !== p) {
-    m.style.color = "#f87171"; m.textContent = "Usuário ou senha errados"; return;
-  }
-  localStorage.setItem("goblox_user", u); entrarLobby();
-}
-function sair() { localStorage.removeItem("goblox_user"); mostrar("telaLogin"); }
-
-/* ===== NAVEGAÇÃO ===== */
-function mostrar(t) {
-  ["telaLogin","telaLobby","telaJogo"].forEach(x => $(x).classList.add("hidden"));
-  $(t).classList.remove("hidden");
-}
-function entrarLobby() {
-  const u = localStorage.getItem("goblox_user");
-  if (!u) { mostrar("telaLogin"); return; }
-  $("nomeUser").textContent = "👤 " + u;
-  mostrar("telaLobby");
-}
-function abrirJogo(tipo) {
-  mostrar("telaJogo");
-  $("jogoVelha").classList.add("hidden");
-  $("jogoMemoria").classList.add("hidden");
-  $("jogoSnake").classList.add("hidden");
-  if (tipo === "velha") { $("tituloJogo").textContent = "⭕ Jogo da Velha"; $("jogoVelha").classList.remove("hidden"); $("menuVelha").classList.remove("hidden"); $("painelVelha").classList.add("hidden"); }
-  if (tipo === "memoria") { $("tituloJogo").textContent = "🧠 Memória"; $("jogoMemoria").classList.remove("hidden"); iniciarMemoria(); }
-  if (tipo === "snake") { $("tituloJogo").textContent = "🐍 Snake"; $("jogoSnake").classList.remove("hidden"); iniciarSnake(); }
-}
-function voltarLobby() { if (unsub) { unsub(); unsub = null; } salaId = null; mostrar("telaLobby"); }
-
-/* ===== VELHA ONLINE ===== */
-let salaId = null, meuSimbolo = null, unsub = null, tab = Array(9).fill("");
-
-async function criarSala() {
-  const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-  salaId = codigo; meuSimbolo = "X";
-  $("codigoSala").textContent = codigo; $("meuSimbolo").textContent = "X";
-  $("menuVelha").classList.add("hidden"); $("painelVelha").classList.remove("hidden");
-  await set(ref(db, "salas/" + codigo), {
-    tab: Array(9).fill(""), turno: "X", fim: false, vencedor: null,
-    j1: localStorage.getItem("goblox_user"), j2: null, criada: Date.now()
-  });
-  escutarSala(codigo);
-}
-async function entrarSala() {
-  const cod = $("inCodigo").value.trim().toUpperCase();
-  if (cod.length < 4) { $("msgVelha").textContent = "Código inválido"; return; }
-  const snap = await get(ref(db, "salas/" + cod));
-  if (!snap.exists()) { $("msgVelha").textContent = "Sala não existe"; return; }
-  const d = snap.val(), user = localStorage.getItem("goblox_user");
-  if (d.j2 && d.j2 !== user && d.j1 !== user) { $("msgVelha").textContent = "Sala cheia"; return; }
-  if (d.j1 !== user && !d.j2) await update(ref(db, "salas/" + cod), { j2: user });
-  salaId = cod; meuSimbolo = d.j1 === user ? "X" : "O";
-  $("codigoSala").textContent = cod; $("meuSimbolo").textContent = meuSimbolo;
-  $("menuVelha").classList.add("hidden"); $("painelVelha").classList.remove("hidden");
-  escutarSala(cod);
-}
-function escutarSala(cod) {
-  if (unsub) unsub();
-  unsub = onValue(ref(db, "salas/" + cod), snap => {
-    const d = snap.val(); if (!d) return;
-    tab = d.tab; desenharVelha(d);
-  });
-}
-async function jogarVelha(i) {
-  if (!salaId) return;
-  const snap = await get(ref(db, "salas/" + salaId)); const d = snap.val();
-  if (!d || d.fim || d.tab[i] || d.turno !== meuSimbolo) return;
-  const nova = [...d.tab]; nova[i] = meuSimbolo;
-  const venc = verificarVitoria(nova);
-  await update(ref(db, "salas/" + salaId), {
-    tab: nova, turno: meuSimbolo === "X" ? "O" : "X", fim: !!venc, vencedor: venc
-  });
-}
-function verificarVitoria(t) {
-  const c = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  for (const [a,b,c2] of c) if (t[a] && t[a] === t[b] && t[a] === t[c2]) return t[a];
-  if (!t.includes("")) return "empate";
-  return null;
-}
-function desenharVelha(d) {
-  const el = $("tabuleiro"); el.innerHTML = "";
-  d.tab.forEach((v, i) => {
-    const c = document.createElement("div");
-    c.className = "cell" + (v === "O" ? " o" : "");
-    c.textContent = v; c.onclick = () => jogarVelha(i); el.appendChild(c);
-  });
-  if (d.fim) $("statusVelha").textContent = d.vencedor === "empate" ? "🤝 Empate!" : "🏆 " + d.vencedor + " venceu!";
-  else if (!d.j2) $("statusVelha").textContent = "Aguardando oponente... Código: " + salaId;
-  else $("statusVelha").textContent = d.turno === meuSimbolo ? "Sua vez (" + meuSimbolo + ")" : "Vez do oponente (" + d.turno + ")";
-}
-async function reiniciarVelha() {
-  if (!salaId) return;
-  await update(ref(db, "salas/" + salaId), { tab: Array(9).fill(""), turno: "X", fim: false, vencedor: null });
-}
-
-/* ===== MEMÓRIA ===== */
-let cartas = [], viradas = [], achadas = 0, bloqueado = false;
-const emojis = ["🍎","🍌","🍇","🍓","🍒","🍑","🥝","🍍"];
-function iniciarMemoria() {
-  cartas = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
-  viradas = []; achadas = 0; bloqueado = false;
-  $("statusMemoria").textContent = "Clique nas cartas";
-  desenharMemoria();
-}
-function desenharMemoria() {
-  const g = $("gridMemoria"); g.innerHTML = "";
-  cartas.forEach((e, i) => {
-    const c = document.createElement("div");
-    c.className = "carta";
-    if (viradas.includes(i) || cartas[i] === null) {
-      c.classList.add("virada"); c.textContent = e;
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
     }
-    if (cartas[i] === null) c.classList.add("achada");
-    c.onclick = () => virarCarta(i);
-    g.appendChild(c);
-  });
-}
-function virarCarta(i) {
-  if (bloqueado || cartas[i] === null || viradas.includes(i)) return;
-  viradas.push(i); desenharMemoria();
-  if (viradas.length === 2) {
-    bloqueado = true;
-    const [a, b] = viradas;
-    if (cartas[a] === cartas[b]) {
-      setTimeout(() => {
-        cartas[a] = null; cartas[b] = null; achadas++;
-        viradas = []; bloqueado = false; desenharMemoria();
-        if (achadas === emojis.length) $("statusMemoria").textContent = "🏆 Você venceu!";
-      }, 500);
-    } else {
-      setTimeout(() => { viradas = []; bloqueado = false; desenharMemoria(); }, 800);
-    }
-  }
-}
+    </script>
 
-/* ===== SNAKE ===== */
-let snake, direcao, comida, pontos, loopSnake, ctxSnake;
-function iniciarSnake() {
-  const canvas = $("canvasSnake");
-  ctxSnake = canvas.getContext("2d");
-  const T = 20, W = canvas.width / T;
-  snake = [{x: 5, y: 5}]; direcao = {x: 1, y: 0}; pontos = 0;
-  comida = {x: Math.floor(Math.random()*W), y: Math.floor(Math.random()*W)};
-  $("statusSnake").textContent = "Pontos: 0";
-  if (loopSnake) clearInterval(loopSnake);
-  loopSnake = setInterval(() => tickSnake(T, W), 140);
-  desenharSnake(T);
-}
-function dir(d) {
-  if (d === "up" && direcao.y === 0) direcao = {x:0, y:-1};
-  if (d === "down" && direcao.y === 0) direcao = {x:0, y:1};
-  if (d === "left" && direcao.x === 0) direcao = {x:-1, y:0};
-  if (d === "right" && direcao.x === 0) direcao = {x:1, y:0};
-}
-document.addEventListener("keydown", e => {
-  if ($("jogoSnake").classList.contains("hidden")) return;
-  if (e.key === "ArrowUp") dir("up");
-  if (e.key === "ArrowDown") dir("down");
-  if (e.key === "ArrowLeft") dir("left");
-  if (e.key === "ArrowRight") dir("right");
-});
-function tickSnake(T, W) {
-  const head = {x: snake[0].x + direcao.x, y: snake[0].y + direcao.y};
-  if (head.x < 0 || head.x >= W || head.y < 0 || head.y >= W ||
-      snake.some(s => s.x === head.x && s.y === head.y)) {
-    clearInterval(loopSnake);
-    $("statusSnake").textContent = "💀 Game over! Pontos: " + pontos;
-    return;
-  }
-  snake.unshift(head);
-  if (head.x === comida.x && head.y === comida.y) {
-    pontos++; $("statusSnake").textContent = "Pontos: " + pontos;
-    comida = {x: Math.floor(Math.random()*W), y: Math.floor(Math.random()*W)};
-  } else snake.pop();
-  desenharSnake(T);
-}
-function desenharSnake(T) {
-  const canvas = $("canvasSnake");
-  ctxSnake.fillStyle = "#1a1a24";
-  ctxSnake.fillRect(0, 0, canvas.width, canvas.height);
-  ctxSnake.fillStyle = "#f87171";
-  ctxSnake.fillRect(comida.x*T, comida.y*T, T-2, T-2);
-  ctxSnake.fillStyle = "#4ade80";
-  snake.forEach(s => ctxSnake.fillRect(s.x*T, s.y*T, T-2, T-2));
-}
+    <script type="module">
+        import * as THREE from 'three';
 
-/* ===== EXPÕE ===== */
-Object.assign(window, {
-  registrar, login, sair, abrirJogo, voltarLobby,
-  criarSala, entrarSala, jogarVelha, reiniciarVelha,
-  iniciarMemoria, iniciarSnake, dir, virarCarta
-});
+        // 1. Cena, Câmera e Renderer
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111122);
+        const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-entrarLobby();
-</script>
+        // 2. Luz
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 7);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        // 3. Cubo (Jogador)
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshStandardMaterial({ color: 0x4ade80 });
+        const player = new THREE.Mesh(geometry, material);
+        scene.add(player);
+
+        // Chão
+        const floorGeo = new THREE.PlaneGeometry(20, 20);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.5;
+        scene.add(floor);
+
+        // 4. Joystick (Lógica)
+        let moveX = 0, moveZ = 0;
+        const container = document.getElementById('joystick-container');
+        const knob = document.getElementById('joystick-knob');
+        const maxDist = 35;
+
+        container.addEventListener('pointerdown', (e) => {
+            container.setPointerCapture(e.pointerId);
+            container.addEventListener('pointermove', onMove);
+        });
+        container.addEventListener('pointerup', (e) => {
+            container.removeEventListener('pointermove', onMove);
+            knob.style.transform = `translate(-50%, -50%)`;
+            moveX = 0; moveZ = 0;
+        });
+
+        function onMove(e) {
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let dx = e.clientX - centerX;
+            let dy = e.clientY - centerY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            moveX = dx / maxDist;
+            moveZ = dy / maxDist;
+        }
+
+        // 5. Loop de Animação
+        function animate() {
+            requestAnimationFrame(animate);
+            // Movimento
+            player.position.x += moveX * 0.1;
+            player.position.z += moveZ * 0.1;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Responsividade
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+    </script>
 </body>
 </html>
