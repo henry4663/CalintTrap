@@ -99,7 +99,7 @@
     renderer.shadowMap.enabled = true;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Céu azul
+    scene.background = new THREE.Color(0x87CEEB);
     scene.fog = new THREE.Fog(0x87CEEB, 20, 60);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -125,8 +125,8 @@
       x: 0, y: 0.5, z: 0,
       vx: 0, vy: 0, vz: 0,
       noChao: false,
-      velocidade: 8,
-      forcaPulo: 12,
+      velocidade: 9,       // Aumentado levemente para melhorar a fluidez
+      forcaPulo: 13.5,     // Aumentado para garantir saltos confortáveis
       gravidade: 30
     };
 
@@ -136,37 +136,43 @@
     const plataformas = [];
     
     // Chão inicial
-    const chaoGeo = new THREE.BoxGeometry(5, 1, 5);
+    const chaoGeo = new THREE.BoxGeometry(6, 1, 6);
     const chaoMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const chao = new THREE.Mesh(chaoGeo, chaoMat);
     chao.position.set(0, -0.5, 0);
     chao.receiveShadow = true;
     scene.add(chao);
-    plataformas.push({ mesh: chao, x: 0, y: -0.5, z: 0, w: 5, h: 1, d: 5 });
+    plataformas.push({ mesh: chao, x: 0, y: -0.5, z: 0, w: 6, h: 1, d: 6 });
 
-    // Gera plataformas subindo
+    // Gera plataformas subindo de forma garantida
     let lastY = 0;
-    for (let i = 0; i < 50; i++) {
-      lastY += 2 + Math.random() * 2; // Sobe de 2 a 4 metros
-      const w = 2 + Math.random() * 2;
-      const d = 2 + Math.random() * 2;
+    let lastZ = 0;
+    let lastX = 0;
+
+    for (let i = 0; i < 100; i++) {
+      // Limita a altura e a distância para nunca gerar um salto impossível
+      lastY += 1.5 + Math.random() * 1.2; // Sobe de 1.5 a 2.7m (garantido pelo pulo de 13.5)
+      lastZ -= 2.2 + Math.random() * 1.0; // Distância pra frente controlada
+      
+      const w = 2.2 + Math.random() * 1.2;
+      const d = 2.2 + Math.random() * 1.2;
+      
+      // Mantém as plataformas dentro de um raio que o jogador consegue alcançar pros lados
+      lastX += (Math.random() - 0.5) * 3.5;
+      lastX = Math.max(-4, Math.min(4, lastX)); // Limita as bordas laterais
       
       const pGeo = new THREE.BoxGeometry(w, 0.5, d);
       const pMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4 });
       const p = new THREE.Mesh(pGeo, pMat);
       
-      // Move pra frente e para os lados
-      const posX = (Math.random() - 0.5) * 6;
-      const posZ = -i * 3 - 5; // Vai indo pra frente (-Z)
-      
-      p.position.set(posX, lastY, posZ);
+      p.position.set(lastX, lastY, lastZ);
       p.receiveShadow = true;
       p.castShadow = true;
       scene.add(p);
       
       plataformas.push({ 
         mesh: p, 
-        x: posX, y: lastY, z: posZ, 
+        x: lastX, y: lastY, z: lastZ, 
         w: w, h: 0.5, d: d 
       });
     }
@@ -196,7 +202,7 @@
     
     zone.addEventListener('pointerdown', e => { zone.setPointerCapture(e.pointerId); });
     zone.addEventListener('pointermove', e => {
-      if (e.buttons === 0) return; // Se soltou, ignora
+      if (e.buttons === 0) return;
       const rect = zone.getBoundingClientRect();
       let dx = e.clientX - (rect.left + rect.width / 2);
       let dz = e.clientY - (rect.top + rect.height / 2);
@@ -231,7 +237,7 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.1); // Evita bugs se travar
+      const dt = Math.min(clock.getDelta(), 0.1);
 
       // Movimento Horizontal
       let moveX = 0, moveZ = 0;
@@ -240,7 +246,6 @@
       if (keys.a) moveX -= 1;
       if (keys.d) moveX += 1;
       
-      // Combina teclado + joystick
       moveX += joyX;
       moveZ += joyZ;
 
@@ -264,7 +269,6 @@
       // Colisão com Plataformas
       playerState.noChao = false;
       
-      // Pega o tamanho do jogador (1x1x1)
       const pMinX = playerState.x - 0.5;
       const pMaxX = playerState.x + 0.5;
       const pMinY = playerState.y - 0.5;
@@ -284,13 +288,11 @@
         const bMinZ = plat.z - d;
         const bMaxZ = plat.z + d;
 
-        // Colisão AABB (Caixa com Caixa)
         if (pMaxX > bMinX && pMinX < bMaxX &&
             pMaxY > bMinY && pMinY < bMaxY &&
             pMaxZ > bMinZ && pMinZ < bMaxZ) {
           
-          // Se estava caindo e bateu no topo da plataforma
-          if (playerState.vy <= 0 && pMinY < bMaxY && pMinY > bMaxY - 1) {
+          if (playerState.vy <= 0 && pMinY < bMaxY && pMinY > bMaxY - 1.2) {
             playerState.y = bMaxY + 0.5;
             playerState.vy = 0;
             playerState.noChao = true;
@@ -300,22 +302,18 @@
 
       // Se cair do mapa, Game Over
       if (playerState.y < -10) {
-        document.getElementById('alturaFinal').textContent = Math.floor(playerState.y + 10);
+        document.getElementById('alturaFinal').textContent = Math.max(0, Math.floor(playerState.y + 10));
         document.getElementById('gameOver').style.display = 'flex';
         return;
       }
 
-      // Atualiza posição do objeto 3D
       player.position.set(playerState.x, playerState.y, playerState.z);
+      alturaEl.textContent = Math.max(0, Math.floor(playerState.y + 0.5));
 
-      // Atualiza HUD
-      alturaEl.textContent = Math.floor(playerState.y + 0.5);
-
-      // Câmera Segue (Terceira Pessoa)
+      // Câmera Segue
       const camDist = 8;
       const camHeight = 4;
       
-      // A câmera fica atrás do jogador no eixo Z
       camera.position.x += (playerState.x - camera.position.x) * 5 * dt;
       camera.position.y += (playerState.y + camHeight - camera.position.y) * 5 * dt;
       camera.position.z = playerState.z + camDist;
