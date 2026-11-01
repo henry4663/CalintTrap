@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — FPS Multiplayer Arena</title>
+<title>Goblox — FPS Arena Ajustada</title>
 <link rel="stylesheet" href="global.css">
 <style>
   body {
@@ -48,7 +48,7 @@
     border-radius: 50%;
   }
 
-  /* BOTÃO DE ATIRAR */
+  /* BOTÃO DE ATIRAR NO TOUCH */
   #btnAtirar {
     position: absolute;
     bottom: 40px;
@@ -87,6 +87,23 @@
     z-index: 20;
     text-decoration: none;
   }
+  
+  #instrucaoMouse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: bold;
+    background: rgba(0,0,0,0.8);
+    padding: 20px 30px;
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 30;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
 </style>
 
 <script type="importmap">
@@ -105,6 +122,7 @@
 </div>
 
 <div id="mira"></div>
+<div id="instrucaoMouse">Clica na tela para jogar<br><small style="font-size: 0.9rem; color: #aaa;">Pressiona ESC a qualquer momento para voltar ao lobby</small></div>
 <button id="btnAtirar">🔫 FIRE</button>
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
@@ -117,7 +135,7 @@ import { criarPersonagem } from './personagem.js';
 // 1. CENA, CÂMERA E RENDERER
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a14);
-scene.fog = new THREE.FogExp2(0x0a0a14, 0.025);
+scene.fog = new THREE.FogExp2(0x0a0a14, 0.012);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -126,15 +144,15 @@ renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 // ILUMINAÇÃO
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xa855f7, 1.2);
-dirLight.position.set(20, 40, 20);
+dirLight.position.set(50, 80, 50);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// 2. PLATAFORMAS DO MAPA
+// 2. MAPA EXPANDIDO E CORRIGIDO
 const plataformas = [];
 
 function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
@@ -143,33 +161,60 @@ function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(x, y, z);
   mesh.receiveShadow = true;
+  mesh.castShadow = true;
   scene.add(mesh);
   
   mesh.userData = { minX: x - w/2, maxX: x + w/2, minZ: z - d/2, maxZ: z + d/2, topY: y + h/2 };
   plataformas.push(mesh);
 }
 
-criarPlataforma(0, 0, 0, 30, 2, 30, 0x181824);
-criarPlataforma(-22, 4, -10, 14, 1.5, 14, 0x312e81);
-criarPlataforma(22, 6, 12, 16, 1.5, 16, 0x312e81);
-criarPlataforma(0, 8, -25, 18, 1.5, 12, 0x4c1d95);
+// Chão Principal Gigante (100x100)
+criarPlataforma(0, 0, 0, 100, 2, 100, 0x181824);
 
-// 3. JOGADOR E MULTIPLAYER FIREBASE
+// Plataformas e Ilhas Elevadas ao Redor
+criarPlataforma(-35, 5, -35, 25, 2, 25, 0x312e81);
+criarPlataforma(35, 5, 35, 25, 2, 25, 0x312e81);
+criarPlataforma(-35, 8, 35, 25, 2, 25, 0x4c1d95);
+criarPlataforma(35, 8, -35, 25, 2, 25, 0x4c1d95);
+criarPlataforma(0, 12, 0, 30, 2, 30, 0x5b21b6); // Ilha Central Alta
+
+// Barricadas e Obstáculos na Arena
+function criarBarricada(x, y, z) {
+  const geo = new THREE.BoxGeometry(3, 3.5, 3);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x6366f1 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, y + 1.75, z);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  
+  // Adiciona colisão simples para as barricadas
+  plataformas.push({
+    userData: { minX: x - 1.5, maxX: x + 1.5, minZ: z - 1.5, maxZ: z + 1.5, topY: y + 3.5 }
+  });
+}
+criarBarricada(-15, 0, -15);
+criarBarricada(15, 0, 15);
+criarBarricada(-15, 0, 15);
+criarBarricada(15, 0, -15);
+criarBarricada(0, 0, -25);
+criarBarricada(0, 0, 25);
+
+// 3. MULTIPLAYER E JOGADOR
 const meuId = 'player_' + Math.random().toString(36).substr(2, 9);
 const jogadorRef = ref(database, 'fps_jogadores/' + meuId);
 const todosJogadoresRef = ref(database, 'fps_jogadores');
 
-set(jogadorRef, { x: 0, y: 3, z: 10 });
-onDisconnect(jogadorRef).remove();
-
-let playerPos = { x: 0, y: 3, z: 10 };
+let playerPos = { x: 0, y: 3, z: 40 };
 let velY = 0;
 const gravidade = -0.015;
 let kills = 0;
 let vida = 100;
 const outrosJogadores = {};
 
-// ARMA NA CÂMERA
+set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
+onDisconnect(jogadorRef).remove();
+
+// ARMA 3D NA CÂMERA
 const gunGroup = new THREE.Group();
 const gunBody = new THREE.Mesh(
   new THREE.BoxGeometry(0.15, 0.2, 0.7),
@@ -185,6 +230,24 @@ gunBarrel.position.set(0.3, -0.2, -0.85);
 gunGroup.add(gunBody, gunBarrel);
 camera.add(gunGroup);
 scene.add(camera);
+
+// BOTS INIMIGOS
+const bots = [];
+function criarBot(x, y, z) {
+  const botGroup = new THREE.Group();
+  const corpo = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.6, 1.2, 4, 8),
+    new THREE.MeshStandardMaterial({ color: 0xef4444 })
+  );
+  corpo.position.y = 1.2;
+  botGroup.add(corpo);
+  botGroup.position.set(x, y, z);
+  scene.add(botGroup);
+
+  bots.push({ mesh: botGroup, vida: 3, speed: 0.04 });
+}
+criarBot(-30, 2, -30);
+criarBot(30, 2, 30);
 
 // ESCUTA OUTROS JOGADORES NO FIREBASE
 onValue(todosJogadoresRef, (snapshot) => {
@@ -202,25 +265,26 @@ onValue(todosJogadoresRef, (snapshot) => {
     let pos = data[id];
 
     if (!outrosJogadores[id]) {
-      const meshOutro = criarPersonagem(); // Usa o teu modelo personalizado!
+      const meshOutro = criarPersonagem();
       scene.add(meshOutro);
-      outrosJogadores[id] = { mesh: meshOutro };
+      outrosJogadores[id] = { id: id, mesh: meshOutro, vida: pos.vida || 100 };
     }
 
     if (pos && typeof pos.x === 'number') {
       outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
+      outrosJogadores[id].vida = pos.vida || 100;
     }
   }
 });
 
-// 4. SISTEMA DE TIROS
+// 4. SISTEMA DE TIROS E DANO
 const projetes = [];
 
 function atirar() {
   gunGroup.position.z += 0.08;
   setTimeout(() => gunGroup.position.z = 0, 80);
 
-  const bulletGeo = new THREE.SphereGeometry(0.12, 8, 8);
+  const bulletGeo = new THREE.SphereGeometry(0.15, 8, 8);
   const bulletMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
   const bullet = new THREE.Mesh(bulletGeo, bulletMat);
 
@@ -233,41 +297,40 @@ function atirar() {
   projetes.push({ mesh: bullet, dir: dir, life: 100 });
 }
 
-document.getElementById('btnAtirar').addEventListener('click', atirar);
-window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'KeyF') atirar(); });
+// 5. CONTROLES DE MOUSE E TECLA ESC
+const instrucaoMouse = document.getElementById('instrucaoMouse');
 
-// 5. CONTROLES DE CÂMERA E MOVIMENTO
+renderer.domElement.addEventListener('click', () => {
+  renderer.domElement.requestPointerLock();
+});
+
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement === renderer.domElement) {
+    instrucaoMouse.style.display = 'none';
+  } else {
+    instrucaoMouse.style.display = 'block';
+  }
+});
+
 let rotationX = 0, rotationY = 0;
-let isMouseDown = false;
-let lastTouchX = 0, lastTouchY = 0;
 
-window.addEventListener('mousedown', () => isMouseDown = true);
-window.addEventListener('mouseup', () => isMouseDown = false);
-window.addEventListener('mousemove', (e) => {
-  if (isMouseDown) {
-    rotationY -= e.movementX * 0.003;
-    rotationX -= e.movementY * 0.003;
+document.addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement === renderer.domElement) {
+    rotationY -= e.movementX * 0.002;
+    rotationX -= e.movementY * 0.002;
     rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
   }
 });
 
-window.addEventListener('touchstart', (e) => {
-  if (e.touches[0].target.id !== 'btnAtirar') {
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape') {
+    if (document.pointerLockElement) document.exitPointerLock();
+    window.location.href = 'lobby.html';
   }
+  if (e.code === 'Space' || e.code === 'KeyF') atirar();
 });
-window.addEventListener('touchmove', (e) => {
-  if (e.touches[0].target.id !== 'btnAtirar') {
-    const deltaX = e.touches[0].clientX - lastTouchX;
-    const deltaY = e.touches[0].clientY - lastTouchY;
-    rotationY -= deltaX * 0.005;
-    rotationX -= deltaY * 0.005;
-    rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
-  }
-});
+
+document.getElementById('btnAtirar').addEventListener('click', atirar);
 
 const keys = {};
 window.addEventListener('keydown', (e) => keys[e.code] = true);
@@ -285,7 +348,7 @@ function animate(tempo) {
 
   const dirFrente = new THREE.Vector3(-Math.sin(rotationY), 0, -Math.cos(rotationY)).normalize();
   const dirLado = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY)).normalize();
-  const vel = 0.18;
+  const vel = 0.22;
 
   if (keys['KeyW']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
   if (keys['KeyS']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
@@ -295,22 +358,20 @@ function animate(tempo) {
   velY += gravidade;
   playerPos.y += velY;
 
-  let noChao = false;
   for (let plat of plataformas) {
     const b = plat.userData;
     if (playerPos.x >= b.minX && playerPos.x <= b.maxX && playerPos.z >= b.minZ && playerPos.z <= b.maxZ) {
       if (playerPos.y <= b.topY + 1.6 && playerPos.y >= b.topY - 0.5) {
         playerPos.y = b.topY + 1.6;
         velY = 0;
-        noChao = true;
         break;
       }
     }
   }
 
-  // QUEDA DA PLATAFORMA (RESPAWN)
-  if (playerPos.y < -15) {
-    playerPos = { x: 0, y: 4, z: 0 };
+  // RESPAWN SE CAIR DA PLATAFORMA
+  if (playerPos.y < -20) {
+    playerPos = { x: 0, y: 5, z: 0 };
     velY = 0;
     vida = Math.max(0, vida - 20);
     document.getElementById('scoreVida').innerText = vida;
@@ -318,26 +379,70 @@ function animate(tempo) {
 
   camera.position.set(playerPos.x, playerPos.y, playerPos.z);
 
-  // Envia posição para o Firebase de forma otimizada a cada ~50ms
   if (tempo - ultimoEnvio > 50) {
     set(jogadorRef, {
       x: Number(playerPos.x.toFixed(2)),
       y: Number(playerPos.y.toFixed(2)),
-      z: Number(playerPos.z.toFixed(2))
+      z: Number(playerPos.z.toFixed(2)),
+      vida: vida
     }).catch(() => {});
     ultimoEnvio = tempo;
   }
 
-  // Atualiza Projéteis
+  // ATUALIZA PROJÉTEIS E DANO
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
-    p.mesh.position.add(p.dir.clone().multiplyScalar(0.8));
+    p.mesh.position.add(p.dir.clone().multiplyScalar(0.9));
     p.life--;
-    if (p.life <= 0) {
+
+    // Dano em Bots
+    for (let j = bots.length - 1; j >= 0; j--) {
+      const b = bots[j];
+      if (p.mesh.position.distanceTo(b.mesh.position) < 1.3) {
+        b.vida--;
+        scene.remove(p.mesh);
+        projetes.splice(i, 1);
+
+        if (b.vida <= 0) {
+          scene.remove(b.mesh);
+          bots.splice(j, 1);
+          kills++;
+          document.getElementById('scoreKills').innerText = kills;
+          setTimeout(() => criarBot((Math.random() - 0.5) * 60, 4, (Math.random() - 0.5) * 60), 2500);
+        }
+        break;
+      }
+    }
+
+    // Dano em Jogadores Online
+    for (let id in outrosJogadores) {
+      const outro = outrosJogadores[id];
+      if (p && p.mesh.position.distanceTo(outro.mesh.position) < 1.5) {
+        scene.remove(p.mesh);
+        projetes.splice(i, 1);
+        
+        const outroRef = ref(database, 'fps_jogadores/' + id + '/vida');
+        set(outroRef, Math.max(0, outro.vida - 25)).catch(() => {});
+        kills++;
+        document.getElementById('scoreKills').innerText = kills;
+        break;
+      }
+    }
+
+    if (p && p.life <= 0) {
       scene.remove(p.mesh);
       projetes.splice(i, 1);
     }
   }
+
+  // MOVIMENTO DOS BOTS
+  bots.forEach(bot => {
+    const dirBot = new THREE.Vector3().subVectors(camera.position, bot.mesh.position);
+    dirBot.y = 0;
+    dirBot.normalize();
+    bot.mesh.position.add(dirBot.multiplyScalar(bot.speed));
+    bot.mesh.lookAt(camera.position.x, bot.mesh.position.y, camera.position.z);
+  });
 
   renderer.render(scene, camera);
 }
