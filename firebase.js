@@ -4,7 +4,7 @@ import { getDatabase, ref, set, get, update, onValue, remove } from "https://www
 const firebaseConfig = {
   apiKey: "AIzaSyDX8URTIoGsagCpTpOYXUthhsyAz6AbrFc",
   authDomain: "goblox-61b88.firebaseapp.com",
-  databaseURL: "https://goblox-61b88-default-rtdb.firebaseio.com", // AQUI ESTÁ A CORREÇÃO
+databaseURL: "https://goblox-61b88-default-rtdb.firebaseio.com",
   projectId: "goblox-61b88",
   storageBucket: "goblox-61b88.firebasestorage.app",
   messagingSenderId: "112050040041",
