@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function criarPersonagem() {
+export function criarPersonagem(nomePlayer = "Jogador") {
   const grupoPersonagem = new THREE.Group();
 
   // Materiais padrão com cores vibrantes
@@ -50,6 +50,31 @@ export function criarPersonagem() {
 
   criarParte(pernaE, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
   criarParte(pernaD, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+
+  // --- SISTEMA DE NICKNAME (Canvas Text Sprite) ---
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = 512;
+  canvas.height = 128;
+
+  context.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  context.roundRect(56, 16, 400, 96, 24);
+  context.fill();
+
+  context.font = 'bold 48px Arial';
+  context.fillStyle = '#ffffff';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(nomePlayer, 256, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(spriteMaterial);
+  
+  // Posiciona o nick logo acima da cabeça do personagem
+  sprite.position.set(0, 3.5, 0);
+  sprite.scale.set(2.0, 0.5, 1.0);
+  grupoPersonagem.add(sprite);
 
   return grupoPersonagem;
 }
