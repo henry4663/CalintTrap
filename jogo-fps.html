@@ -268,9 +268,31 @@ let noChao = false;
 let kills = 0;
 let vida = 100;
 const outrosJogadores = {};
+const MAX_INATIVIDADE_MS = 10000;
 
 function sairDoJogoLimpo() {
   remove(jogadorRef).catch(() => {});
+}
+
+function removerJogadorFantasma(id) {
+  if (outrosJogadores[id]) {
+    scene.remove(outrosJogadores[id].mesh);
+    delete outrosJogadores[id];
+  }
+  remove(ref(database, 'fps_tatico/' + id)).catch(() => {});
+}
+
+function limparJogadoresFantasma(data) {
+  const agora = Date.now();
+  for (const id in data) {
+    if (id === meuId) continue;
+    const info = data[id];
+    if (!info || typeof info.lastSeen !== 'number') continue;
+
+    if (agora - info.lastSeen > MAX_INATIVIDADE_MS) {
+      removerJogadorFantasma(id);
+    }
+  }
 }
 
 onDisconnect(jogadorRef).remove();
@@ -283,7 +305,7 @@ document.getElementById('btnVoltar').addEventListener('click', (e) => {
   setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
 });
 
-set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
+set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida, lastSeen: Date.now() });
 
 // ARMA 3D NA CÂMERA
 const gunGroup = new THREE.Group();
@@ -338,6 +360,7 @@ criarBot(35, 2, 35);
 // ESCUTA OUTROS JOGADORES E VERIFICA A PRÓPRIA VIDA (PVP & RESPAWN)
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
+  limparJogadoresFantasma(data);
 
   // Verifica se o nosso próprio jogador recebeu dano de outro player no banco de dados
   if (data[meuId] && typeof data[meuId].vida === 'number') {
@@ -349,7 +372,7 @@ onValue(todosJogadoresRef, (snapshot) => {
       playerPos = { x: 0, y: 5, z: 45 };
       vida = 100;
       document.getElementById('scoreVida').innerText = vida;
-      set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
+      set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida, lastSeen: Date.now() });
     }
   }
 
@@ -363,15 +386,14 @@ onValue(todosJogadoresRef, (snapshot) => {
   for (let id in data) {
     if (id === meuId) continue;
     let pos = data[id];
+    if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number' || typeof pos.z !== 'number') continue;
     if (!outrosJogadores[id]) {
       const meshOutro = criarPersonagem();
       scene.add(meshOutro);
       outrosJogadores[id] = { id: id, mesh: meshOutro, vida: pos.vida || 100 };
     }
-    if (pos && typeof pos.x === 'number') {
-      outrosJogadores[id].mesh.position.set(pos.x, pos.y - 1.6, pos.z);
-      outrosJogadores[id].vida = pos.vida || 100;
-    }
+    outrosJogadores[id].mesh.position.set(pos.x, pos.y - 1.6, pos.z);
+    outrosJogadores[id].vida = pos.vida || 100;
   }
 });
 
@@ -578,7 +600,8 @@ function animate(tempo) {
       x: Number(playerPos.x.toFixed(2)),
       y: Number(playerPos.y.toFixed(2)),
       z: Number(playerPos.z.toFixed(2)),
-      vida: vida
+      vida: vida,
+      lastSeen: Date.now()
     }).catch(() => {});
     ultimoEnvio = tempo;
   }
