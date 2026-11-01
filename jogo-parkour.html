@@ -39,36 +39,34 @@
     text-decoration: none;
   }
 
-  /* BOTÕES DE CONTROLE MOBILE */
-  #controlesMobile {
+  /* JOYSTICK VIRTUAL MOBILE */
+  #joystickBase {
     position: absolute;
-    bottom: 30px;
-    left: 30px;
-    display: none;
+    bottom: 40px;
+    left: 40px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
     z-index: 20;
-    gap: 15px;
-    align-items: center;
+    display: none;
+    touch-action: none;
   }
-  .d-pad {
-    display: grid;
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 50px);
-    gap: 5px;
+  #joystickStick {
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle, #35d995 0%, #047857 100%);
+    border: 2px solid #6ee7b7;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(53, 217, 149, 0.6);
   }
-  .move {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.6);
-    border-radius: 12px;
-    color: white;
-    font-size: 1.2rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .move:active { background: rgba(255, 255, 255, 0.6); }
-  
+
+  /* BOTÃO DE PULAR MOBILE */
   #btnPularMobile {
     width: 85px;
     height: 85px;
@@ -80,13 +78,14 @@
     font-size: 1rem;
     box-shadow: 0 0 20px rgba(53, 217, 149, 0.6);
     cursor: pointer;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     position: absolute;
     bottom: 40px;
     right: 40px;
     z-index: 20;
+    touch-action: none;
   }
   #btnPularMobile:active { transform: scale(0.92); }
 
@@ -123,19 +122,9 @@
 <div id="mensagem">VICTORY! 🎉</div>
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
-<!-- CONTROLES MOBILE -->
-<div id="controlesMobile">
-  <div class="d-pad">
-    <div></div>
-    <button class="move" data-key="KeyW" style="grid-column: 2; grid-row: 1;">▲</button>
-    <div></div>
-    <button class="move" data-key="KeyA" style="grid-column: 1; grid-row: 2;">◀</button>
-    <div></div>
-    <button class="move" data-key="KeyD" style="grid-column: 3; grid-row: 2;">▶</button>
-    <div></div>
-    <button class="move" data-key="KeyS" style="grid-column: 2; grid-row: 3;">▼</button>
-    <div></div>
-  </div>
+<!-- CONTROLES MOBILE (JOYSTICK + PULO) -->
+<div id="joystickBase">
+  <div id="joystickStick"></div>
 </div>
 <button id="btnPularMobile">PULAR</button>
 
@@ -148,7 +137,8 @@ import { criarPersonagem } from './personagem.js';
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 if (isMobile) {
-  document.getElementById("controlesMobile").style.display = "flex";
+  document.getElementById("joystickBase").style.display = "block";
+  document.getElementById("btnPularMobile").style.display = "flex";
 }
 
 (async function iniciarParkour() {
@@ -318,39 +308,99 @@ if (isMobile) {
     }
   }
 
-  document.querySelectorAll(".move").forEach(botao => {
-    const tecla = botao.dataset.key;
-    botao.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      teclas[tecla] = true;
-      botao.setPointerCapture(e.pointerId);
-    });
-    function soltar() { teclas[tecla] = false; }
-    botao.addEventListener("pointerup", soltar);
-    botao.addEventListener("pointercancel", soltar);
-    botao.addEventListener("lostpointercapture", soltar);
-  });
-
   document.getElementById("btnPularMobile").addEventListener("pointerdown", e => {
     e.preventDefault();
     pular();
   });
 
+  // CONTROLE DO JOYSTICK VIRTUAL E ROTAÇÃO DA CÂMERA (MULTITOQUE)
+  const joystickBase = document.getElementById('joystickBase');
+  const joystickStick = document.getElementById('joystickStick');
+  let joystickTouchId = null;
+  let cameraTouchId = null;
+  let joyX = 0, joyY = 0;
+  let lastTouchX = 0, lastTouchY = 0;
+
+  window.addEventListener('touchstart', (e) => {
+    if (!isMobile) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      if (target && (target.closest('#btnPularMobile') || target.closest('#btnVoltar'))) {
+        continue;
+      }
+
+      // Lado esquerdo = Joystick
+      if (joystickTouchId === null && touch.clientX < window.innerWidth / 2) {
+        joystickTouchId = touch.identifier;
+      } 
+      // Lado direito = Rotação de câmera
+      else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
+        cameraTouchId = touch.identifier;
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+      }
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isMobile) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+
+      if (touch.identifier === joystickTouchId) {
+        const rect = joystickBase.getBoundingClientRect();
+        const centroX = rect.left + rect.width / 2;
+        const centroY = rect.top + rect.height / 2;
+        let deltaX = touch.clientX - centroX;
+        let deltaY = touch.clientY - centroY;
+        const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+        const angulo = Math.atan2(deltaY, deltaX);
+        joyX = Math.cos(angulo) * (distancia / 50);
+        joyY = Math.sin(angulo) * (distancia / 50);
+        joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
+      }
+
+      if (touch.identifier === cameraTouchId) {
+        const deltaX = touch.clientX - lastTouchX;
+        const deltaY = touch.clientY - lastTouchY;
+        anguloCamera -= deltaX * 0.006;
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+      }
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', (e) => {
+    if (!isMobile) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === joystickTouchId) {
+        joystickTouchId = null;
+        joyX = 0; joyY = 0;
+        joystickStick.style.transform = `translate(0px, 0px)`;
+      }
+      if (touch.identifier === cameraTouchId) {
+        cameraTouchId = null;
+      }
+    }
+  });
+
+  // Para PC (arrastar com o rato)
   let arrastando = false;
   let ultimaX = 0;
-
   renderer.domElement.addEventListener("pointerdown", e => {
+    if (isMobile) return;
     arrastando = true;
     ultimaX = e.clientX;
     renderer.domElement.setPointerCapture(e.pointerId);
   });
-
   renderer.domElement.addEventListener("pointermove", e => {
-    if (!arrastando) return;
+    if (!arrastando || isMobile) return;
     anguloCamera -= (e.clientX - ultimaX) * 0.006;
     ultimaX = e.clientX;
   });
-
   function pararCamera() { arrastando = false; }
   renderer.domElement.addEventListener("pointerup", pararCamera);
   renderer.domElement.addEventListener("pointercancel", pararCamera);
@@ -370,6 +420,20 @@ if (isMobile) {
       jogador.position.x += direcao.x * velocidade * dt;
       jogador.position.z += direcao.z * velocidade * dt;
       jogador.rotation.y = Math.atan2(direcao.x, direcao.z) + Math.PI;
+    }
+
+    // Movimento via Joystick Mobile
+    if (joystickTouchId !== null) {
+      const dirFrente = new THREE.Vector3(-Math.sin(anguloCamera), 0, -Math.cos(anguloCamera)).normalize();
+      const dirLado = new THREE.Vector3(Math.cos(anguloCamera), 0, -Math.sin(anguloCamera)).normalize();
+      
+      jogador.position.x += (dirFrente.x * (-joyY) + dirLado.x * joyX) * velocidade * dt;
+      jogador.position.z += (dirFrente.z * (-joyY) + dirLado.z * joyX) * velocidade * dt;
+
+      if (joyX !== 0 || joyY !== 0) {
+        const moveDir = new THREE.Vector3(dirFrente.x * (-joyY) + dirLado.x * joyX, 0, dirFrente.z * (-joyY) + dirLado.z * joyX).normalize();
+        jogador.rotation.y = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
+      }
     }
 
     velocidadeY -= gravidade * dt;
