@@ -1,70 +1,55 @@
-// PERSONAGEM
-const jogador = new THREE.Group();
-scene.add(jogador);
+import * as THREE from 'three';
 
-const corpo = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1.4, 1),
-  new THREE.MeshStandardMaterial({
-    color: 0x8b5cf6,
-    emissive: 0x4c1d95,
-    emissiveIntensity: 0.2
-  })
-);
-corpo.position.y = 1.2;
-corpo.castShadow = true;
-corpo.receiveShadow = true;
-jogador.add(corpo);
+export function criarPersonagem() {
+  const grupoPersonagem = new THREE.Group();
 
-// CABEÇA
-const cabeca = new THREE.Mesh(
-  new THREE.BoxGeometry(0.8, 0.8, 0.8),
-  new THREE.MeshStandardMaterial({ color: 0xffd7b5 })
-);
-cabeca.position.y = 2.2;
-cabeca.castShadow = true;
-cabeca.receiveShadow = true;
-jogador.add(cabeca);
+  // Materiais padrão com cores vibrantes
+  const materialRoupa = new THREE.MeshStandardMaterial({ color: 0x2678ed, roughness: 0.75 });
+  const materialCalca = new THREE.MeshStandardMaterial({ color: 0x242b43, roughness: 0.75 });
+  const materialPele = new THREE.MeshStandardMaterial({ color: 0xffc18b, roughness: 0.75 });
+  const materialCabelo = new THREE.MeshStandardMaterial({ color: 0x29202a, roughness: 0.75 });
 
-// OLHOS
-const olhoMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+  function criarParte(parent, x, y, z, sx, sy, sz, mat) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  }
 
-const olhoEsq = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.04), olhoMat);
-olhoEsq.position.set(-0.18, 2.25, 0.42);
-jogador.add(olhoEsq);
+  // TRONCO
+  criarParte(grupoPersonagem, 0, 1.55, 0, 0.9, 1.1, 0.48, materialRoupa);
 
-const olhoDir = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.04), olhoMat);
-olhoDir.position.set(0.18, 2.25, 0.42);
-jogador.add(olhoDir);
+  // CABEÇA
+  criarParte(grupoPersonagem, 0, 2.48, 0, 0.75, 0.75, 0.75, materialPele);
 
-// NOME EM CIMA DO PLAYER
-function criarNomeNoPlayer(nome = "nick") {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 128;
+  // CABELO
+  criarParte(grupoPersonagem, 0, 2.91, 0, 0.79, 0.18, 0.79, materialCabelo);
 
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // OLHOS
+  criarParte(grupoPersonagem, -0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
+  criarParte(grupoPersonagem, 0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
 
-  ctx.font = "700 42px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(nome, canvas.width / 2, canvas.height / 2);
+  // BRAÇOS
+  const bracoE = new THREE.Group();
+  const bracoD = new THREE.Group();
+  bracoE.position.set(-0.58, 1.95, 0);
+  bracoD.position.set(0.58, 1.95, 0);
+  grupoPersonagem.add(bracoE, bracoD);
 
-  const tex = new THREE.CanvasTexture(canvas);
-  const material = new THREE.SpriteMaterial({ map: tex, transparent: true });
-  const sprite = new THREE.Sprite(material);
+  criarParte(bracoE, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
+  criarParte(bracoD, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
 
-  sprite.scale.set(2.8, 0.7, 1);
-  sprite.position.set(0, 3.2, 0);
+  // PERNAS
+  const pernaE = new THREE.Group();
+  const pernaD = new THREE.Group();
+  pernaE.position.set(-0.25, 1, 0);
+  pernaD.position.set(0.25, 1, 0);
+  grupoPersonagem.add(pernaE, pernaD);
 
-  return sprite;
+  criarParte(pernaE, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+  criarParte(pernaD, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+
+  return grupoPersonagem;
 }
-
-const nomeSprite = criarNomeNoPlayer("nick");
-jogador.add(nomeSprite);
-
-// POSIÇÃO INICIAL
-jogador.position.set(0, 0.5, 6);
