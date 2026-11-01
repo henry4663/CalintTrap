@@ -12,14 +12,13 @@ import {
 
 import {
     getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    updateProfile,
-    signOut
+    createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
+    signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+    onAuthStateChanged as firebaseOnAuthStateChanged,
+    updateProfile as firebaseUpdateProfile,
+    signOut as firebaseSignOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// CONFIGURAÇÃO ORIGINAL DO GOBLOX
 const firebaseConfig = {
     apiKey: "AIzaSyDX8URTIoGsagCpTpOYXUthhsyAz6AbrFc",
     authDomain: "goblox-61b88.firebaseapp.com",
@@ -30,32 +29,74 @@ const firebaseConfig = {
     appId: "1:112050040041:web:1777dcc3fd0909d5655478"
 };
 
-// INICIALIZAÇÃO
-const app = initializeApp(firebaseConfig);
+function hasValidFirebaseConfig(config) {
+    return Boolean(
+        config &&
+        typeof config.apiKey === "string" && config.apiKey.trim() &&
+        typeof config.projectId === "string" && config.projectId.trim() &&
+        typeof config.appId === "string" && config.appId.trim()
+    );
+}
 
-// BANCO DE DADOS
-export const db = getDatabase(app);
+let app = null;
+let database = null;
+let auth = null;
 
-// AUTENTICAÇÃO
-export const auth = getAuth(app);
+if (hasValidFirebaseConfig(firebaseConfig)) {
+    try {
+        app = initializeApp(firebaseConfig);
+        database = getDatabase(app);
+        auth = getAuth(app);
+    } catch (error) {
+        console.error("Falha ao inicializar Firebase:", error);
+    }
+} else {
+    console.warn("Firebase não configurado. Atualize o objeto firebaseConfig em firebase.js.");
+}
 
-// EXPORTAÇÕES
+function ensureFirebaseReady() {
+    if (!app || !database || !auth) {
+        throw new Error("Firebase não está configurado corretamente. Verifique o arquivo firebase.js e a configuração do projeto no Firebase Console.");
+    }
+}
+
+export const db = database;
+export { auth };
+
+export function createUserWithEmailAndPassword(...args) {
+    ensureFirebaseReady();
+    return firebaseCreateUserWithEmailAndPassword(auth, ...args);
+}
+
+export function signInWithEmailAndPassword(...args) {
+    ensureFirebaseReady();
+    return firebaseSignInWithEmailAndPassword(auth, ...args);
+}
+
+export function onAuthStateChanged(...args) {
+    ensureFirebaseReady();
+    return firebaseOnAuthStateChanged(auth, ...args);
+}
+
+export function updateProfile(...args) {
+    ensureFirebaseReady();
+    return firebaseUpdateProfile(...args);
+}
+
+export function signOut(...args) {
+    ensureFirebaseReady();
+    return firebaseSignOut(auth, ...args);
+}
+
 export {
     ref,
     set,
     get,
     update,
     onValue,
-    remove,
-
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    updateProfile,
-    signOut
+    remove
 };
 
-// SISTEMA DE NOTIFICAÇÃO
 export function toast(msg, tipo = "") {
     const t = document.getElementById("toast");
 
