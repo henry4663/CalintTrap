@@ -1,4 +1,4 @@
-```javascript
+javascript
 import {
     auth,
     db,
@@ -142,4 +142,4 @@ onAuthStateChanged(auth, (user) => {
         window.location.replace(LOBBY);
     }
 });
-```
+
