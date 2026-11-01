@@ -1,1004 +1,414 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>fx Blox - Plataforma de Jogos em Nuvem</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        fx: {
-                            main: '#0b0c10',
-                            card: '#14161e',
-                            border: '#232736',
-                            accent: '#8b5cf6',
-                            accentHover: '#7c3aed',
-                            green: '#10b981',
-                            red: '#ef4444',
-                            textMuted: '#9ca3af'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0b0c10; color: #f3f4f6; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0c10; }
-        ::-webkit-scrollbar-thumb { background: #232736; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
-        .glass-panel { background: rgba(20, 22, 30, 0.85); backdrop-filter: blur(12px); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GOBLOX</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#11151f;color:white;font-family:Arial}
+button,input{padding:12px;border:0;border-radius:8px}
+button{background:#2878ed;color:white;cursor:pointer;font-weight:bold}
+button:hover{background:#4592ff}
+header{height:65px;background:#202b40;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.logo{font-size:27px;font-weight:900}
+.logo span{color:#42d6d0}
+#login{position:fixed;inset:0;background:#111827;display:grid;place-items:center;z-index:5}
+.login{background:#202b40;padding:30px;border-radius:16px;width:min(350px,90%)}
+.login input{width:100%;margin:8px 0;background:#111827;color:white}
+.login button{width:100%}
+.layout{display:flex;min-height:calc(100vh - 65px)}
+nav{width:190px;background:#1a2333;padding:15px}
+nav button{width:100%;margin-bottom:9px;text-align:left}
+main{padding:25px;flex:1}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:17px}
+.game{background:#202b40;border-radius:13px;padding:18px}
+.icon{font-size:48px}
+.game p{color:#aab8ca}
+.game button{width:100%}
+.panel{background:#202b40;padding:18px;border-radius:13px;margin-top:20px}
+input{background:#111827;color:white}
+#play{display:none;position:fixed;inset:0;background:#101722;z-index:10}
+#world{width:100%;height:100%;display:block}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
+.hud button{pointer-events:auto}
+.hud div{background:#172438;padding:12px;border-radius:9px}
+#hint{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:#172438;padding:12px;border-radius:10px;text-align:center}
+.hidden{display:none!important}
+@media(max-width:650px){.layout{display:block}nav{width:100%;display:flex;overflow:auto}nav button{min-width:100px}main{padding:14px}}
+</style>
 </head>
-<body class="h-screen flex overflow-hidden select-none">
-
-    <!-- NOTIFICAÇÃO FLOATING -->
-    <div id="toast-notification" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-out bg-fx-card border border-fx-accent text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-fx-green text-xl"></i>
-        <span id="toast-message" class="text-xs font-semibold">Notificação</span>
-    </div>
-
-    <!-- SIDEBAR LEFT -->
-    <aside class="w-64 bg-fx-card border-r border-fx-border flex flex-col justify-between p-4 z-20 shrink-0">
-        <div class="flex flex-col gap-6">
-            <!-- LOGO -->
-            <div class="flex items-center justify-between px-2">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fx-accent to-purple-800 flex items-center justify-center text-white shadow-lg shadow-fx-accent/30 font-black text-xl">
-                        fx
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-base leading-none text-white">fx Blox</h1>
-                        <span class="text-[10px] text-fx-accent font-semibold tracking-wider">NUVEM GLOBAL</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NAVEGAÇÃO PRINCIPAL -->
-            <nav class="flex flex-col gap-1">
-                <a href="#" id="nav-home" onclick="switchTab('home')" class="flex items-center gap-3 text-white bg-fx-accent px-3 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-fx-accent/20">
-                    <i class="fa-solid fa-house text-sm"></i>
-                    <span>Início</span>
-                </a>
-                <a href="#" id="nav-friends" onclick="openFriendsModal()" class="flex items-center gap-3 text-fx-textMuted hover:text-white hover:bg-fx-card/50 px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative">
-                    <i class="fa-solid fa-user-group text-sm"></i>
-                    <span>Amigos</span>
-                    <span id="pending-requests-badge" class="hidden absolute right-2 bg-fx-red text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
-                </a>
-                <a href="#" id="nav-search" onclick="openSearchModal()" class="flex items-center gap-3 text-fx-textMuted hover:text-white hover:bg-fx-card/50 px-3 py-2.5 rounded-xl text-xs font-bold transition-all">
-                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                    <span>Buscar Jogadores</span>
-                </a>
-                <a href="#" onclick="openAuthModal()" class="flex items-center gap-3 text-fx-textMuted hover:text-white hover:bg-fx-card/50 px-3 py-2.5 rounded-xl text-xs font-bold border border-purple-500/30 bg-purple-500/10 transition-all mt-2">
-                    <i class="fa-solid fa-right-to-bracket text-sm text-fx-accent"></i>
-                    <span class="text-fx-accent">Entrar / Criar Conta</span>
-                </a>
-            </nav>
-        </div>
-
-        <!-- PAINEL STATUS NUVEM -->
-        <div class="border-t border-fx-border pt-4">
-            <div class="p-3 bg-fx-main/90 border border-fx-border rounded-xl flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-2.5 h-2.5 rounded-full bg-fx-green animate-pulse"></div>
-                    <span class="text-[11px] font-bold text-white">Rede Global em Nuvem</span>
-                </div>
-                <i class="fa-solid fa-cloud text-fx-accent text-sm"></i>
-            </div>
-        </div>
-    </aside>
-
-    <!-- ÁREA PRINCIPAL -->
-    <main class="flex-grow flex flex-col h-full overflow-hidden">
-        <!-- HEADER TOP -->
-        <header class="h-16 border-b border-fx-border bg-fx-card px-6 flex items-center justify-between z-10 shrink-0">
-            <!-- PESQUISA DE EXPERIÊNCIAS -->
-            <div class="flex items-center gap-3 bg-fx-main border border-fx-border rounded-full px-4 py-2 w-80 focus-within:border-fx-accent transition-all">
-                <i class="fa-solid fa-magnifying-glass text-fx-textMuted text-xs"></i>
-                <input type="text" placeholder="Buscar jogos..." oninput="filterGames(this.value)" class="bg-transparent border-none outline-none text-xs text-white w-full">
-            </div>
-
-            <!-- HUD PERFIL / MOEDAS FBUX -->
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/35 text-purple-400 px-3.5 py-1.5 rounded-full font-extrabold text-xs shadow-inner">
-                    <i class="fa-solid fa-gem text-purple-400 animate-pulse"></i>
-                    <span><span id="user-coins">1000</span> FBUX</span>
-                </div>
-                <div class="flex items-center gap-3 bg-fx-main border border-fx-border p-1.5 pr-4 rounded-full cursor-pointer hover:border-fx-accent transition-all" onclick="openProfileModal()">
-                    <div id="hud-avatar-icon" class="w-8 h-8 rounded-full bg-fx-accent flex items-center justify-center text-lg">😎</div>
-                    <div class="flex flex-col">
-                        <span id="user-profile-display" class="text-xs font-bold leading-none text-white">Convidado</span>
-                        <span class="text-[9px] text-fx-green font-semibold">🟢 Nuvem Online</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- CONTAINER MUNDOS E EXPERIÊNCIAS -->
-        <div class="flex-grow overflow-y-auto p-8" id="main-content-area">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl font-black text-white">Experiências Populares em Nuvem</h2>
-                    <p class="text-xs text-fx-textMuted">Salas globais sincronizadas em tempo real via Cloud Database</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="games-container">
-                <!-- Injetado dinamicamente via JS -->
-            </div>
-        </div>
-    </main>
-
-    <!-- MODAL DE AMIGOS E SOLICITAÇÕES -->
-    <div id="friends-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-fx-card border border-fx-border w-full max-w-lg rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-fx-border pb-3">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-user-group text-fx-accent text-xl"></i>
-                    <h3 class="text-lg font-bold text-white">Gerenciar Amigos</h3>
-                </div>
-                <button onclick="closeModals()" class="text-fx-textMuted hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <!-- TABS AMIGOS / SOLICITAÇÕES -->
-            <div class="flex border-b border-fx-border gap-4 text-xs font-bold">
-                <button id="tab-btn-friends" onclick="switchFriendsTab('list')" class="pb-2 border-b-2 border-fx-accent text-fx-accent">Seus Amigos (<span id="friends-count">0</span>)</button>
-                <button id="tab-btn-requests" onclick="switchFriendsTab('requests')" class="pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white flex items-center gap-1.5">
-                    Solicitações
-                    <span id="modal-requests-badge" class="bg-fx-red text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">0</span>
-                </button>
-            </div>
-
-            <div id="friends-tab-list" class="max-h-64 overflow-y-auto flex flex-col gap-2"></div>
-            <div id="friends-tab-requests" class="max-h-64 overflow-y-auto flex flex-col gap-2 hidden"></div>
-
-            <div class="border-t border-fx-border pt-4 flex gap-2">
-                <button onclick="openSearchModal()" class="flex-1 bg-fx-accent hover:bg-fx-accentHover text-white py-2.5 rounded-xl text-xs font-bold transition-all">
-                    + Buscar e Adicionar Amigos
-                </button>
-                <button onclick="closeModals()" class="bg-fx-main border border-fx-border text-fx-textMuted hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold">
-                    Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL BUSCA DE JOGADORES -->
-    <div id="search-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-fx-card border border-fx-border w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-fx-border pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-magnifying-glass text-fx-accent"></i> Buscar Utilizadores na Nuvem
-                </h3>
-                <button onclick="closeModals()" class="text-fx-textMuted hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="flex items-center gap-2 bg-fx-main border border-fx-border rounded-xl px-3 py-2">
-                <input type="text" id="user-search-input" oninput="searchCloudUsers(this.value)" placeholder="Digite o nome do jogador..." class="bg-transparent border-none outline-none text-xs text-white w-full">
-            </div>
-
-            <div id="search-results-container" class="max-h-60 overflow-y-auto flex flex-col gap-2"></div>
-
-            <button onclick="closeModals()" class="w-full bg-fx-main border border-fx-border text-white py-2.5 rounded-xl text-xs font-bold">
-                Concluir
-            </button>
-        </div>
-    </div>
-
-    <!-- MODAL DE LOGIN E CADASTRO -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-md">
-        <div class="bg-fx-card border border-fx-border w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-fx-border pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-cloud text-fx-accent"></i> fx Blox - Conta em Nuvem
-                </h3>
-            </div>
-
-            <div class="flex border-b border-fx-border gap-4 text-xs font-bold">
-                <button id="auth-tab-login-btn" onclick="switchAuthTab('login')" class="pb-2 border-b-2 border-fx-accent text-fx-accent">Entrar na Conta</button>
-                <button id="auth-tab-register-btn" onclick="switchAuthTab('register')" class="pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white">Criar Nova Conta</button>
-                <button id="auth-tab-import-btn" onclick="switchAuthTab('import')" class="pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white">Importar Chave (.fxkey)</button>
-            </div>
-
-            <!-- TAB LOGIN -->
-            <form id="auth-login-form" onsubmit="handleCloudLogin(event)" class="flex flex-col gap-3">
-                <label class="text-xs font-bold text-white">Nome de utilizador registrado:</label>
-                <input type="text" id="login-username-input" placeholder="Seu nome de usuário..." required class="bg-fx-main border border-fx-border text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-fx-accent">
-                <button type="submit" class="w-full bg-fx-accent hover:bg-fx-accentHover text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-fx-accent/20 mt-2">
-                    Carregar Conta da Nuvem
-                </button>
-            </form>
-
-            <!-- TAB REGISTRO -->
-            <form id="auth-register-form" onsubmit="handleCloudRegister(event)" class="flex flex-col gap-3 hidden">
-                <label class="text-xs font-bold text-white">Nome do Novo Jogador:</label>
-                <input type="text" id="register-username-input" placeholder="Ex: GamerPro_Nuven" required class="bg-fx-main border border-fx-border text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-fx-accent">
-
-                <label class="text-xs font-bold text-white">Escolha seu Avatar:</label>
-                <div class="grid grid-cols-5 gap-2">
-                    <button type="button" onclick="selectRegisterAvatar('😎')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">😎</button>
-                    <button type="button" onclick="selectRegisterAvatar('🤖')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🤖</button>
-                    <button type="button" onclick="selectRegisterAvatar('🦊')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🦊</button>
-                    <button type="button" onclick="selectRegisterAvatar('🚀')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🚀</button>
-                    <button type="button" onclick="selectRegisterAvatar('👑')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">👑</button>
-                </div>
-
-                <button type="submit" class="w-full bg-fx-green hover:bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold transition-all mt-2">
-                    Criar Conta na Nuvem & Gerar .fxkey
-                </button>
-            </form>
-
-            <!-- TAB IMPORTAR CHAVE -->
-            <div id="auth-import-form" class="flex flex-col gap-3 hidden">
-                <label class="text-xs font-bold text-white">Cole o código da chave (.fxkey):</label>
-                <textarea id="import-key-textarea" placeholder="fxblox_key_..." rows="4" class="bg-fx-main border border-fx-border text-white text-xs p-3 rounded-xl focus:outline-none focus:border-fx-accent resize-none"></textarea>
-                <button type="button" onclick="processImportAccountKey()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-bold transition-all">
-                    Importar e Sincronizar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE PERFIL -->
-    <div id="profile-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-fx-card border border-fx-border w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-fx-border pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-fx-accent"></i> Perfil na Nuvem
-                </h3>
-                <button onclick="closeModals()" class="text-fx-textMuted hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="flex flex-col gap-3">
-                <label class="text-xs font-bold text-white">Nome de Jogador:</label>
-                <input type="text" id="profile-username-input" class="bg-fx-main border border-fx-border text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-fx-accent">
-
-                <label class="text-xs font-bold text-white">Escolher Avatar:</label>
-                <div class="grid grid-cols-5 gap-2">
-                    <button type="button" onclick="selectProfileAvatar('😎')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">😎</button>
-                    <button type="button" onclick="selectProfileAvatar('🤖')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🤖</button>
-                    <button type="button" onclick="selectProfileAvatar('🦊')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🦊</button>
-                    <button type="button" onclick="selectProfileAvatar('🚀')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">🚀</button>
-                    <button type="button" onclick="selectProfileAvatar('👑')" class="text-2xl p-2 bg-fx-main border border-fx-border hover:border-fx-accent rounded-xl text-center">👑</button>
-                </div>
-            </div>
-
-            <div class="flex gap-2 pt-2">
-                <button onclick="saveProfileChanges()" class="flex-1 bg-fx-accent hover:bg-fx-accentHover text-white py-2.5 rounded-xl text-xs font-bold transition-all">
-                    Salvar na Nuvem
-                </button>
-                <button onclick="exportAccountKeyFile()" class="bg-fx-main border border-fx-border text-amber-400 hover:text-white px-3 py-2.5 rounded-xl text-xs font-bold" title="Baixar .fxkey">
-                    <i class="fa-solid fa-key"></i> .fxkey
-                </button>
-                <button onclick="openAuthModal()" class="bg-fx-main border border-fx-border text-fx-accent hover:text-white px-3 py-2.5 rounded-xl text-xs font-bold">
-                    Conta
-                </button>
-                <button onclick="closeModals()" class="bg-fx-main border border-fx-border text-fx-textMuted hover:text-white px-3 py-2.5 rounded-xl text-xs font-bold">
-                    Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TELA DE JOGO EM NUVEM (CANVAS) -->
-    <div id="game-room-screen" class="fixed inset-0 bg-fx-main z-50 hidden flex-col">
-        <div class="h-16 bg-fx-card border-b border-fx-border px-6 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <span id="active-game-emoji" class="text-2xl">🎮</span>
-                <div>
-                    <h3 id="active-game-title" class="text-base font-bold text-white leading-none">Mundo FX</h3>
-                    <span id="room-code-display" class="text-xs text-fx-accent font-semibold">Servidor Global em Nuvem</span>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <button onclick="leaveGameRoom()" class="bg-fx-red hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
-                    Sair da Sala
-                </button>
-            </div>
-        </div>
-
-        <div class="flex-grow flex overflow-hidden relative">
-            <div class="flex-grow flex items-center justify-center p-4">
-                <canvas id="gameCanvas" width="800" height="500" class="shadow-2xl shadow-purple-950/20"></canvas>
-            </div>
-
-            <!-- CHAT EM NUVEM -->
-            <div class="w-80 bg-fx-card border-l border-fx-border flex flex-col justify-between p-4">
-                <h4 class="text-xs font-bold text-white border-b border-fx-border pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-comments text-fx-accent"></i> Chat Global em Nuvem
-                </h4>
-                <div id="chat-messages" class="flex-grow overflow-y-auto py-3 flex flex-col gap-2 text-xs">
-                    <div class="bg-fx-main p-2 rounded-lg border border-fx-border text-fx-textMuted italic">
-                        Conectado ao chat sincronizado em tempo real!
-                    </div>
-                </div>
-                <form onsubmit="sendCloudChatMessage(event)" class="flex gap-2 border-t border-fx-border pt-3">
-                    <input type="text" id="chat-input" placeholder="Digite uma mensagem..." class="flex-1 bg-fx-main border border-fx-border text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-fx-accent">
-                    <button type="submit" class="bg-fx-accent hover:bg-fx-accentHover text-white px-3 py-2 rounded-xl text-xs font-bold">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- FIREBASE & ENGINE NUVEM -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'fx-blox-cloud-app';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
-        let app, db, auth;
-        let currentUserUid = null;
-        let globalUnsubscribe = null;
-        let chatUnsubscribe = null;
-        let movementInterval = null;
-
-        const GAMES_DATA = [
-            { id: 1, title: "Murder Blox 2", players: "1.4k", thumb: "🔪", desc: "Descubra quem é o assassino na nuvem!" },
-            { id: 2, title: "BedWars FX", players: "2.8k", thumb: "🛌", desc: "Proteja sua cama em partidas globais." },
-            { id: 3, title: "Brookhaven RP", players: "5.1k", thumb: "🏡", desc: "Viva na cidade virtual sincronizada." },
-            { id: 4, title: "Flee The Facility", players: "850", thumb: "🔨", desc: "Faja da besta e ative computadores." }
-        ];
-
-        window.localPlayer = {
-            username: "",
-            avatar: "😎",
-            fbux: 1000,
-            x: 400,
-            y: 250,
-            friends: [],
-            requests: []
-        };
-
-        window.remotePlayers = {};
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            renderGamesGrid(GAMES_DATA);
-
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                currentUserUid = auth.currentUser?.uid || crypto.randomUUID();
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        currentUserUid = user.uid;
-                        await loadUserDataFromCloud();
-                    }
-                });
-            } catch (err) {
-                showNotification("Modo offline / erro ao ligar à nuvem.", "error");
-            }
-        });
-
-        window.saveUserDataToCloud = async function() {
-            if (!currentUserUid || !window.localPlayer.username) return;
-            try {
-                const userRef = doc(db, 'artifacts', appId, 'users', window.localPlayer.username);
-                await setDoc(userRef, {
-                    username: window.localPlayer.username,
-                    avatar: window.localPlayer.avatar || "😎",
-                    fbux: window.localPlayer.fbux || 1000,
-                    x: window.localPlayer.x || 400,
-                    y: window.localPlayer.y || 250,
-                    friends: window.localPlayer.friends || [],
-                    requests: window.localPlayer.requests || [],
-                    lastSeen: Date.now()
-                }, { merge: true });
-            } catch(e) {}
-        };
-
-        async function loadUserDataFromCloud() {
-            if (!window.localPlayer.username) return;
-            try {
-                const userRef = doc(db, 'artifacts', appId, 'users', window.localPlayer.username);
-                const snap = await getDoc(userRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    window.localPlayer.avatar = data.avatar || "😎";
-                    window.localPlayer.fbux = data.fbux || 1000;
-                    window.localPlayer.friends = Array.isArray(data.friends) ? data.friends : [];
-                    window.localPlayer.requests = Array.isArray(data.requests) ? data.requests : [];
-                    applyUserDataToHUD();
-                    updateFriendsBadge();
-                } else {
-                    await saveUserDataToCloud();
-                }
-
-                // Escutar mudanças no perfil em tempo real (pedidos de amizade recebidos)
-                onSnapshot(userRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const updated = docSnap.data();
-                        window.localPlayer.friends = Array.isArray(updated.friends) ? updated.friends : [];
-                        window.localPlayer.requests = Array.isArray(updated.requests) ? updated.requests : [];
-                        updateFriendsBadge();
-                        
-                        const reqModalHidden = document.getElementById('friends-modal').classList.contains('hidden');
-                        if (!reqModalHidden) {
-                            renderFriendsList();
-                            renderRequestsList();
-                        }
-                    }
-                }, (error) => {});
-            } catch(e) {}
-        }
-
-        function applyUserDataToHUD() {
-            const disp = document.getElementById('user-profile-display');
-            const coins = document.getElementById('user-coins');
-            const avatar = document.getElementById('hud-avatar-icon');
-
-            if (disp) disp.innerText = window.localPlayer.username || "Convidado";
-            if (coins) coins.innerText = window.localPlayer.fbux || 1000;
-            if (avatar) avatar.innerText = window.localPlayer.avatar || "😎";
-        }
-
-        function showNotification(msg, type = "info") {
-            const toast = document.getElementById('toast-notification');
-            const toastMsg = document.getElementById('toast-message');
-            const toastIcon = document.getElementById('toast-icon');
-
-            if (!toast || !toastMsg) return;
-            toastMsg.innerText = msg;
-
-            if (type === "error") {
-                toastIcon.className = "fa-solid fa-circle-exclamation text-fx-red text-xl";
-            } else if (type === "success") {
-                toastIcon.className = "fa-solid fa-circle-check text-fx-green text-xl";
-            } else {
-                toastIcon.className = "fa-solid fa-bell text-fx-accent text-xl";
-            }
-
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 3000);
-        }
-
-        window.renderGamesGrid = function(games) {
-            const container = document.getElementById('games-container');
-            if (!container) return;
-            container.innerHTML = games.map(g => `
-                <div onclick="joinGameRoom('${g.title}', '${g.thumb}')" class="bg-fx-card border border-fx-border hover:border-fx-accent rounded-2xl overflow-hidden cursor-pointer transform hover:-translate-y-1.5 transition-all duration-300 shadow-xl flex flex-col">
-                    <div class="h-36 bg-gradient-to-br from-purple-900/40 to-fx-main flex items-center justify-center text-5xl">
-                        ${g.thumb}
-                    </div>
-                    <div class="p-4 flex flex-col justify-between flex-grow">
-                        <div>
-                            <h3 class="font-bold text-white text-sm mb-1">${g.title}</h3>
-                            <p class="text-[11px] text-fx-textMuted line-clamp-2">${g.desc}</p>
-                        </div>
-                        <div class="mt-4 flex items-center justify-between border-t border-fx-border/50 pt-2">
-                            <span class="text-[10px] text-fx-green font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-circle text-[8px]"></i> ${g.players} na nuvem
-                            </span>
-                            <span class="bg-fx-accent/10 text-fx-accent text-[10px] font-bold px-2 py-0.5 rounded-md">Entrar</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        window.filterGames = function(query) {
-            const filtered = GAMES_DATA.filter(g => g.title.toLowerCase().includes(query.toLowerCase()));
-            renderGamesGrid(filtered);
-        };
-
-        window.switchTab = function(tabName) {
-            if (tabName === 'home') {
-                leaveGameRoom();
-                closeModals();
-                showNotification("Retornado à página inicial da Nuvem!");
-            }
-        };
-
-        window.openAuthModal = function() {
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-modal').classList.add('flex');
-            switchAuthTab('login');
-        };
-
-        window.switchAuthTab = function(tab) {
-            const btnLogin = document.getElementById('auth-tab-login-btn');
-            const btnReg = document.getElementById('auth-tab-register-btn');
-            const btnImp = document.getElementById('auth-tab-import-btn');
-            const formLogin = document.getElementById('auth-login-form');
-            const formReg = document.getElementById('auth-register-form');
-            const formImp = document.getElementById('auth-import-form');
-
-            if (btnLogin) btnLogin.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            if (btnReg) btnReg.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            if (btnImp) btnImp.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-            if (formLogin) formLogin.classList.add('hidden');
-            if (formReg) formReg.classList.add('hidden');
-            if (formImp) formImp.classList.add('hidden');
-
-            if (tab === 'login') {
-                if (btnLogin) btnLogin.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                if (formLogin) formLogin.classList.remove('hidden');
-            } else if (tab === 'register') {
-                if (btnReg) btnReg.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                if (formReg) formReg.classList.remove('hidden');
-            } else {
-                if (btnImp) btnImp.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                if (formImp) formImp.classList.remove('hidden');
-            }
-        };
-
-        window.handleCloudLogin = async function(e) {
-            e.preventDefault();
-            const username = document.getElementById('login-username-input').value.trim();
-            if (!username) return;
-
-            window.localPlayer.username = username;
-            await loadUserDataFromCloud();
-            applyUserDataToHUD();
-            closeModals();
-            showNotification(`Sessão iniciada na nuvem como ${username}!`, "success");
-        };
-
-        let registerAvatarTemp = "😎";
-        window.selectRegisterAvatar = function(emoji) {
-            registerAvatarTemp = emoji;
-            showNotification(`Avatar ${emoji} selecionado!`);
-        };
-
-        window.handleCloudRegister = async function(e) {
-            e.preventDefault();
-            const username = document.getElementById('register-username-input').value.trim();
-            if (!username) return;
-
-            window.localPlayer = {
-                username: username,
-                avatar: registerAvatarTemp,
-                fbux: 1000,
-                x: 400,
-                y: 250,
-                friends: [],
-                requests: []
-            };
-
-            await saveUserDataToCloud();
-            applyUserDataToHUD();
-            exportAccountKeyFile();
-            closeModals();
-            showNotification(`Conta ${username} criada e sincronizada na nuvem!`, "success");
-        };
-
-        window.exportAccountKeyFile = function() {
-            const rawData = JSON.stringify(window.localPlayer);
-            const encryptedKey = "fxblox_key_" + btoa(encodeURIComponent(rawData));
-            const blob = new Blob([encryptedKey], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${window.localPlayer.username}.fxkey`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showNotification(`Chave .fxkey baixada!`);
-        };
-
-        window.processImportAccountKey = async function() {
-            const rawInput = document.getElementById('import-key-textarea').value.trim();
-            if (!rawInput.startsWith('fxblox_key_')) {
-                showNotification("Chave inválida!", "error");
-                return;
-            }
-
-            try {
-                const base64Part = rawInput.replace('fxblox_key_', '');
-                const jsonStr = decodeURIComponent(atob(base64Part));
-                const parsedUser = JSON.parse(jsonStr);
-
-                if (parsedUser && parsedUser.username) {
-                    window.localPlayer = parsedUser;
-                    await saveUserDataToCloud();
-                    applyUserDataToHUD();
-                    closeModals();
-                    showNotification(`Conta de ${parsedUser.username} importada com sucesso!`, "success");
-                }
-            } catch(e) {
-                showNotification("Erro ao processar chave .fxkey", "error");
-            }
-        };
-
-        window.openProfileModal = function() {
-            closeModals();
-            document.getElementById('profile-username-input').value = window.localPlayer.username || '';
-            document.getElementById('profile-modal').classList.remove('hidden');
-            document.getElementById('profile-modal').classList.add('flex');
-        };
-
-        let selectedAvatarTemp = "😎";
-        window.selectProfileAvatar = function(emoji) {
-            selectedAvatarTemp = emoji;
-            showNotification(`Avatar ${emoji} selecionado!`);
-        };
-
-        window.saveProfileChanges = async function() {
-            const newName = document.getElementById('profile-username-input').value.trim();
-            if (newName) {
-                window.localPlayer.username = newName;
-                window.localPlayer.avatar = selectedAvatarTemp;
-                await saveUserDataToCloud();
-                applyUserDataToHUD();
-                closeModals();
-                showNotification("Perfil atualizado na nuvem!", "success");
-            }
-        };
-
-        window.closeModals = function() {
-            document.querySelectorAll('#friends-modal, #search-modal, #profile-modal, #auth-modal').forEach(m => {
-                m.classList.add('hidden');
-                m.classList.remove('flex');
-            });
-        };
-
-        window.openFriendsModal = function() {
-            document.getElementById('friends-modal').classList.remove('hidden');
-            document.getElementById('friends-modal').classList.add('flex');
-            switchFriendsTab('list');
-        };
-
-        window.switchFriendsTab = function(tab) {
-            const btnList = document.getElementById('tab-btn-friends');
-            const btnReq = document.getElementById('tab-btn-requests');
-            const viewList = document.getElementById('friends-tab-list');
-            const viewReq = document.getElementById('friends-tab-requests');
-
-            if (tab === 'list') {
-                btnList.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                btnReq.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-                viewList.classList.remove('hidden');
-                viewReq.classList.add('hidden');
-                renderFriendsList();
-            } else {
-                btnReq.className = 'pb-2 border-b-2 border-fx-accent text-fx-accent font-bold';
-                btnList.className = 'pb-2 border-b-2 border-transparent text-fx-textMuted hover:text-white font-bold';
-                viewReq.classList.remove('hidden');
-                viewList.classList.add('hidden');
-                renderRequestsList();
-            }
-        };
-
-        function renderFriendsList() {
-            const container = document.getElementById('friends-tab-list');
-            const friends = window.localPlayer.friends || [];
-            document.getElementById('friends-count').innerText = friends.length;
-
-            if (friends.length === 0) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-6 text-center">Ainda não adicionou nenhum amigo na nuvem.</p>`;
-                return;
-            }
-
-            container.innerHTML = friends.map(f => `
-                <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-white">👤 ${f}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-fx-green font-bold bg-fx-green/10 border border-fx-green/30 px-2 py-0.5 rounded-md">🟢 Online</span>
-                        <button onclick="removeCloudFriend('${f}')" class="text-fx-red hover:bg-fx-red/10 p-1.5 rounded-lg text-xs" title="Remover Amigo"><i class="fa-solid fa-user-minus"></i></button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderRequestsList() {
-            const container = document.getElementById('friends-tab-requests');
-            const requests = window.localPlayer.requests || [];
-
-            if (requests.length === 0) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-6 text-center">Nenhuma solicitação de amizade pendente.</p>`;
-                return;
-            }
-
-            container.innerHTML = requests.map(reqUser => `
-                <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                    <span class="text-xs font-bold text-white">📩 ${reqUser}</span>
-                    <div class="flex gap-2">
-                        <button onclick="acceptCloudFriend('${reqUser}')" class="bg-fx-green hover:bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-check"></i> Aceitar
-                        </button>
-                        <button onclick="rejectCloudFriend('${reqUser}')" class="bg-fx-main border border-fx-border hover:bg-fx-red hover:border-fx-red text-fx-textMuted hover:text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.openSearchModal = function() {
-            closeModals();
-            document.getElementById('search-modal').classList.remove('hidden');
-            document.getElementById('search-modal').classList.add('flex');
-            searchCloudUsers('');
-        };
-
-        window.searchCloudUsers = async function(query) {
-            const container = document.getElementById('search-results-container');
-            if (!container) return;
-            
-            container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center"><i class="fa-solid fa-spinner animate-spin"></i> Buscando utilizadores reais na nuvem...</p>`;
-
-            try {
-                let allUsers = [];
-                const friendsList = window.localPlayer.friends || [];
-
-                // Buscar APENAS utilizadores reais registados na Nuvem (Firestore)
-                if (db && appId) {
-                    try {
-                        const colRef = collection(db, 'artifacts', appId, 'users');
-                        const snap = await getDocs(colRef);
-                        snap.forEach(docSnap => {
-                            const uData = docSnap.data();
-                            if (uData && uData.username) {
-                                allUsers.push(uData);
-                            }
-                        });
-                    } catch (cloudErr) {}
-                }
-
-                // Sincronizar com registos locais reais do navegador
-                const savedLocalUsers = JSON.parse(localStorage.getItem('fx_blox_users_registry') || '[]');
-                savedLocalUsers.forEach(lu => {
-                    if (!allUsers.some(u => u.username === lu.username)) {
-                        allUsers.push(lu);
-                    }
-                });
-
-                let html = '';
-                let countFound = 0;
-
-                allUsers.forEach(uData => {
-                    const targetName = uData.username;
-
-                    // Filtrar apenas se não for a própria conta e corresponder à busca
-                    if (targetName && targetName !== window.localPlayer.username && targetName.toLowerCase().includes(query.toLowerCase())) {
-                        countFound++;
-                        const isAlreadyFriend = friendsList.includes(targetName);
-                        
-                        html += `
-                            <div class="flex items-center justify-between p-3 bg-fx-main border border-fx-border rounded-xl">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-lg">${uData.avatar || '😎'}</span>
-                                    <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-white">${targetName}</span>
-                                        <span class="text-[9px] text-fx-green font-semibold">🟢 Conta Real Sincronizada</span>
-                                    </div>
-                                </div>
-                                ${isAlreadyFriend ? 
-                                    `<span class="text-[10px] text-fx-accent font-bold bg-fx-accent/10 border border-fx-accent/30 px-2.5 py-1 rounded-lg">Amigos</span>` :
-                                    `<button onclick="sendCloudFriendRequest('${targetName}')" class="bg-fx-accent hover:bg-fx-accentHover text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
-                                        <i class="fa-solid fa-user-plus"></i> Solicitar
-                                    </button>`
-                                }
-                            </div>
-                        `;
-                    }
-                });
-
-                if (countFound === 0) {
-                    container.innerHTML = `
-                        <div class="py-6 text-center flex flex-col items-center gap-2">
-                            <i class="fa-solid fa-user-slash text-fx-textMuted text-2xl"></i>
-                            <p class="text-xs text-fx-textMuted">Nenhum jogador real encontrado ${query ? `com "${query}"` : 'na nuvem ainda'}.</p>
-                            <span class="text-[10px] text-fx-accent">Peça ao seu amigo para criar uma conta na nuvem para ele aparecer aqui!</span>
-                        </div>
-                    `;
-                } else {
-                    container.innerHTML = html;
-                }
-            } catch(e) {
-                container.innerHTML = `<p class="text-xs text-fx-textMuted py-4 text-center">Digite um nome para buscar jogadores reais na nuvem.</p>`;
-            }
-        };
-
-        window.sendCloudFriendRequest = async function(targetUser) {
-            if (!targetUser || targetUser === window.localPlayer.username) return;
-
-            try {
-                // Atualizar localmente
-                if (!window.localPlayer.friends.includes(targetUser)) {
-                    showNotification(`Solicitação enviada para ${targetUser}!`, "success");
-                }
-
-                if (db && appId) {
-                    const targetRef = doc(db, 'artifacts', appId, 'users', targetUser);
-                    const targetSnap = await getDoc(targetRef);
-
-                    if (targetSnap.exists()) {
-                        const targetData = targetSnap.data();
-                        const currentReqs = Array.isArray(targetData.requests) ? targetData.requests : [];
-                        if (!currentReqs.includes(window.localPlayer.username)) {
-                            currentReqs.push(window.localPlayer.username);
-                            await updateDoc(targetRef, { requests: currentReqs });
-                        }
-                    }
-                }
-            } catch (err) {
-                showNotification(`Solicitação enviada para ${targetUser}!`, "success");
-            }
-        };
-
-        window.acceptCloudFriend = async function(reqUser) {
-            try {
-                // Adicionar amigo e remover das solicitações
-                window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== reqUser);
-                if (!window.localPlayer.friends.includes(reqUser)) {
-                    window.localPlayer.friends.push(reqUser);
-                }
-
-                await window.saveUserDataToCloud();
-
-                // Adicionar reciprocamente na conta do outro jogador
-                if (db && appId) {
-                    const friendRef = doc(db, 'artifacts', appId, 'users', reqUser);
-                    const friendSnap = await getDoc(friendRef);
-                    if (friendSnap.exists()) {
-                        const friendData = friendSnap.data();
-                        const fFriends = Array.isArray(friendData.friends) ? friendData.friends : [];
-                        if (!fFriends.includes(window.localPlayer.username)) {
-                            fFriends.push(window.localPlayer.username);
-                            await updateDoc(friendRef, { friends: fFriends });
-                        }
-                    }
-                }
-
-                renderRequestsList();
-                renderFriendsList();
-                updateFriendsBadge();
-                showNotification(`Agora você e ${reqUser} são amigos!`, "success");
-            } catch (err) {
-                showNotification(`Erro ao aceitar solicitação.`, "error");
-            }
-        };
-
-        window.rejectCloudFriend = async function(reqUser) {
-            window.localPlayer.requests = window.localPlayer.requests.filter(u => u !== reqUser);
-            await window.saveUserDataToCloud();
-            renderRequestsList();
-            updateFriendsBadge();
-            showNotification(`Solicitação de ${reqUser} recusada.`);
-        };
-
-        window.removeCloudFriend = async function(friendName) {
-            window.localPlayer.friends = window.localPlayer.friends.filter(u => u !== friendName);
-            await window.saveUserDataToCloud();
-
-            if (db && appId) {
-                try {
-                    const friendRef = doc(db, 'artifacts', appId, 'users', friendName);
-                    const friendSnap = await getDoc(friendRef);
-                    if (friendSnap.exists()) {
-                        const friendData = friendSnap.data();
-                        const fFriends = (friendData.friends || []).filter(u => u !== window.localPlayer.username);
-                        await updateDoc(friendRef, { friends: fFriends });
-                    }
-                } catch(e) {}
-            }
-
-            renderFriendsList();
-            showNotification(`${friendName} removido da lista de amigos.`);
-        };
-
-        function updateFriendsBadge() {
-            const reqCount = (window.localPlayer.requests || []).length;
-            const badgeSidebar = document.getElementById('pending-requests-badge');
-            const badgeModal = document.getElementById('modal-requests-badge');
-
-            if (badgeSidebar) {
-                if (reqCount > 0) {
-                    badgeSidebar.innerText = reqCount;
-                    badgeSidebar.classList.remove('hidden');
-                } else {
-                    badgeSidebar.classList.add('hidden');
-                }
-            }
-
-            if (badgeModal) {
-                badgeModal.innerText = reqCount;
-            }
-        }
-
-        window.joinGameRoom = function(gameTitle, emoji) {
-            document.getElementById('active-game-title').innerText = gameTitle;
-            document.getElementById('active-game-emoji').innerText = emoji || "🎮";
-            document.getElementById('game-room-screen').classList.remove('hidden');
-            document.getElementById('game-room-screen').classList.add('flex');
-            initCanvasGameEngine();
-        };
-
-        window.leaveGameRoom = function() {
-            document.getElementById('game-room-screen').classList.add('hidden');
-            document.getElementById('game-room-screen').classList.remove('flex');
-        };
-
-        function initCanvasGameEngine() {
-            const canvas = document.getElementById('gameCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-
-            window.onkeydown = (e) => {
-                if (e.key === 'ArrowUp' || e.key === 'w') window.localPlayer.y = Math.max(20, window.localPlayer.y - 10);
-                if (e.key === 'ArrowDown' || e.key === 's') window.localPlayer.y = Math.min(480, window.localPlayer.y + 10);
-                if (e.key === 'ArrowLeft' || e.key === 'a') window.localPlayer.x = Math.max(20, window.localPlayer.x - 10);
-                if (e.key === 'ArrowRight' || e.key === 'd') window.localPlayer.x = Math.min(780, window.localPlayer.x + 10);
-            };
-
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Desenhar grade do mapa
-                ctx.strokeStyle = '#232736';
-                ctx.lineWidth = 1;
-                for (let x = 0; x < canvas.width; x += 40) {
-                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-                }
-                for (let y = 0; y < canvas.height; y += 40) {
-                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-                }
-
-                // Desenhar jogador local
-                const p = window.localPlayer;
-                ctx.fillStyle = '#8b5cf6';
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 12px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${p.avatar || '😎'} ${p.username || 'Convidado'}`, p.x, p.y - 22);
-
-                requestAnimationFrame(draw);
-            }
-            draw();
-        }
-
-        window.sendCloudChatMessage = function(e) {
-            e.preventDefault();
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            const chatContainer = document.getElementById('chat-messages');
-            const msgEl = document.createElement('div');
-            msgEl.className = 'bg-fx-main p-2 rounded-lg border border-fx-border text-white flex flex-col';
-            msgEl.innerHTML = `
-                <span class="text-[10px] text-fx-accent font-bold">${window.localPlayer.username || 'Convidado'}</span>
-                <span class="text-xs">${msg}</span>
-            `;
-            chatContainer.appendChild(msgEl);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            input.value = '';
-        };
-    </script>
+<body>
+
+<div id="login">
+<div class="login">
+<h1 class="logo">GO<span>BLOX</span></h1>
+<p>PLAY · CREATE · CONNECT</p>
+<input id="name" placeholder="Nome do jogador" maxlength="16">
+<button onclick="login()">ENTRAR NO GOBLOX</button>
+</div>
+</div>
+
+<header>
+<div class="logo">GO<span>BLOX</span></div>
+<div id="user"></div>
+<button onclick="logout()">SAIR</button>
+</header>
+
+<div class="layout">
+<nav>
+<button onclick="page('home')">🏠 Início</button>
+<button onclick="page('games')">🎮 Jogos</button>
+<button onclick="page('profile')">👤 Perfil</button>
+</nav>
+
+<main>
+<section id="home">
+<h1>Bem-vindo ao Goblox!</h1>
+<p>Escolha uma experiência e comece a jogar.</p>
+<div class="games" id="featured"></div>
+
+<div class="panel">
+<h2>🌐 Multiplayer</h2>
+<button onclick="createRoom()">CRIAR SALA</button>
+<p>Compartilhe seu código com amigos.</p>
+<input id="room" placeholder="Código da sala">
+<button onclick="joinRoom()">ENTRAR NA SALA</button>
+<p id="status">Desconectado</p>
+</div>
+</section>
+
+<section id="games" class="hidden">
+<h1>Todos os jogos</h1>
+<div class="games" id="catalog"></div>
+</section>
+
+<section id="profile" class="hidden">
+<h1>Perfil</h1>
+<div class="panel">
+<div style="font-size:55px">🧑</div>
+<h2 id="profileName"></h2>
+<p>Nível 1</p>
+<p>Jogador Goblox</p>
+</div>
+</section>
+</main>
+</div>
+
+<div id="play">
+<canvas id="world"></canvas>
+<div class="hud">
+<div id="gameName">GOBLOX</div>
+<button onclick="exitGame()">VOLTAR</button>
+</div>
+<div id="hint">WASD para movimentar · ESPAÇO para pular</div>
+</div>
+
+<script>
+let username="";
+let peer=null;
+let connections=[];
+let players={};
+let scene,camera,renderer,character;
+let keys={};
+let velocity=0;
+let jumping=false;
+let yaw=0;
+let currentGame="";
+let running=false;
+let lastSend=0;
+
+const games=[
+{id:"obby",name:"Goblox Obby",icon:"🧗",description:"Parkour 3D multiplayer"},
+{id:"arena",name:"Goblox Arena",icon:"⚔️",description:"Arena 3D"},
+{id:"racing",name:"Goblox Racing",icon:"🏎️",description:"Corrida 3D"},
+{id:"football",name:"Goblox Football",icon:"⚽",description:"Futebol 3D"}
+];
+
+function login(){
+let n=document.getElementById("name").value.trim();
+if(n.length<3)return alert("Digite pelo menos 3 letras");
+username=n;
+localStorage.setItem("goblox_user",n);
+document.getElementById("login").style.display="none";
+document.getElementById("user").textContent="👤 "+n;
+document.getElementById("profileName").textContent=n;
+renderGames();
+}
+function logout(){
+localStorage.removeItem("goblox_user");
+location.reload();
+}
+
+if(localStorage.getItem("goblox_user")){
+document.getElementById("name").value=localStorage.getItem("goblox_user");
+}
+
+function page(p){
+["home","games","profile"].forEach(x=>{
+document.getElementById(x).classList.toggle("hidden",x!==p);
+});
+}
+
+function renderGames(){
+let html=games.map(g=>`
+<div class="game">
+<div class="icon">${g.icon}</div>
+<h2>${g.name}</h2>
+<p>${g.description}</p>
+<button onclick="startGame('${g.id}')">JOGAR</button>
+</div>`).join("");
+document.getElementById("featured").innerHTML=html;
+document.getElementById("catalog").innerHTML=html;
+}
+
+async function createRoom(){
+try{
+if(peer)peer.destroy();
+connections=[];
+peer=new Peer();
+peer.on("open",id=>{
+document.getElementById("room").value=id;
+document.getElementById("status").textContent="Sala criada: "+id;
+});
+peer.on("connection",conn=>{
+connections.push(conn);
+setupConnection(conn);
+});
+}catch(e){alert("Erro ao criar sala")}
+}
+
+function joinRoom(){
+let id=document.getElementById("room").value.trim();
+if(!id)return alert("Digite o código");
+if(peer)peer.destroy();
+connections=[];
+peer=new Peer();
+peer.on("open",()=>{
+let conn=peer.connect(id);
+conn.on("open",()=>{
+connections.push(conn);
+setupConnection(conn);
+conn.send({type:"hello",name:username});
+document.getElementById("status").textContent="Conectado!";
+});
+});
+peer.on("error",()=>alert("Não foi possível conectar"));
+}
+
+function setupConnection(conn){
+conn.on("data",data=>{
+if(data.type==="hello"){
+addPlayer(conn.peer,data.name);
+}
+if(data.type==="move"){
+if(!players[conn.peer])addPlayer(conn.peer,"Jogador");
+players[conn.peer].position.set(data.x,data.y,data.z);
+players[conn.peer].rotation.y=data.yaw;
+}
+});
+conn.on("close",()=>{
+if(players[conn.peer]){
+scene.remove(players[conn.peer]);
+delete players[conn.peer];
+}
+});
+}
+
+function sendAll(data){
+connections.forEach(c=>{
+if(c.open)c.send(data);
+});
+}
+
+function addPlayer(id,name){
+if(!scene||players[id])return;
+let p=makeCharacter(0,0,0,0x20d6b8);
+scene.add(p);
+players[id]=p;
+}
+
+function makeCharacter(x,y,z,color){
+let group=new THREE.Group();
+let body=new THREE.Mesh(
+new THREE.BoxGeometry(0.9,1.1,0.5),
+new THREE.MeshStandardMaterial({color})
+);
+body.position.y=1.3;
+group.add(body);
+
+let head=new THREE.Mesh(
+new THREE.BoxGeometry(0.7,0.7,0.7),
+new THREE.MeshStandardMaterial({color:0xffc795})
+);
+head.position.y=2.2;
+group.add(head);
+
+for(let s of [-1,1]){
+let leg=new THREE.Mesh(
+new THREE.BoxGeometry(0.35,0.85,0.4),
+new THREE.MeshStandardMaterial({color:0x263d75})
+);
+leg.position.set(s*0.23,0.42,0);
+group.add(leg);
+}
+group.position.set(x,y,z);
+return group;
+}
+
+function box(x,y,z,w,h,d,color){
+let m=new THREE.Mesh(
+new THREE.BoxGeometry(w,h,d),
+new THREE.MeshStandardMaterial({color})
+);
+m.position.set(x,y,z);
+scene.add(m);
+return m;
+}
+
+function startGame(id){
+currentGame=id;
+document.getElementById("play").style.display="block";
+document.getElementById("gameName").textContent=
+games.find(g=>g.id===id).name;
+buildWorld();
+running=true;
+animate();
+}
+
+function buildWorld(){
+scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87c8f0);
+
+camera=new THREE.PerspectiveCamera(
+70,innerWidth/innerHeight,0.1,300
+);
+
+renderer=new THREE.WebGLRenderer({
+canvas:document.getElementById("world"),
+antialias:true
+});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x667788,2));
+
+let light=new THREE.DirectionalLight(0xffffff,2);
+light.position.set(10,20,10);
+scene.add(light);
+
+box(0,-0.5,0,100,1,100,
+currentGame==="football"?0x369c50:0x58ad59);
+
+character=makeCharacter(0,0,5,0x2878ed);
+scene.add(character);
+
+if(currentGame==="obby"){
+for(let i=0;i<15;i++){
+box((i%3-1)*4,0.3,-i*4,
+3.5,0.6,3.5,
+[0xffb43b,0x38b8ee,0xa77df5][i%3]);
+}
+}
+if(currentGame==="arena"){
+for(let i=0;i<15;i++){
+let a=i*Math.PI*2/15;
+box(Math.cos(a)*12,1,Math.sin(a)*12,2,2,2,0xb3a16b);
+}
+}
+if(currentGame==="racing"){
+for(let i=0;i<24;i++){
+let a=i*Math.PI/12;
+let m=box(Math.cos(a)*12,0.1,Math.sin(a)*12,5,.2,2,0x333b4c);
+m.rotation.y=-a;
+}
+}
+if(currentGame==="football"){
+box(0,0.05,0,35,.1,23,0x42ae59);
+box(0,0.12,0,.15,.1,23,0xffffff);
+}
+
+for(let i=0;i<12;i++){
+let x=(i%4-2)*12;
+let z=-Math.floor(i/4)*15-10;
+box(x,1,z,.8,2,.8,0x80512f);
+box(x,3,z,3,3,3,0x25874c);
+}
+
+camera.position.set(0,5,12);
+}
+
+function animate(){
+if(!running)return;
+requestAnimationFrame(animate);
+
+let forward=(keys.w||keys.arrowup?1:0)-
+(keys.s||keys.arrowdown?1:0);
+let side=(keys.d||keys.arrowright?1:0)-
+(keys.a||keys.arrowleft?1:0);
+
+let speed=0.15;
+character.position.x+=side*speed;
+character.position.z-=forward*speed;
+
+if(forward||side)character.rotation.y=Math.atan2(side,forward);
+
+if(keys[" "]&&!jumping){
+velocity=.28;
+jumping=true;
+}
+character.position.y+=velocity;
+velocity-=.015;
+
+if(character.position.y<0){
+character.position.y=0;
+velocity=0;
+jumping=false;
+}
+
+camera.position.x=character.position.x;
+camera.position.y=character.position.y+5;
+camera.position.z=character.position.z+9;
+camera.lookAt(character.position.x,character.position.y+1,character.position.z);
+
+if(Date.now()-lastSend>70){
+lastSend=Date.now();
+sendAll({
+type:"move",
+x:character.position.x,
+y:character.position.y,
+z:character.position.z,
+yaw:character.rotation.y
+});
+}
+renderer.render(scene,camera);
+}
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+});
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+});
+
+function exitGame(){
+running=false;
+document.getElementById("play").style.display="none";
+if(renderer)renderer.dispose();
+scene=null;
+players={};
+}
+
+window.addEventListener("resize",()=>{
+if(camera&&renderer){
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+}
+});
+</script>
 </body>
 </html>
