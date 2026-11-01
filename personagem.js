@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 
-export function criarPersonagem(nomePlayer = "Jogador") {
+export function criarPersonagem(nomePersonalizado) {
   const grupoPersonagem = new THREE.Group();
+
+  // Usa o nome passado pelo jogo, ou tenta o localStorage, ou define "Jogador"
+  const nomePlayer = nomePersonalizado || localStorage.getItem('goblox_player_nick') || "Jogador";
 
   // Materiais padrão com cores vibrantes
   const materialRoupa = new THREE.MeshStandardMaterial({ color: 0x2678ed, roughness: 0.75 });
@@ -71,7 +74,6 @@ export function criarPersonagem(nomePlayer = "Jogador") {
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
   
-  // Posiciona o nick logo acima da cabeça do personagem
   sprite.position.set(0, 3.5, 0);
   sprite.scale.set(2.0, 0.5, 1.0);
   grupoPersonagem.add(sprite);
