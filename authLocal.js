@@ -5,36 +5,20 @@ function normalizeNick(nick) {
   return String(nick || "").trim().toLowerCase();
 }
 
-function generateSalt() {
-  return crypto.getRandomValues(new Uint8Array(16));
+export function getAccounts() {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
 }
 
-async function hashPassword(password, salt) {
-  const encoder = new TextEncoder();
-
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: 250000,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    256
-  );
-
-  return Array.from(new Uint8Array(bits));
+export function saveAccounts(accounts) {
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
-export async function createAccount(nick, password) {
+export function createAccount(nick, password) {
   const cleanNick = String(nick || "").trim();
 
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(cleanNick)) {
@@ -45,49 +29,42 @@ export async function createAccount(nick, password) {
     throw new Error("A senha precisa ter pelo menos 6 caracteres.");
   }
 
-  const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "{}");
+  const accounts = getAccounts();
   const key = normalizeNick(cleanNick);
 
   if (accounts[key]) {
     throw new Error("Este nick já existe.");
   }
 
-  const salt = generateSalt();
-  const passwordHash = await hashPassword(password, salt);
-
   accounts[key] = {
     nick: cleanNick,
-    passwordHash: passwordHash,
-    salt: Array.from(salt),
+    password: String(password),
     createdAt: Date.now()
   };
 
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  saveAccounts(accounts);
   setSession(cleanNick);
 
   return { nick: cleanNick };
 }
 
-export async function loginAccount(nick, password) {
+export function loginAccount(nick, password) {
   const cleanNick = String(nick || "").trim();
   const key = normalizeNick(cleanNick);
 
-  const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "{}");
+  const accounts = getAccounts();
   const account = accounts[key];
 
   if (!account) {
     throw new Error("Nick não encontrado.");
   }
 
-  const salt = new Uint8Array(account.salt);
-  const passwordHash = await hashPassword(password, salt);
-  const currentHash = Array.from(passwordHash);
-
-  if (JSON.stringify(currentHash) !== JSON.stringify(account.passwordHash)) {
+  if (account.password !== String(password)) {
     throw new Error("Senha incorreta.");
   }
 
   setSession(cleanNick);
+
   return { nick: cleanNick };
 }
 
@@ -109,12 +86,12 @@ export function getSession() {
   }
 }
 
-export function logout() {
-  localStorage.removeItem(SESSION_KEY);
-  window.location.href = "lock.html";
-}
-
 export function getCurrentNick() {
   const session = getSession();
   return session ? session.nick : null;
+}
+
+export function logout() {
+  localStorage.removeItem(SESSION_KEY);
+  window.location.href = "lock.html";
 }
