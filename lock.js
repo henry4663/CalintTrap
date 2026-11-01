@@ -1,33 +1,19 @@
-import {
-  auth,
-  db,
-  ref,
-  set,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  updateProfile
-} from "./firebase.js";
+import { createAccount, loginAccount, getSession } from "./authLocal.js";
 
 const form = document.getElementById("authForm");
 const usernameInput = document.getElementById("username");
 const loginUsernameInput = document.getElementById("loginUsername");
 const passwordInput = document.getElementById("password");
-
-const nameGroup = document.getElementById("nameGroup");
 const message = document.getElementById("message");
 const submitButton = document.getElementById("submitButton");
 const switchModeButton = document.getElementById("switchMode");
 const switchText = document.getElementById("switchText");
+const nameGroup = document.getElementById("nameGroup");
 
 let registerMode = false;
 let loading = false;
 
 const LOBBY = "./lobby.html";
-
-function toFirebaseEmail(username) {
-  return `${String(username).trim().toLowerCase()}@goblox-login.com`;
-}
 
 function showMessage(text, success = false) {
   message.textContent = text;
@@ -37,26 +23,15 @@ function showMessage(text, success = false) {
 function setLoading(value) {
   loading = value;
   submitButton.disabled = value;
-  submitButton.textContent = value
-    ? "AGUARDE..."
-    : registerMode ? "CRIAR CONTA" : "ENTRAR";
+  submitButton.textContent = value ? "AGUARDE..." : registerMode ? "CRIAR CONTA" : "ENTRAR";
 }
 
 function getUsernameValue() {
-  const raw = registerMode ? usernameInput.value : loginUsernameInput.value;
-  return String(raw || "").trim();
+  return String((registerMode ? usernameInput.value : loginUsernameInput.value) || "").trim();
 }
 
 function isValidUsername(username) {
   return /^[a-zA-Z0-9_]{3,20}$/.test(username);
-}
-
-function isFirebaseReady() {
-  if (!auth || !db) {
-    showMessage("Firebase não está disponível. Verifique a configuração do projeto.");
-    return false;
-  }
-  return true;
 }
 
 switchModeButton.addEventListener("click", () => {
@@ -77,12 +52,12 @@ switchModeButton.addEventListener("click", () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  if (!isFirebaseReady() || loading) return;
+  if (loading) return;
 
-  const username = getUsernameValue();
+  const nick = getUsernameValue();
   const password = String(passwordInput.value || "").trim();
 
-  if (!isValidUsername(username)) {
+  if (!isValidUsername(nick)) {
     showMessage("Nick inválido. Use 3 a 20 letras, números ou _.");
     return;
   }
@@ -95,59 +70,32 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
 
   try {
-    const email = toFirebaseEmail(username);
-
     if (registerMode) {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-
-      await updateProfile(result.user, {
-        displayName: username
-      });
-
-      await set(ref(db, `users/${username.toLowerCase()}`), {
-        username,
-        uid: result.user.uid,
-        createdAt: Date.now()
-      });
-
-      localStorage.setItem("goblox_user", username);
+      await createAccount(nick, password);
       showMessage("Conta criada com sucesso!", true);
 
-    } else {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const userName = result.user.displayName || username;
-      localStorage.setItem("goblox_user", userName);
-      showMessage("Login realizado com sucesso!", true);
+      setTimeout(() => {
+        window.location.assign(LOBBY);
+      }, 500);
+
+      return;
     }
+
+    await loginAccount(nick, password);
+    showMessage("Login realizado com sucesso!", true);
 
     setTimeout(() => {
       window.location.assign(LOBBY);
-    }, 600);
+    }, 500);
 
   } catch (error) {
-    const errors = {
-      "auth/email-already-in-use": "Nick já cadastrado.",
-      "auth/invalid-credential": "Nick ou senha incorretos.",
-      "auth/weak-password": "Senha muito fraca.",
-      "auth/network-request-failed": "Erro de internet.",
-      "auth/operation-not-allowed": "Ative o Email/Password no Firebase.",
-      "auth/user-not-found": "Nick não encontrado.",
-      "auth/too-many-requests": "Muitas tentativas. Tente mais tarde."
-    };
-
-    showMessage(errors[error.code] || error.message);
+    showMessage(error.message || "Erro ao autenticar.");
   } finally {
     setLoading(false);
   }
 });
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) return;
-
-  const userName = user.displayName || (user.email || "").split("@")[0] || "Jogador";
-  localStorage.setItem("goblox_user", userName);
-
-  if (!loading) {
-    window.location.replace(LOBBY);
-  }
-});
+const session = getSession();
+if (session && session.nick) {
+  window.location.replace(LOBBY);
+}
