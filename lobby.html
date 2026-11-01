@@ -6,12 +6,60 @@
 <title>Goblox — Lobby</title>
 <link rel="stylesheet" href="global.css">
 <link rel="stylesheet" href="lobby.css">
+<style>
+  /* Modal de Configurações */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(5px);
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-card {
+    background: #14141f; border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 24px; border-radius: 20px; width: 90%; max-width: 420px;
+    color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-title { font-size: 1.4rem; font-weight: 800; color: #a78bfa; }
+  .btn-close { background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; }
+  
+  /* Opções de Configuração */
+  .config-group { margin-bottom: 20px; }
+  .config-label { font-size: 0.95rem; color: #aaa; margin-bottom: 8px; display: block; }
+  .config-options { display: flex; gap: 10px; }
+  .btn-mode {
+    flex: 1; padding: 12px; border: 2px solid rgba(255, 255, 255, 0.1);
+    background: #1e1e2d; color: #fff; border-radius: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s ease; text-align: center;
+  }
+  .btn-mode.active {
+    border-color: #8b5cf6; background: #8b5cf6; color: #fff;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+  }
+
+  /* ESTILOS DINÂMICOS PARA MODO MOBILE */
+  body.mode-mobile button, 
+  body.mode-mobile .game-card, 
+  body.mode-mobile .icon-btn {
+    transform: scale(1.03);
+  }
+  body.mode-mobile .game-grid {
+    gap: 20px !important;
+  }
+  body.mode-mobile .card-content h3 {
+    font-size: 1.3rem !important;
+  }
+  body.mode-mobile .icon-btn {
+    width: 48px !important; height: 48px !important; font-size: 1.4rem !important;
+  }
+</style>
 </head>
-<body>
+<body class="mode-pc">
 
 <header>
   <div class="header-logo">GOBLOX</div>
   <div class="header-right">
+    <button class="icon-btn" id="btnConfig" title="Configurações">⚙️</button>
     <button class="icon-btn" id="btnPerfil" title="Perfil">👤</button>
     <button class="icon-btn" id="btnSair" title="Sair">⎋</button>
   </div>
@@ -27,7 +75,7 @@
   
   <div class="game-grid">
     
-    <!-- Jogo 1: Arena FPS -->
+    <!-- Jogo 1: FPS Arena -->
     <div class="game-card card-fps" onclick="abrirJogo('FPS Arena')">
       <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop" class="card-img" alt="FPS">
       <div class="card-badge badge-blue">AÇÃO</div>
@@ -47,19 +95,17 @@
       </div>
     </div>
 
-    <!-- Jogo 3: Parkour -->
-<!-- Mude de: onclick="abrirJogo('Parkour Extremo')" -->
-<!-- Para: -->
-<a href="jogo-parkour.html" class="game-card card-parkour">
+    <!-- Jogo 3: Parkour Extremo -->
+    <a href="jogo-parkour.html" class="game-card card-parkour">
       <img src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Parkour">
       <div class="card-badge badge-purple">NOVO</div>
       <div class="card-content">
         <h3>Parkour Extremo</h3>
         <p>Pule e alcance o topo</p>
       </div>
-    </div>
+    </a>
 
-    <!-- Jogo 4: Arena PvP (aquele que já fizemos) -->
+    <!-- Jogo 4: Arena 3D -->
     <a href="jogo-3d.html" class="game-card card-arena">
       <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Arena 3D">
       <div class="card-badge badge-yellow">JOGAR AGORA</div>
@@ -72,7 +118,87 @@
   </div>
 </main>
 
+<!-- MODAL DE CONFIGURAÇÕES -->
+<div class="modal-overlay" id="modalConfig">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ Configurações</span>
+      <button class="btn-close" id="fecharConfig">&times;</button>
+    </div>
+    
+    <div class="config-group">
+      <label class="config-label">Modo de Dispositivo / Controles:</label>
+      <div class="config-options">
+        <button class="btn-mode" id="btnModoPC">💻 PC (Teclado)</button>
+        <button class="btn-mode" id="btnModoMobile">📱 Mobile (Touch)</button>
+      </div>
+    </div>
+
+    <div class="config-group">
+      <label class="config-label">Orientação de Tela:</label>
+      <p style="font-size: 0.85rem; color: #888;">No modo Mobile, a tela trava em modo Paisagem (Horizontal) automaticamente nos jogos.</p>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
+  
+<script type="module">
+  import { toast } from './firebase.js';
+
+  const modal = document.getElementById('modalConfig');
+  const btnConfig = document.getElementById('btnConfig');
+  const fecharConfig = document.getElementById('fecharConfig');
+  const btnPC = document.getElementById('btnModoPC');
+  const btnMobile = document.getElementById('btnModoMobile');
+
+  // Detecta ou carrega a preferência salva
+  let modoAtual = localStorage.getItem('goblox_modo');
+  if (!modoAtual) {
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth < 768;
+    modoAtual = isTouch ? 'mobile' : 'pc';
+  }
+
+  function aplicarModo(modo) {
+    modoAtual = modo;
+    localStorage.setItem('goblox_modo', modo);
+
+    if (modo === 'mobile') {
+      document.body.classList.remove('mode-pc');
+      document.body.classList.add('mode-mobile');
+      btnMobile.classList.add('active');
+      btnPC.classList.remove('active');
+
+      // Tenta forçar modo paisagem no celular se suportado
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } else {
+      document.body.classList.remove('mode-mobile');
+      document.body.classList.add('mode-pc');
+      btnPC.classList.add('active');
+      btnMobile.classList.remove('active');
+    }
+  }
+
+  // Inicializa o modo
+  aplicarModo(modoAtual);
+
+  // Eventos do Modal
+  btnConfig.addEventListener('click', () => modal.classList.add('active'));
+  fecharConfig.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+  btnPC.addEventListener('click', () => {
+    aplicarModo('pc');
+    toast("Modo PC ativado!", "sucesso");
+  });
+
+  btnMobile.addEventListener('click', () => {
+    aplicarModo('mobile');
+    toast("Modo Mobile ativado (Botões maiores)!", "sucesso");
+  });
+</script>
 <script type="module" src="lobby.js"></script>
 </body>
 </html>
