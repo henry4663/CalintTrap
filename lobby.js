@@ -1,12 +1,9 @@
 import { getCurrentNick, logout } from "./authLocal.js";
-import { saveJsonToFile, loadJsonFromFile } from "./saveFile.js";
 
 const boasVindas = document.getElementById("boasVindas");
-const btnSair = document.getElementById("btnSair");
 const btnPerfil = document.getElementById("btnPerfil");
-const btnSalvarDados = document.getElementById("btnSalvarDados");
+const btnSair = document.getElementById("btnSair");
 const toast = document.getElementById("toast");
-const inputSave = document.getElementById("inputSave");
 
 function mostrarToast(msg, tipo = "info") {
   if (!toast) return;
@@ -25,88 +22,31 @@ function verificarSessao() {
 
   if (!nick) {
     window.location.href = "lock.html";
-    return null;
+    return;
   }
 
-  if (boasVindas) {
-    boasVindas.textContent = `Olá, ${nick}!`;
-  }
-
-  return nick;
+  boasVindas.textContent = `Olá, ${nick}!`;
 }
 
-function salvarDadosDoJogo() {
-  const nick = getCurrentNick();
+btnPerfil.addEventListener("click", () => {
+  mostrarToast("Tela de perfil em construção!", "warning");
+});
 
-  const saveData = {
-    nick: nick || "Jogador",
-    vida: 100,
-    moedas: 120,
-    nivel: 1,
-    inventario: [
-      { id: "pocao", nome: "Poção" },
-      { id: "espada", nome: "Espada" }
-    ],
-    posicao: { x: 0, y: 2, z: 0 }
-  };
+btnSair.addEventListener("click", () => {
+  logout();
+});
 
-  saveJsonToFile(saveData, `${(nick || "save").toLowerCase()}.fxkey`)
-    .then(() => {
-      mostrarToast("Save salvo com sucesso!", "success");
-    })
-    .catch(() => {
-      mostrarToast("Erro ao salvar o save.", "error");
-    });
-}
+document.querySelectorAll(".game-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const page = card.dataset.page;
 
-async function carregarDadosDoArquivo(file) {
-  if (!file) return;
-
-  try {
-    const data = await loadJsonFromFile(file);
-
-    if (!data) {
-      throw new Error("Arquivo inválido");
+    if (!page) {
+      mostrarToast("Jogo não disponível ainda.", "warning");
+      return;
     }
 
-    console.log("Dados carregados:", data);
-    mostrarToast("Save carregado com sucesso!", "success");
-  } catch {
-    mostrarToast("Arquivo inválido ou corrompido.", "error");
-  }
-}
-
-function configurarEventos() {
-  btnSair?.addEventListener("click", () => {
-    logout();
+    window.location.href = page;
   });
-
-  btnPerfil?.addEventListener("click", () => {
-    mostrarToast("Tela de perfil em construção!", "info");
-  });
-
-  btnSalvarDados?.addEventListener("click", () => {
-    salvarDadosDoJogo();
-  });
-
-  inputSave?.addEventListener("change", (event) => {
-    const file = event.target.files?.[0];
-    carregarDadosDoArquivo(file);
-  });
-
-  document.querySelectorAll(".game-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const nome = card.dataset.game || "Jogo";
-      mostrarToast(`${nome} em desenvolvimento!`, "warning");
-    });
-  });
-}
-
-window.abrirJogo = (nomeJogo) => {
-  mostrarToast(`${nomeJogo} estará disponível em breve!`, "warning");
-};
-
-document.addEventListener("DOMContentLoaded", () => {
-  verificarSessao();
-  configurarEventos();
 });
+
+verificarSessao();
