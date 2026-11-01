@@ -1,21 +1,236 @@
-.login-box {
-  background: var(--card); padding: 36px 28px; border-radius: 20px;
-  width: 100%; max-width: 380px; text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
-  position: relative; overflow: hidden;
+```css
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
 }
-.login-box::before {
-  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-  background: conic-gradient(from 0deg, transparent, var(--accent), transparent 30%);
-  animation: spin 6s linear infinite; opacity: .08; z-index: 0;
+
+body {
+    min-height: 100vh;
+    background: #080711;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.login-box > * { position: relative; z-index: 1; }
+
+/* FUNDO */
+
+.lock-background {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+
+    background:
+        radial-gradient(circle at 15% 20%, #6725a855, transparent 40%),
+        radial-gradient(circle at 85% 75%, #a020dd33, transparent 40%),
+        #080711;
+}
+
+.lock-background::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background-image:
+        linear-gradient(#ffffff06 1px, transparent 1px),
+        linear-gradient(90deg, #ffffff06 1px, transparent 1px);
+
+    background-size: 45px 45px;
+}
+
+/* LOGIN */
+
+.lock-container {
+    width: 410px;
+    max-width: 92%;
+    padding: 42px;
+
+    background: rgba(19, 16, 31, 0.96);
+
+    border: 1px solid #64358b;
+    border-radius: 16px;
+
+    box-shadow:
+        0 0 50px #7926b522,
+        0 20px 80px #0008;
+
+    animation: aparecer .6s ease;
+}
+
+/* LOGO */
 
 .logo {
-  font-size: 2.4rem; font-weight: 900; margin-bottom: 4px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
+    text-align: center;
+    font-size: 43px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: white;
 }
-.logo-sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
+
+.logo span {
+    color: #a855f7;
+    text-shadow: 0 0 20px #a855f7;
+}
+
+.subtitle {
+    text-align: center;
+    color: #938a9e;
+    margin-top: 12px;
+    margin-bottom: 32px;
+    font-size: 14px;
+}
+
+/* CAMPOS */
+
+label {
+    display: block;
+    color: #c9b7df;
+    font-size: 13px;
+    margin-bottom: 9px;
+    margin-top: 19px;
+}
+
+input {
+    display: block;
+    width: 100%;
+    height: 48px;
+
+    padding: 0 14px;
+
+    background: #0c0a14;
+    color: white;
+
+    border: 1px solid #393044;
+    border-radius: 8px;
+
+    outline: none;
+    font-size: 14px;
+
+    transition: .25s;
+}
+
+input::placeholder {
+    color: #696273;
+}
+
+input:focus {
+    border-color: #a855f7;
+    box-shadow: 0 0 12px #a855f733;
+}
+
+/* BOTÃO */
+
+#submitButton {
+    width: 100%;
+    height: 49px;
+
+    margin-top: 27px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: linear-gradient(
+        110deg,
+        #7926bd,
+        #a344e8
+    );
+
+    color: white;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    transition: .25s;
+}
+
+#submitButton:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 25px #a855f755;
+    transform: translateY(-2px);
+}
+
+#submitButton:active {
+    transform: scale(.98);
+}
+
+#submitButton:disabled {
+    opacity: .5;
+    cursor: wait;
+}
+
+/* MENSAGEM */
+
+#message {
+    min-height: 17px;
+    margin-top: 17px;
+    text-align: center;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+/* LINKS */
+
+.links {
+    margin-top: 25px;
+    text-align: center;
+    color: #898191;
+    font-size: 13px;
+}
+
+.links p {
+    margin-top: 10px;
+}
+
+.links button {
+    background: none;
+    border: none;
+
+    color: #bd75ff;
+    font-size: 13px;
+
+    cursor: pointer;
+    transition: .2s;
+}
+
+.links button:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* ELEMENTOS OCULTOS */
+
+[hidden] {
+    display: none !important;
+}
+
+/* ANIMAÇÃO */
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CELULAR */
+
+@media (max-width: 500px) {
+    .lock-container {
+        padding: 30px 24px;
+    }
+
+    .logo {
+        font-size: 36px;
+    }
+}
+```
