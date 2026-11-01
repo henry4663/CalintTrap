@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — Parkour</title>
+<title>Goblox — Parkour Multiplayer</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
   body { overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
@@ -22,11 +22,11 @@
     text-decoration: none; backdrop-filter: blur(8px);
   }
   
-  /* Tela de Game Over */
+  /* Tela de Game Over Local */
   #gameOver {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+    position: absolute; inset: 0; background: rgba(0,0,0,0.75);
     display: none; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 20; color: #fff; text-align: center;
+    z-index: 20; color: #fff; text-align: center; backdrop-filter: blur(4px);
   }
   #gameOver h1 { font-size: 3rem; color: #ef4444; margin-bottom: 10px; }
   #gameOver p { font-size: 1.2rem; margin-bottom: 20px; color: #ccc; }
@@ -35,7 +35,7 @@
     background: #22c55e; color: #000; border: none; border-radius: 12px; cursor: pointer;
   }
 
-  /* Joystick Mobile */
+  /* Controls Mobile */
   #joystick-zone {
     position: absolute; bottom: 30px; left: 30px; z-index: 10;
     width: 120px; height: 120px; background: rgba(255,255,255,.05);
@@ -48,7 +48,6 @@
     border-radius: 50%; box-shadow: 0 0 15px rgba(124,58,237,.8);
     pointer-events: none;
   }
-  /* Botão de Pulo Mobile */
   #btnPulo {
     position: absolute; bottom: 40px; right: 30px; z-index: 10;
     width: 80px; height: 80px; background: rgba(124,58,237,.8);
@@ -71,7 +70,7 @@
   <div id="gameOver">
     <h1>Você caiu!</h1>
     <p>Alcance: <span id="alturaFinal">0</span>m</p>
-    <button onclick="location.reload()">Tentar Novamente</button>
+    <button id="btnRenascer">Tentar Novamente</button>
   </div>
 
   <div id="joystick-zone"><div id="joystick-knob"></div></div>
@@ -90,6 +89,7 @@
   <script type="module">
     import * as THREE from 'three';
     import { criarPersonagem } from './personagem.js';
+    import { iniciarMultiplayer } from './multiplayer.js';
 
     // ==========================================
     // CONFIGURAÇÃO DA CENA
@@ -113,7 +113,7 @@
     scene.add(dirLight);
 
     // ==========================================
-    // PERSONAGEM (Puxando do seu personagem.js)
+    // PERSONAGEM
     // ==========================================
     const player = criarPersonagem();
     scene.add(player);
@@ -124,14 +124,19 @@
       noChao: false,
       velocidade: 9,
       forcaPulo: 13.5,
-      gravidade: 30
+      gravidade: 30,
+      vivo: true
     };
 
+    // Conecta ao Multiplayer
+    const conexaoMultiplayer = iniciarMultiplayer(scene);
+
     // ==========================================
-    // GERADOR DE PLATAFORMAS
+    // GERADOR DE PLATAFORMAS (FIXO E SEGURO)
     // ==========================================
     const plataformas = [];
     
+    // Plataforma Inicial
     const chaoGeo = new THREE.BoxGeometry(6, 1, 6);
     const chaoMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const chao = new THREE.Mesh(chaoGeo, chaoMat);
@@ -140,22 +145,20 @@
     scene.add(chao);
     plataformas.push({ mesh: chao, x: 0, y: -0.5, z: 0, w: 6, h: 1, d: 6 });
 
-    let lastY = 0;
-    let lastZ = 0;
-    let lastX = 0;
-
+    // Gera 100 plataformas com posições matemáticas alcançáveis
+    let lastY = 0, lastZ = 0, lastX = 0;
     for (let i = 0; i < 100; i++) {
-      lastY += 1.5 + Math.random() * 1.2;
-      lastZ -= 2.2 + Math.random() * 1.0;
+      lastY += 1.5 + (i * 0.01); // Aumenta gradualmente a dificuldade
+      lastZ -= 2.5;
       
-      const w = 2.2 + Math.random() * 1.2;
-      const d = 2.2 + Math.random() * 1.2;
+      const w = Math.max(1.8, 3.0 - (i * 0.01)); // Plataformas ficam levemente menores no topo
+      const d = 2.5;
       
-      lastX += (Math.random() - 0.5) * 3.5;
+      lastX += (Math.sin(i) * 2.5); // Caminho suave em padrão de S
       lastX = Math.max(-4, Math.min(4, lastX));
       
       const pGeo = new THREE.BoxGeometry(w, 0.5, d);
-      const pMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4 });
+      const pMat = new THREE.MeshStandardMaterial({ color: (i % 2 === 0) ? 0x06b6d4 : 0x3b82f6 });
       const p = new THREE.Mesh(pGeo, pMat);
       
       p.position.set(lastX, lastY, lastZ);
@@ -163,12 +166,24 @@
       p.castShadow = true;
       scene.add(p);
       
-      plataformas.push({ 
-        mesh: p, 
-        x: lastX, y: lastY, z: lastZ, 
-        w: w, h: 0.5, d: d 
-      });
+      plataformas.push({ mesh: p, x: lastX, y: lastY, z: lastZ, w: w, h: 0.5, d: d });
     }
+
+    // ==========================================
+    // RESSUSCITAR JOGADOR (LOCAL)
+    // ==========================================
+    function renascer() {
+      playerState.x = 0;
+      playerState.y = 0.5;
+      playerState.z = 0;
+      playerState.vx = 0;
+      playerState.vy = 0;
+      playerState.vz = 0;
+      playerState.vivo = true;
+      document.getElementById('gameOver').style.display = 'none';
+    }
+
+    document.getElementById('btnRenascer').addEventListener('click', renascer);
 
     // ==========================================
     // CONTROLES
@@ -210,11 +225,10 @@
       joyX = 0; joyZ = 0;
     });
 
-    const btnPulo = document.getElementById('btnPulo');
-    btnPulo.addEventListener('pointerdown', e => { e.preventDefault(); pular(); });
+    document.getElementById('btnPulo').addEventListener('pointerdown', e => { e.preventDefault(); pular(); });
 
     function pular() {
-      if (playerState.noChao) {
+      if (playerState.noChao && playerState.vivo) {
         playerState.vy = playerState.forcaPulo;
         playerState.noChao = false;
       }
@@ -230,79 +244,72 @@
       requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.1);
 
-      let moveX = 0, moveZ = 0;
-      if (keys.w) moveZ -= 1;
-      if (keys.s) moveZ += 1;
-      if (keys.a) moveX -= 1;
-      if (keys.d) moveX += 1;
-      
-      moveX += joyX;
-      moveZ += joyZ;
-
-      if (moveX !== 0 || moveZ !== 0) {
-        const len = Math.sqrt(moveX*moveX + moveZ*moveZ);
-        playerState.vx = (moveX / len) * playerState.velocidade;
-        playerState.vz = (moveZ / len) * playerState.velocidade;
-      } else {
-        playerState.vx = 0;
-        playerState.vz = 0;
-      }
-
-      playerState.vy -= playerState.gravidade * dt;
-
-      playerState.x += playerState.vx * dt;
-      playerState.y += playerState.vy * dt;
-      playerState.z += playerState.vz * dt;
-
-      playerState.noChao = false;
-      
-      const pMinX = playerState.x - 0.5;
-      const pMaxX = playerState.x + 0.5;
-      const pMinY = playerState.y - 0.5;
-      const pMaxY = playerState.y + 0.5;
-      const pMinZ = playerState.z - 0.5;
-      const pMaxZ = playerState.z + 0.5;
-
-      for (let plat of plataformas) {
-        const w = plat.w / 2;
-        const h = plat.h / 2;
-        const d = plat.d / 2;
+      if (playerState.vivo) {
+        let moveX = 0, moveZ = 0;
+        if (keys.w) moveZ -= 1;
+        if (keys.s) moveZ += 1;
+        if (keys.a) moveX -= 1;
+        if (keys.d) moveX += 1;
         
-        const bMinX = plat.x - w;
-        const bMaxX = plat.x + w;
-        const bMinY = plat.y - h;
-        const bMaxY = plat.y + h;
-        const bMinZ = plat.z - d;
-        const bMaxZ = plat.z + d;
+        moveX += joyX;
+        moveZ += joyZ;
 
-        if (pMaxX > bMinX && pMinX < bMaxX &&
-            pMaxY > bMinY && pMinY < bMaxY &&
-            pMaxZ > bMinZ && pMinZ < bMaxZ) {
-          
-          if (playerState.vy <= 0 && pMinY < bMaxY && pMinY > bMaxY - 1.2) {
-            playerState.y = bMaxY + 0.5;
-            playerState.vy = 0;
-            playerState.noChao = true;
+        if (moveX !== 0 || moveZ !== 0) {
+          const len = Math.sqrt(moveX*moveX + moveZ*moveZ);
+          playerState.vx = (moveX / len) * playerState.velocidade;
+          playerState.vz = (moveZ / len) * playerState.velocidade;
+        } else {
+          playerState.vx = 0;
+          playerState.vz = 0;
+        }
+
+        playerState.vy -= playerState.gravidade * dt;
+
+        playerState.x += playerState.vx * dt;
+        playerState.y += playerState.vy * dt;
+        playerState.z += playerState.vz * dt;
+
+        // Colisão AABB
+        playerState.noChao = false;
+        const pMinX = playerState.x - 0.5, pMaxX = playerState.x + 0.5;
+        const pMinY = playerState.y - 0.5, pMaxY = playerState.y + 0.5;
+        const pMinZ = playerState.z - 0.5, pMaxZ = playerState.z + 0.5;
+
+        for (let plat of plataformas) {
+          const w = plat.w / 2, h = plat.h / 2, d = plat.d / 2;
+          if (pMaxX > plat.x - w && pMinX < plat.x + w &&
+              pMaxY > plat.y - h && pMinY < plat.y + h &&
+              pMaxZ > plat.z - d && pMinZ < plat.z + d) {
+            
+            if (playerState.vy <= 0 && pMinY < plat.y + h && pMinY > plat.y + h - 1.2) {
+              playerState.y = plat.y + h + 0.5;
+              playerState.vy = 0;
+              playerState.noChao = true;
+            }
           }
+        }
+
+        // Queda / Morte individual
+        if (playerState.y < -10) {
+          playerState.vivo = false;
+          document.getElementById('alturaFinal').textContent = Math.max(0, Math.floor(playerState.y + 10));
+          document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        // Atualiza posição do modelo local
+        player.position.set(playerState.x, playerState.y, playerState.z);
+        alturaEl.textContent = Math.max(0, Math.floor(playerState.y + 0.5));
+
+        // Transmite a posição individual para o Firebase
+        if (conexaoMultiplayer && conexaoMultiplayer.atualizarPosicao) {
+          conexaoMultiplayer.atualizarPosicao(playerState.x, playerState.y, playerState.z);
         }
       }
 
-      if (playerState.y < -10) {
-        document.getElementById('alturaFinal').textContent = Math.max(0, Math.floor(playerState.y + 10));
-        document.getElementById('gameOver').style.display = 'flex';
-        return;
-      }
-
-      player.position.set(playerState.x, playerState.y, playerState.z);
-      alturaEl.textContent = Math.max(0, Math.floor(playerState.y + 0.5));
-
-      const camDist = 8;
-      const camHeight = 4;
-      
+      // Câmera Acompanha o jogador
       camera.position.x += (playerState.x - camera.position.x) * 5 * dt;
-      camera.position.y += (playerState.y + camHeight - camera.position.y) * 5 * dt;
-      camera.position.z = playerState.z + camDist;
-      
+      camera.position.y += (playerState.y + 4 - camera.position.y) * 5 * dt;
+      camera.position.z = playerState.z + 8;
       camera.lookAt(playerState.x, playerState.y, playerState.z);
 
       renderer.render(scene, camera);
