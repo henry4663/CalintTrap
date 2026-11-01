@@ -89,6 +89,7 @@
 
   <script type="module">
     import * as THREE from 'three';
+    import { criarPersonagem } from './personagem.js';
 
     // ==========================================
     // CONFIGURAÇÃO DA CENA
@@ -112,32 +113,25 @@
     scene.add(dirLight);
 
     // ==========================================
-    // FÍSICA BÁSICA DO JOGADOR
+    // PERSONAGEM (Puxando do seu personagem.js)
     // ==========================================
-   import { criarPersonagem } from './personagem.js';
-   const player = // Cria o personagem personalizado usando o seu arquivo personagem.js
-const player = criarPersonagem();
-scene.add(player);
-     player.position.set(playerState.x, playerState.y, playerState.z);
-    );
-    player.castShadow = true;
+    const player = criarPersonagem();
     scene.add(player);
 
     const playerState = {
       x: 0, y: 0.5, z: 0,
       vx: 0, vy: 0, vz: 0,
       noChao: false,
-      velocidade: 9,       // Aumentado levemente para melhorar a fluidez
-      forcaPulo: 13.5,     // Aumentado para garantir saltos confortáveis
+      velocidade: 9,
+      forcaPulo: 13.5,
       gravidade: 30
     };
 
     // ==========================================
-    // GERADOR DE PLATAFORMAS (OBSTÁCULOS)
+    // GERADOR DE PLATAFORMAS
     // ==========================================
     const plataformas = [];
     
-    // Chão inicial
     const chaoGeo = new THREE.BoxGeometry(6, 1, 6);
     const chaoMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const chao = new THREE.Mesh(chaoGeo, chaoMat);
@@ -146,22 +140,19 @@ scene.add(player);
     scene.add(chao);
     plataformas.push({ mesh: chao, x: 0, y: -0.5, z: 0, w: 6, h: 1, d: 6 });
 
-    // Gera plataformas subindo de forma garantida
     let lastY = 0;
     let lastZ = 0;
     let lastX = 0;
 
     for (let i = 0; i < 100; i++) {
-      // Limita a altura e a distância para nunca gerar um salto impossível
-      lastY += 1.5 + Math.random() * 1.2; // Sobe de 1.5 a 2.7m (garantido pelo pulo de 13.5)
-      lastZ -= 2.2 + Math.random() * 1.0; // Distância pra frente controlada
+      lastY += 1.5 + Math.random() * 1.2;
+      lastZ -= 2.2 + Math.random() * 1.0;
       
       const w = 2.2 + Math.random() * 1.2;
       const d = 2.2 + Math.random() * 1.2;
       
-      // Mantém as plataformas dentro de um raio que o jogador consegue alcançar pros lados
       lastX += (Math.random() - 0.5) * 3.5;
-      lastX = Math.max(-4, Math.min(4, lastX)); // Limita as bordas laterais
+      lastX = Math.max(-4, Math.min(4, lastX));
       
       const pGeo = new THREE.BoxGeometry(w, 0.5, d);
       const pMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4 });
@@ -180,7 +171,7 @@ scene.add(player);
     }
 
     // ==========================================
-    // CONTROLES (TECLADO E MOBILE)
+    // CONTROLES
     // ==========================================
     const keys = { w: false, a: false, s: false, d: false };
     window.addEventListener('keydown', e => {
@@ -197,7 +188,6 @@ scene.add(player);
       if (e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
     });
 
-    // Joystick Mobile
     let joyX = 0, joyZ = 0;
     const zone = document.getElementById('joystick-zone');
     const knob = document.getElementById('joystick-knob');
@@ -220,7 +210,6 @@ scene.add(player);
       joyX = 0; joyZ = 0;
     });
 
-    // Botão de Pulo
     const btnPulo = document.getElementById('btnPulo');
     btnPulo.addEventListener('pointerdown', e => { e.preventDefault(); pular(); });
 
@@ -241,7 +230,6 @@ scene.add(player);
       requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.1);
 
-      // Movimento Horizontal
       let moveX = 0, moveZ = 0;
       if (keys.w) moveZ -= 1;
       if (keys.s) moveZ += 1;
@@ -260,15 +248,12 @@ scene.add(player);
         playerState.vz = 0;
       }
 
-      // Gravidade
       playerState.vy -= playerState.gravidade * dt;
 
-      // Aplica velocidades
       playerState.x += playerState.vx * dt;
       playerState.y += playerState.vy * dt;
       playerState.z += playerState.vz * dt;
 
-      // Colisão com Plataformas
       playerState.noChao = false;
       
       const pMinX = playerState.x - 0.5;
@@ -302,7 +287,6 @@ scene.add(player);
         }
       }
 
-      // Se cair do mapa, Game Over
       if (playerState.y < -10) {
         document.getElementById('alturaFinal').textContent = Math.max(0, Math.floor(playerState.y + 10));
         document.getElementById('gameOver').style.display = 'flex';
@@ -312,7 +296,6 @@ scene.add(player);
       player.position.set(playerState.x, playerState.y, playerState.z);
       alturaEl.textContent = Math.max(0, Math.floor(playerState.y + 0.5));
 
-      // Câmera Segue
       const camDist = 8;
       const camHeight = 4;
       
