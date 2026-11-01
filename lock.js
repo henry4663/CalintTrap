@@ -1,9 +1,9 @@
+```javascript
 import {
     auth,
     db,
     ref,
     set,
-    get,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     onAuthStateChanged,
@@ -24,7 +24,7 @@ const switchText = document.getElementById("switchText");
 let registerMode = false;
 let loading = false;
 
-const LOBBY = "lobby.html";
+const LOBBY = "./lobby.html";
 
 function internalEmail(name) {
     return name.toLowerCase() + "@goblox-login.com";
@@ -43,7 +43,7 @@ function setLoading(value) {
         : registerMode ? "CRIAR CONTA" : "ENTRAR";
 }
 
-// Alternar login e cadastro
+// Alternar cadastro e login
 switchMode.addEventListener("click", () => {
     if (loading) return;
 
@@ -51,6 +51,7 @@ switchMode.addEventListener("click", () => {
 
     nameGroup.hidden = !registerMode;
     username.required = registerMode;
+    loginUsername.required = !registerMode;
 
     submitButton.textContent = registerMode
         ? "CRIAR CONTA"
@@ -67,7 +68,7 @@ switchMode.addEventListener("click", () => {
     message.textContent = "";
 });
 
-// Cadastro e login
+// Login e cadastro
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -80,12 +81,12 @@ form.addEventListener("submit", async (event) => {
     const pass = password.value;
 
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(name)) {
-        showMessage("Usuário: 3 a 20 letras, números ou _.");
+        showMessage("Usuário inválido.");
         return;
     }
 
     if (pass.length < 6) {
-        showMessage("A senha precisa ter pelo menos 6 caracteres.");
+        showMessage("Senha precisa ter 6 caracteres.");
         return;
     }
 
@@ -96,9 +97,7 @@ form.addEventListener("submit", async (event) => {
 
         if (registerMode) {
             const result = await createUserWithEmailAndPassword(
-                auth,
-                email,
-                pass
+                auth, email, pass
             );
 
             await updateProfile(result.user, {
@@ -111,28 +110,23 @@ form.addEventListener("submit", async (event) => {
                 createdAt: Date.now()
             });
 
-            showMessage("Conta criada!", true);
-
         } else {
             await signInWithEmailAndPassword(
-                auth,
-                email,
-                pass
+                auth, email, pass
             );
-
-            showMessage("Bem-vindo ao GOBLOX!", true);
         }
 
-        window.location.replace(LOBBY);
+        showMessage("Bem-vindo ao GOBLOX!", true);
+
+        window.location.assign(LOBBY);
 
     } catch (error) {
         const errors = {
-            "auth/email-already-in-use": "Esse usuário já existe.",
+            "auth/email-already-in-use": "Usuário já cadastrado.",
             "auth/invalid-credential": "Usuário ou senha incorretos.",
             "auth/weak-password": "Senha muito fraca.",
-            "auth/network-request-failed": "Sem conexão com a internet.",
-            "auth/operation-not-allowed": "Ative Email/Password no Firebase.",
-            "PERMISSION_DENIED": "Permissão negada no banco de dados."
+            "auth/network-request-failed": "Erro de internet.",
+            "auth/operation-not-allowed": "Ative Email/Password no Firebase."
         };
 
         showMessage(errors[error.code] || error.message);
@@ -142,7 +136,10 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
-// Se já estiver conectado, vai direto para o lobby
-window.location.href = "lobby.html";
+// Verificar sessão existente
+onAuthStateChanged(auth, (user) => {
+    if (user && !loading) {
+        window.location.replace(LOBBY);
     }
 });
+```
