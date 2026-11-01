@@ -1,246 +1,46 @@
-:root {
-  --bg: #060914;
-  --panel: rgba(15, 18, 29, 0.9);
-  --panel-2: rgba(19, 23, 34, 0.95);
-  --line: rgba(255,255,255,0.08);
-  --text: #edf3ff;
-  --muted: #b7bfce;
-  --purple: #a855f7;
-  --purple-2: #7c3aed;
-  --cyan: #22d3ee;
-  --danger: #f87171;
-  --success: #4ade80;
-  --warning: #fbbf24;
+import { getCurrentNick, logout } from "./authLocal.js";
+
+const boasVindas = document.getElementById("boasVindas");
+const btnPerfil = document.getElementById("btnPerfil");
+const btnSair = document.getElementById("btnSair");
+const toast = document.getElementById("toast");
+
+function mostrarToast(msg, tipo = "info") {
+  if (!toast) return;
+
+  toast.textContent = msg;
+  toast.className = `toast show ${tipo}`;
+
+  clearTimeout(mostrarToast.timer);
+  mostrarToast.timer = setTimeout(() => {
+    toast.className = "toast";
+  }, 2500);
 }
 
-* {
-  box-sizing: border-box;
-}
+function verificarSessao() {
+  const nick = getCurrentNick();
 
-html, body {
-  margin: 0;
-  height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-
-body {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
-.bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 15%, rgba(168,85,247,0.18), transparent 20%),
-    radial-gradient(circle at 80% 80%, rgba(34,211,238,0.18), transparent 22%),
-    linear-gradient(90deg, #070b14 0%, #0a101d 30%, #0b1020 100%);
-  z-index: 0;
-}
-
-.topbar {
-  position: relative;
-  z-index: 2;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(10, 13, 23, 0.55);
-  backdrop-filter: blur(8px);
-}
-
-.logo {
-  font-size: 2rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #fff;
-}
-
-.user-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-#boasVindas {
-  font-size: 1rem;
-  color: var(--muted);
-  margin-right: 8px;
-}
-
-.btn {
-  border: 0;
-  border-radius: 12px;
-  padding: 12px 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-  font-size: 0.95rem;
-}
-
-.btn-light {
-  background: #fff;
-  color: #111827;
-}
-
-.btn-dark {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: 1px solid var(--line);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.container {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  justify-content: center;
-  padding: 30px 26px 40px;
-}
-
-.panel {
-  width: min(1200px, 100%);
-  background: rgba(13, 18, 28, 0.8);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 28px 24px 24px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
-}
-
-.label {
-  margin: 0 0 4px;
-  font-size: 0.9rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.1;
-}
-
-.stats {
-  margin-top: 18px;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.game-list {
-  margin-top: 28px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-}
-
-.game-card {
-  text-align: left;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 20px 18px;
-  color: var(--text);
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.game-card:hover {
-  border-color: rgba(168,85,247,0.55);
-  transform: translateY(-2px);
-  background: rgba(168,85,247,0.05);
-}
-
-.game-card.active {
-  border-color: rgba(168,85,247,0.7);
-  background: rgba(168,85,247,0.07);
-}
-
-.tag {
-  display: inline-block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-
-.game-card strong {
-  display: block;
-  font-size: 1.6rem;
-  margin-bottom: 8px;
-}
-
-.game-card small {
-  display: block;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.toast {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  min-width: 220px;
-  max-width: 320px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: rgba(15, 18, 29, 0.96);
-  border: 1px solid var(--line);
-  color: var(--text);
-  opacity: 0;
-  transform: translateY(12px);
-  pointer-events: none;
-  transition: 0.2s ease;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.toast.success {
-  border-color: rgba(74, 222, 128, 0.5);
-}
-
-.toast.warning {
-  border-color: rgba(251, 191, 36, 0.5);
-}
-
-.toast.error {
-  border-color: rgba(248, 113, 113, 0.5);
-}
-
-@media (max-width: 700px) {
-  .topbar {
-    padding: 0 16px;
+  if (!nick) {
+    window.location.href = "lock.html";
+    return;
   }
 
-  .user-box {
-    gap: 8px;
-  }
-
-  .btn {
-    padding: 10px 12px;
-    font-size: 0.8rem;
-  }
-
-  .panel {
-    padding: 18px 16px 20px;
-  }
-
-  .game-list {
-    grid-template-columns: 1fr;
-  }
+  boasVindas.textContent = `Olá, ${nick}!`;
 }
+
+btnPerfil.addEventListener("click", () => {
+  mostrarToast("Tela de perfil em construção!", "warning");
+});
+
+btnSair.addEventListener("click", () => {
+  logout();
+});
+
+document.querySelectorAll(".game-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const nome = card.dataset.game || "Jogo";
+    mostrarToast(`${nome} em desenvolvimento!`, "info");
+  });
+});
+
+verificarSessao();
