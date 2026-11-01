@@ -1,14 +1,18 @@
 import {
     auth,
+    db,
+    ref,
+    set,
+    get,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    updateProfile,
-    onAuthStateChanged
+    onAuthStateChanged,
+    updateProfile
 } from "./firebase.js";
 
 const form = document.getElementById("authForm");
-const loginUsername = document.getElementById("loginUsername");
 const username = document.getElementById("username");
+const loginUsername = document.getElementById("loginUsername");
 const password = document.getElementById("password");
 
 const nameGroup = document.getElementById("nameGroup");
@@ -20,9 +24,10 @@ const switchText = document.getElementById("switchText");
 let registerMode = false;
 let loading = false;
 
-// Identificador interno. Não é um endereço de e-mail real.
-function usernameToInternalId(name) {
-    return name.trim().toLowerCase() + "@accounts.goblox.invalid";
+const LOBBY = "lobby.html";
+
+function internalEmail(name) {
+    return name.toLowerCase() + "@goblox-login.com";
 }
 
 function showMessage(text, success = false) {
@@ -30,14 +35,21 @@ function showMessage(text, success = false) {
     message.style.color = success ? "#55ee99" : "#ff5555";
 }
 
+function setLoading(value) {
+    loading = value;
+    submitButton.disabled = value;
+    submitButton.textContent = value
+        ? "AGUARDE..."
+        : registerMode ? "CRIAR CONTA" : "ENTRAR";
+}
+
+// Alternar login e cadastro
 switchMode.addEventListener("click", () => {
+    if (loading) return;
+
     registerMode = !registerMode;
 
     nameGroup.hidden = !registerMode;
-    loginUsername.parentElement.querySelector("label").textContent =
-        "Usuário";
-
-    loginUsername.required = !registerMode;
     username.required = registerMode;
 
     submitButton.textContent = registerMode
@@ -55,19 +67,20 @@ switchMode.addEventListener("click", () => {
     message.textContent = "";
 });
 
+// Cadastro e login
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (loading) return;
 
-    const name = registerMode
-        ? username.value.trim()
-        : loginUsername.value.trim();
+    const name = (registerMode
+        ? username.value
+        : loginUsername.value).trim();
 
     const pass = password.value;
 
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(name)) {
-        showMessage("Use de 3 a 20 caracteres: letras, números ou _.");
+        showMessage("Usuário: 3 a 20 letras, números ou _.");
         return;
     }
 
@@ -76,17 +89,15 @@ form.addEventListener("submit", async (event) => {
         return;
     }
 
-    loading = true;
-    submitButton.disabled = true;
-    submitButton.textContent = "AGUARDE...";
+    setLoading(true);
 
     try {
-        const internalId = usernameToInternalId(name);
+        const email = internalEmail(name);
 
         if (registerMode) {
             const result = await createUserWithEmailAndPassword(
                 auth,
-                internalId,
+                email,
                 pass
             );
 
@@ -94,42 +105,46 @@ form.addEventListener("submit", async (event) => {
                 displayName: name
             });
 
-            showMessage("Conta criada com sucesso!", true);
+            await set(ref(db, "users/" + name.toLowerCase()), {
+                username: name,
+                uid: result.user.uid,
+                createdAt: Date.now()
+            });
+
+            showMessage("Conta criada!", true);
 
         } else {
             await signInWithEmailAndPassword(
                 auth,
-                internalId,
+                email,
                 pass
             );
 
-            showMessage("Login realizado!", true);
+            showMessage("Bem-vindo ao GOBLOX!", true);
         }
 
-        window.location.replace("index.html");
+        window.location.replace(LOBBY);
 
     } catch (error) {
         const errors = {
             "auth/email-already-in-use": "Esse usuário já existe.",
             "auth/invalid-credential": "Usuário ou senha incorretos.",
             "auth/weak-password": "Senha muito fraca.",
-            "auth/network-request-failed": "Erro de conexão.",
-            "auth/operation-not-allowed": "Ative Email/Senha no Firebase."
+            "auth/network-request-failed": "Sem conexão com a internet.",
+            "auth/operation-not-allowed": "Ative Email/Password no Firebase.",
+            "PERMISSION_DENIED": "Permissão negada no banco de dados."
         };
 
-        showMessage(errors[error.code] || "Erro ao acessar sua conta.");
+        showMessage(errors[error.code] || error.message);
 
     } finally {
-        loading = false;
-        submitButton.disabled = false;
-        submitButton.textContent = registerMode
-            ? "CRIAR CONTA"
-            : "ENTRAR";
+        setLoading(false);
     }
 });
 
+// Se já estiver conectado, vai direto para o lobby
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        window.location.replace("index.html");
+        window.location.replace(LOBBY);
     }
 });
