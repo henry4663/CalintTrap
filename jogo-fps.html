@@ -246,15 +246,12 @@ function criarBlocoTatico(x, y, z, w, h, d, cor = 0x1e1e2e) {
   plataformas.push(mesh);
 }
 
-// Chão principal da Arena Tática
 criarBlocoTatico(0, 0, 0, 120, 2, 120, 0x14141f);
-
-// Paredes e Coberturas Táticas
 criarBlocoTatico(-30, 3, -30, 20, 4, 4, 0x3b82f6);
 criarBlocoTatico(30, 3, 30, 20, 4, 4, 0x3b82f6);
 criarBlocoTatico(-30, 3, 30, 4, 4, 20, 0x6366f1);
 criarBlocoTatico(30, 3, -30, 4, 4, 20, 0x6366f1);
-criarBlocoTatico(0, 5, 0, 16, 2, 16, 0x8b5cf6); // Torre central
+criarBlocoTatico(0, 5, 0, 16, 2, 16, 0x8b5cf6);
 
 // 3. MULTIPLAYER E ANTI-FANTASMA
 const meuId = 'player_fps_' + Math.random().toString(36).substr(2, 9);
@@ -286,12 +283,12 @@ document.getElementById('btnVoltar').addEventListener('click', (e) => {
 
 set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
 
-// ARMA 3D NA CÂMERA (COM O INVENTÁRIO)
+// ARMA 3D NA CÂMERA
 const gunGroup = new THREE.Group();
 const materialArmas = [
-  new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 }), // Pistola
-  new THREE.MeshStandardMaterial({ color: 0x4f46e5, metalness: 0.8 }), // Rifle
-  new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 })  // SMG
+  new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 }),
+  new THREE.MeshStandardMaterial({ color: 0x4f46e5, metalness: 0.8 }),
+  new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 })
 ];
 
 const gunMesh = new THREE.Mesh(
@@ -303,7 +300,7 @@ gunGroup.add(gunMesh);
 camera.add(gunGroup);
 scene.add(camera);
 
-let armaAtual = 0; // 0: Pistola, 1: Rifle, 2: SMG
+let armaAtual = 0;
 function selecionarArma(index) {
   armaAtual = index;
   gunMesh.material = materialArmas[index];
@@ -336,7 +333,7 @@ function criarBot(x, y, z) {
 criarBot(-35, 2, -35);
 criarBot(35, 2, 35);
 
-// ESCUTA OUTROS JOGADORES
+// ESCUTA OUTROS JOGADORES (AJUSTE DA ALTURA Y - 1.6 PARA TOCAR NO CHÃO)
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
   for (let id in outrosJogadores) {
@@ -354,7 +351,8 @@ onValue(todosJogadoresRef, (snapshot) => {
       outrosJogadores[id] = { id: id, mesh: meshOutro, vida: pos.vida || 100 };
     }
     if (pos && typeof pos.x === 'number') {
-      outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
+      // AJUSTADO: pos.y - 1.6 coloca o boneco no chão e impede que fique a voar
+      outrosJogadores[id].mesh.position.set(pos.x, pos.y - 1.6, pos.z);
       outrosJogadores[id].vida = pos.vida || 100;
     }
   }
@@ -535,7 +533,6 @@ function animate(tempo) {
     ultimoEnvio = tempo;
   }
 
-  // ATUALIZAÇÃO DOS TIROS
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
     p.mesh.position.add(p.dir.clone().multiplyScalar(1.2));
