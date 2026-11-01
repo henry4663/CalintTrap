@@ -1,40 +1,53 @@
-// personagem.js
 import * as THREE from 'three';
 
-export function criarPersonagem() {
-  // Cria um "Grupo" (um container invisível) que vai segurar o corpo e os olhos
+export function criarPersonagem(cor = 0x7c3aed) {
   const personagem = new THREE.Group();
 
-  // 1. O Corpo (Cubo roxo com brilho)
-  const corpoGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-  const corpoMat = new THREE.MeshStandardMaterial({ 
-    color: 0x7c3aed, 
-    roughness: 0.2,
-    metalness: 0.5,
-    emissive: 0x4c1d95, 
-    emissiveIntensity: 0.4 
-  });
-  const corpo = new THREE.Mesh(corpoGeo, corpoMat);
+  const corpo = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.55, 1.25, 4, 8),
+    new THREE.MeshStandardMaterial({
+      color: cor,
+      roughness: 0.25,
+      metalness: 0.45,
+      emissive: cor,
+      emissiveIntensity: 0.2
+    })
+  );
+  corpo.position.y = 1.2;
   corpo.castShadow = true;
   corpo.receiveShadow = true;
   personagem.add(corpo);
 
-  // 2. Os Olhos (Dois quadradinhos brancos na frente)
-  const olhoGeo = new THREE.BoxGeometry(0.2, 0.2, 0.1);
-  const olhoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const cabeca = new THREE.Mesh(
+    new THREE.SphereGeometry(0.42, 18, 18),
+    new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.8,
+      metalness: 0.1
+    })
+  );
+  cabeca.position.y = 2.35;
+  personagem.add(cabeca);
+
+  const olhoGeo = new THREE.BoxGeometry(0.12, 0.12, 0.05);
+  const olhoMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
 
   const olhoEsq = new THREE.Mesh(olhoGeo, olhoMat);
-  olhoEsq.position.set(-0.25, 0.2, 0.6); // X, Y, Z (Z positivo é a frente)
+  olhoEsq.position.set(-0.16, 2.38, 0.35);
   personagem.add(olhoEsq);
 
   const olhoDir = new THREE.Mesh(olhoGeo, olhoMat);
-  olhoDir.position.set(0.25, 0.2, 0.6);
+  olhoDir.position.set(0.16, 2.38, 0.35);
   personagem.add(olhoDir);
 
-  // 3. Uma "luz" na frente pra dar um charme
-  const pontoLuz = new THREE.PointLight(0x06b6d4, 1, 5);
-  pontoLuz.position.set(0, 0, 0.8);
+  const pontoLuz = new THREE.PointLight(0x38bdf8, 1.2, 5);
+  pontoLuz.position.set(0, 1.8, 0.8);
   personagem.add(pontoLuz);
+
+  personagem.userData = {
+    cor,
+    nome: 'Jogador'
+  };
 
   return personagem;
 }
