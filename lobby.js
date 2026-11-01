@@ -1,4 +1,4 @@
-import { db, ref, get, toast } from "./firebase.js";
+import { db, ref, get, toast, auth, signOut } from "./firebase.js";
 
 const $ = id => document.getElementById(id);
 
@@ -11,17 +11,25 @@ async function carregarDados() {
   if (!user) return;
   try {
     $("boasVindas").textContent = `Olá, ${user}!`;
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Não foi possível atualizar o nome do usuário.", e);
+  }
 }
 carregarDados();
 
-$("btnSair").onclick = () => {
-  localStorage.removeItem("goblox_user");
-  location.href = "lock.html";
+$("btnSair").onclick = async () => {
+  try {
+    await signOut(auth);
+  } catch (e) {
+    console.warn("Erro ao sair da sessão:", e);
+  } finally {
+    localStorage.removeItem("goblox_user");
+    location.href = "lock.html";
+  }
 };
 
 $("btnPerfil").onclick = () => {
-  toast("Tela de perfil em construção!");
+  toast("Tela de perfil em construção!", "sucesso");
 };
 
 // Função chamada quando clica nos jogos (FPS, Parkour, Esconde)
