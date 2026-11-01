@@ -1,4 +1,3 @@
-
 const ACCOUNTS_KEY = "goblox_accounts";
 const SESSION_KEY = "goblox_session";
 
@@ -12,6 +11,7 @@ function generateSalt() {
 
 async function hashPassword(password, salt) {
   const encoder = new TextEncoder();
+
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     encoder.encode(password),
@@ -39,6 +39,7 @@ async function hashPassword(password, salt) {
 
 export async function createAccount(nick, password) {
   const cleanNick = String(nick || "").trim();
+
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(cleanNick)) {
     throw new Error("Nick inválido. Use 3 a 20 letras, números ou _.");
   }
@@ -66,6 +67,7 @@ export async function createAccount(nick, password) {
 
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   setSession(cleanNick);
+
   return { nick: cleanNick };
 }
 
@@ -82,7 +84,6 @@ export async function loginAccount(nick, password) {
 
   const salt = new Uint8Array(account.salt);
   const passwordHash = await hashPassword(password, salt);
-
   const currentHash = Array.from(passwordHash);
 
   if (JSON.stringify(currentHash) !== JSON.stringify(account.passwordHash)) {
@@ -90,6 +91,7 @@ export async function loginAccount(nick, password) {
   }
 
   setSession(cleanNick);
+
   return { nick: cleanNick };
 }
 
@@ -103,6 +105,7 @@ export function setSession(nick) {
 export function getSession() {
   const raw = localStorage.getItem(SESSION_KEY);
   if (!raw) return null;
+
   try {
     return JSON.parse(raw);
   } catch {
