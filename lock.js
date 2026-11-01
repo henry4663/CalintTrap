@@ -1,4 +1,3 @@
-javascript
 import {
     auth,
     db,
@@ -110,14 +109,17 @@ form.addEventListener("submit", async (event) => {
                 createdAt: Date.now()
             });
 
+            localStorage.setItem("goblox_user", name);
         } else {
-            await signInWithEmailAndPassword(
+            const result = await signInWithEmailAndPassword(
                 auth, email, pass
             );
+
+            const userName = result.user.displayName || name;
+            localStorage.setItem("goblox_user", userName);
         }
 
         showMessage("Bem-vindo ao GOBLOX!", true);
-
         window.location.assign(LOBBY);
 
     } catch (error) {
@@ -138,8 +140,12 @@ form.addEventListener("submit", async (event) => {
 
 // Verificar sessão existente
 onAuthStateChanged(auth, (user) => {
-    if (user && !loading) {
-        window.location.replace(lobby);
+    if (user) {
+        const userName = user.displayName || (user.email || "").split("@")[0] || "Jogador";
+        localStorage.setItem("goblox_user", userName);
+
+        if (!loading) {
+            window.location.replace(LOBBY);
+        }
     }
 });
-
