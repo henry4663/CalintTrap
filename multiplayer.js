@@ -1,66 +1,85 @@
-// multiplayer.js
-import { db as database } from './firebase.js'; // Usa o 'db' exportado pelo teu firebase.js
-import { ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { db as database } from './firebase.js';
+import { ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { criarPersonagem } from './personagem.js';
 
-export function iniciarMultiplayer(scene) {
-    const outrosJogadores = {};
-    const meuId = 'player_' + Math.random().toString(36).substr(2, 9);
-    
-    // Referência limpa para a sala de jogo no Firebase
-    const jogadorRef = ref(database, 'jogadores/' + meuId);
-    const todosJogadoresRef = ref(database, 'jogadores');
-
-    // Define posição inicial segura
-    set(jogadorRef, { x: 0, y: 0.5, z: 0 }).catch(err => console.error("Erro ao iniciar posição:", err));
-    onDisconnect(jogadorRef).remove();
-
-    // Função ultra-protegida para atualizar a posição (evita qualquer objeto complexo)
-    function atualizarPosicao(x, y, z) {
-        // Converte explicitamente para números primitivos para o Firebase nunca crashar
-        const posX = Number(x) || 0;
-        const posY = Number(y) || 0;
-        const posZ = Number(z) || 0;
-
-        set(jogadorRef, {
-            x: posX,
-            y: posY,
-            z: posZ
-        }).catch(err => {
-            // Silencia ou loga erros pontuais de rede para não travar o loop do jogo
-        });
+export function iniciarMultiplayer({
+    scene,
+    roomKey = 'fps_jogadores',
+    playerIdPrefix = 'player_fps',
+    getLocalState,
+    getPlayerColor = () => 0x7c3aed
+}) {
+    if (!scene || typeof getLocalState !== 'function') {
+        throw new Error('iniciarMultiplayer precisa de scene e getLocalState.');
     }
 
-    // Escuta os outros jogadores em tempo real
-    onValue(todosJogadoresRef, (snapshot) => {
+    const outrosJogadores = new Map();
+    const meuId = `${playerIdPrefix}_${Math.random().toString(36).slice(2, 9)}`;
+    const playerRef = ref(database, `${roomKey}/${meuId}`);
+    const playersRef = ref(database, roomKey);
+
+    function removerJogadorLocal() {
+        remove(playerRef).catch(() => {});
+    }
+
+    onDisconnect(playerRef).remove();
+    window.addEventListener('beforeunload', removerJogadorLocal);
+    window.addEventListener('pagehide', removerJogadorLocal);
+
+    function sincronizarLocal() {
+        const estado = getLocalState();
+        if (!estado || typeof estado.x !== 'number') return;
+
+        const payload = {
+            x: Number(estado.x.toFixed(2)),
+            y: Number(estado.y.toFixed(2)),
+            z: Number(estado.z.toFixed(2)),
+            rotY: Number((estado.rotY ?? 0).toFixed(2)),
+            vida: Number((estado.vida ?? 100).toFixed(2)),
+            atualizadoEm: Date.now()
+        };
+
+        set(playerRef, payload).catch(() => {});
+    }
+
+    onValue(playersRef, (snapshot) => {
         const data = snapshot.val() || {};
 
-        // Remove jogadores que saíram
-        for (let id in outrosJogadores) {
+        for (const [id, entry] of outrosJogadores.entries()) {
             if (!data[id]) {
-                scene.remove(outrosJogadores[id].mesh);
-                delete outrosJogadores[id];
+                if (entry.mesh) {
+                    scene.remove(entry.mesh);
+                }
+                outrosJogadores.delete(id);
             }
         }
 
-        // Atualiza ou cria os outros jogadores
-        for (let id in data) {
-            if (id === meuId) continue; // Ignora a si mesmo
+        for (const [id, jogador] of Object.entries(data)) {
+            if (id === meuId) continue;
+            if (!jogador || typeof jogador.x !== 'number') continue;
 
-            let pos = data[id];
-
-            if (!outrosJogadores[id]) {
-                const meshOutro = criarPersonagem();
-                scene.add(meshOutro);
-                outrosJogadores[id] = { mesh: meshOutro };
+            if (!outrosJogadores.has(id)) {
+                const mesh = criarPersonagem(getPlayerColor(id));
+                scene.add(mesh);
+                outrosJogadores.set(id, { mesh, vida: jogador.vida || 100 });
             }
 
-            // Atualiza a posição do outro jogador na tela de forma segura
-            if (pos && typeof pos.x === 'number') {
-                outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
+            const estado = outrosJogadores.get(id);
+            if (!estado || !estado.mesh) continue;
+
+            estado.mesh.position.set(jogador.x, jogador.y, jogador.z);
+            if (typeof jogador.rotY === 'number') {
+                estado.mesh.rotation.y = jogador.rotY;
             }
+            estado.vida = jogador.vida || 100;
         }
     });
 
-    return { atualizarPosicao };
+    return {
+        meuId,
+        roomKey,
+        sincronizarLocal,
+        removerJogadorLocal,
+        outrosJogadores
+    };
 }
