@@ -9,46 +9,54 @@
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#11151f;color:white;font-family:Arial}
-button,input{padding:12px;border:0;border-radius:8px}
-button{background:#2878ed;color:white;cursor:pointer;font-weight:bold}
-button:hover{background:#4592ff}
-header{height:65px;background:#202b40;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
-.logo{font-size:27px;font-weight:900}
+body{margin:0;background:#111722;color:white;font-family:Arial}
+button,input{font:inherit;border:0;border-radius:9px;padding:12px}
+button{background:#2878ed;color:white;font-weight:bold;cursor:pointer}
+button:hover{filter:brightness(1.15)}
+input{background:#101a2b;color:white;border:1px solid #465875}
+header{height:65px;background:#202c40;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.logo{font-size:27px;font-weight:1000}
 .logo span{color:#42d6d0}
-#login{position:fixed;inset:0;background:#111827;display:grid;place-items:center;z-index:5}
-.login{background:#202b40;padding:30px;border-radius:16px;width:min(350px,90%)}
-.login input{width:100%;margin:8px 0;background:#111827;color:white}
-.login button{width:100%}
-.layout{display:flex;min-height:calc(100vh - 65px)}
-nav{width:190px;background:#1a2333;padding:15px}
-nav button{width:100%;margin-bottom:9px;text-align:left}
-main{padding:25px;flex:1}
-.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:17px}
-.game{background:#202b40;border-radius:13px;padding:18px}
-.icon{font-size:48px}
-.game p{color:#aab8ca}
+#login{position:fixed;inset:0;background:#111722;display:grid;place-items:center;z-index:20}
+.login{background:#202c40;padding:30px;border-radius:16px;width:min(360px,90%)}
+.login input,.login button{width:100%;margin-top:10px}
+.layout{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 65px)}
+nav{background:#192335;padding:15px}
+nav button{display:block;width:100%;margin:5px 0;text-align:left;background:transparent}
+nav button.active{background:#30425e}
+main{padding:25px}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.game{background:#202c40;padding:17px;border-radius:14px;border:1px solid #35445c}
+.gameicon{font-size:45px}
+.game p{color:#aab8cc;min-height:35px}
 .game button{width:100%}
-.panel{background:#202b40;padding:18px;border-radius:13px;margin-top:20px}
-input{background:#111827;color:white}
-#play{display:none;position:fixed;inset:0;background:#101722;z-index:10}
-#world{width:100%;height:100%;display:block}
-.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
-.hud button{pointer-events:auto}
-.hud div{background:#172438;padding:12px;border-radius:9px}
-#hint{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:#172438;padding:12px;border-radius:10px;text-align:center}
+.panel{background:#202c40;padding:18px;border-radius:14px;margin-top:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row input{flex:1;min-width:120px}
 .hidden{display:none!important}
-@media(max-width:650px){.layout{display:block}nav{width:100%;display:flex;overflow:auto}nav button{min-width:100px}main{padding:14px}}
+#play{display:none;position:fixed;inset:0;z-index:10}
+#world{width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
+.hud div{background:#172438ed;padding:12px;border-radius:10px}
+.hud button{pointer-events:auto}
+#hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#172438ed;padding:10px;border-radius:10px;font-size:13px;white-space:nowrap}
+#mobile{display:none;position:absolute;inset:0;pointer-events:none}
+#joystick{position:absolute;bottom:30px;left:25px;width:130px;height:130px;border-radius:50%;background:#ffffff35;border:3px solid #ffffff80;pointer-events:auto;touch-action:none}
+#stick{position:absolute;left:35px;top:35px;width:54px;height:54px;border-radius:50%;background:white;box-shadow:0 3px 12px #0008}
+#jump{position:absolute;right:28px;bottom:48px;width:85px;height:85px;border-radius:50%;font-size:26px;pointer-events:auto;touch-action:none}
+@media(pointer:coarse){#mobile{display:block}#hint{bottom:175px}}
+@media(max-width:650px){.layout{grid-template-columns:1fr}nav{display:flex;overflow:auto;padding:8px}nav button{min-width:100px;width:auto}main{padding:14px}}
 </style>
 </head>
 <body>
 
 <div id="login">
 <div class="login">
-<h1 class="logo">GO<span>BLOX</span></h1>
+<div class="logo">GO<span>BLOX</span></div>
 <p>PLAY · CREATE · CONNECT</p>
-<input id="name" placeholder="Nome do jogador" maxlength="16">
-<button onclick="login()">ENTRAR NO GOBLOX</button>
+<h2>Entrar no Goblox</h2>
+<input id="username" placeholder="Nome de jogador" maxlength="16">
+<button id="loginBtn">ENTRAR</button>
 </div>
 </div>
 
@@ -60,29 +68,29 @@ input{background:#111827;color:white}
 
 <div class="layout">
 <nav>
-<button onclick="page('home')">🏠 Início</button>
-<button onclick="page('games')">🎮 Jogos</button>
-<button onclick="page('profile')">👤 Perfil</button>
+<button class="active" onclick="page('home',this)">🏠 Início</button>
+<button onclick="page('games',this)">🎮 Jogos</button>
+<button onclick="page('profile',this)">👤 Perfil</button>
 </nav>
 
 <main>
 <section id="home">
 <h1>Bem-vindo ao Goblox!</h1>
-<p>Escolha uma experiência e comece a jogar.</p>
+<p>Escolha uma experiência 3D.</p>
 <div class="games" id="featured"></div>
-
 <div class="panel">
 <h2>🌐 Multiplayer</h2>
+<div class="row">
 <button onclick="createRoom()">CRIAR SALA</button>
-<p>Compartilhe seu código com amigos.</p>
 <input id="room" placeholder="Código da sala">
-<button onclick="joinRoom()">ENTRAR NA SALA</button>
+<button onclick="joinRoom()">ENTRAR</button>
+</div>
 <p id="status">Desconectado</p>
 </div>
 </section>
 
 <section id="games" class="hidden">
-<h1>Todos os jogos</h1>
+<h1>Catálogo</h1>
 <div class="games" id="catalog"></div>
 </section>
 
@@ -91,8 +99,7 @@ input{background:#111827;color:white}
 <div class="panel">
 <div style="font-size:55px">🧑</div>
 <h2 id="profileName"></h2>
-<p>Nível 1</p>
-<p>Jogador Goblox</p>
+<p>Nível 1 · Jogador Goblox</p>
 </div>
 </section>
 </main>
@@ -101,10 +108,19 @@ input{background:#111827;color:white}
 <div id="play">
 <canvas id="world"></canvas>
 <div class="hud">
-<div id="gameName">GOBLOX</div>
-<button onclick="exitGame()">VOLTAR</button>
+<div>
+<b id="gameTitle">GOBLOX</b>
+<div id="playerCount">Jogadores: 1</div>
 </div>
-<div id="hint">WASD para movimentar · ESPAÇO para pular</div>
+<div><button onclick="exitGame()">VOLTAR</button></div>
+</div>
+
+<div id="mobile">
+<div id="joystick"><div id="stick"></div></div>
+<button id="jump">⬆</button>
+</div>
+
+<div id="hint">WASD · ESPAÇO PARA PULAR</div>
 </div>
 
 <script>
@@ -112,108 +128,138 @@ let username="";
 let peer=null;
 let connections=[];
 let players={};
-let scene,camera,renderer,character;
+let scene,camera,renderer,character,clock;
 let keys={};
-let velocity=0;
+let vy=0;
 let jumping=false;
-let yaw=0;
-let currentGame="";
+let activeGame="obby";
 let running=false;
+let raf=0;
+let joyX=0,joyY=0;
 let lastSend=0;
+let yaw=0;
 
 const games=[
-{id:"obby",name:"Goblox Obby",icon:"🧗",description:"Parkour 3D multiplayer"},
-{id:"arena",name:"Goblox Arena",icon:"⚔️",description:"Arena 3D"},
-{id:"racing",name:"Goblox Racing",icon:"🏎️",description:"Corrida 3D"},
-{id:"football",name:"Goblox Football",icon:"⚽",description:"Futebol 3D"}
+{id:"obby",name:"Goblox Obby",icon:"🧗",desc:"Parkour 3D e plataformas."},
+{id:"arena",name:"Goblox Arena",icon:"⚔️",desc:"Explore uma arena 3D."},
+{id:"racing",name:"Goblox Racing",icon:"🏎️",desc:"Circuito de corrida."},
+{id:"football",name:"Goblox Football",icon:"⚽",desc:"Futebol em 3D."}
 ];
 
 function login(){
-let n=document.getElementById("name").value.trim();
-if(n.length<3)return alert("Digite pelo menos 3 letras");
+let n=document.getElementById("username").value.trim();
+if(n.length<3)return alert("Digite pelo menos 3 letras.");
+
 username=n;
-localStorage.setItem("goblox_user",n);
+localStorage.setItem("goblox_name",n);
+
 document.getElementById("login").style.display="none";
 document.getElementById("user").textContent="👤 "+n;
 document.getElementById("profileName").textContent=n;
+
 renderGames();
 }
+
+document.getElementById("loginBtn").onclick=login;
+
+let saved=localStorage.getItem("goblox_name");
+if(saved)document.getElementById("username").value=saved;
+
 function logout(){
-localStorage.removeItem("goblox_user");
+localStorage.removeItem("goblox_name");
 location.reload();
 }
 
-if(localStorage.getItem("goblox_user")){
-document.getElementById("name").value=localStorage.getItem("goblox_user");
-}
-
-function page(p){
-["home","games","profile"].forEach(x=>{
-document.getElementById(x).classList.toggle("hidden",x!==p);
-});
+function page(p,b){
+["home","games","profile"].forEach(x=>
+document.getElementById(x).classList.toggle("hidden",x!==p)
+);
+document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
 }
 
 function renderGames(){
 let html=games.map(g=>`
 <div class="game">
-<div class="icon">${g.icon}</div>
-<h2>${g.name}</h2>
-<p>${g.description}</p>
+<div class="gameicon">${g.icon}</div>
+<h3>${g.name}</h3>
+<p>${g.desc}</p>
 <button onclick="startGame('${g.id}')">JOGAR</button>
 </div>`).join("");
+
 document.getElementById("featured").innerHTML=html;
 document.getElementById("catalog").innerHTML=html;
 }
 
-async function createRoom(){
-try{
+// MULTIPLAYER
+
+function createRoom(){
 if(peer)peer.destroy();
-connections=[];
+
 peer=new Peer();
+
 peer.on("open",id=>{
 document.getElementById("room").value=id;
 document.getElementById("status").textContent="Sala criada: "+id;
 });
+
 peer.on("connection",conn=>{
 connections.push(conn);
 setupConnection(conn);
 });
-}catch(e){alert("Erro ao criar sala")}
+
+peer.on("error",e=>alert("Erro multiplayer: "+e.type));
 }
 
 function joinRoom(){
 let id=document.getElementById("room").value.trim();
-if(!id)return alert("Digite o código");
+if(!id)return alert("Digite o código.");
+
 if(peer)peer.destroy();
-connections=[];
+
 peer=new Peer();
+
 peer.on("open",()=>{
 let conn=peer.connect(id);
+
 conn.on("open",()=>{
 connections.push(conn);
 setupConnection(conn);
 conn.send({type:"hello",name:username});
-document.getElementById("status").textContent="Conectado!";
+document.getElementById("status").textContent="Conectado à sala!";
 });
+
+conn.on("error",()=>alert("Erro de conexão."));
 });
-peer.on("error",()=>alert("Não foi possível conectar"));
+
+peer.on("error",()=>alert("Não foi possível conectar."));
 }
 
 function setupConnection(conn){
+
 conn.on("data",data=>{
+
 if(data.type==="hello"){
-addPlayer(conn.peer,data.name);
+addRemote(conn.peer);
 }
+
 if(data.type==="move"){
-if(!players[conn.peer])addPlayer(conn.peer,"Jogador");
-players[conn.peer].position.set(data.x,data.y,data.z);
+if(!players[conn.peer])addRemote(conn.peer);
+
+players[conn.peer].position.set(
+data.x,data.y,data.z
+);
+
 players[conn.peer].rotation.y=data.yaw;
 }
+
 });
+
 conn.on("close",()=>{
 if(players[conn.peer]){
 scene.remove(players[conn.peer]);
 delete players[conn.peer];
+updatePlayers();
 }
 });
 }
@@ -224,40 +270,99 @@ if(c.open)c.send(data);
 });
 }
 
-function addPlayer(id,name){
+function addRemote(id){
 if(!scene||players[id])return;
-let p=makeCharacter(0,0,0,0x20d6b8);
+
+let p=makeCharacter(0,0,0,0x36d6cf);
 scene.add(p);
 players[id]=p;
+updatePlayers();
 }
+
+function updatePlayers(){
+document.getElementById("playerCount").textContent=
+"Jogadores: "+(Object.keys(players).length+1);
+}
+
+// PERSONAGEM
 
 function makeCharacter(x,y,z,color){
+
 let group=new THREE.Group();
-let body=new THREE.Mesh(
-new THREE.BoxGeometry(0.9,1.1,0.5),
-new THREE.MeshStandardMaterial({color})
-);
-body.position.y=1.3;
-group.add(body);
 
-let head=new THREE.Mesh(
-new THREE.BoxGeometry(0.7,0.7,0.7),
-new THREE.MeshStandardMaterial({color:0xffc795})
+function part(w,h,d,c,px,py,pz){
+let m=new THREE.Mesh(
+new THREE.BoxGeometry(w,h,d),
+new THREE.MeshStandardMaterial({color:c})
 );
-head.position.y=2.2;
-group.add(head);
-
-for(let s of [-1,1]){
-let leg=new THREE.Mesh(
-new THREE.BoxGeometry(0.35,0.85,0.4),
-new THREE.MeshStandardMaterial({color:0x263d75})
-);
-leg.position.set(s*0.23,0.42,0);
-group.add(leg);
+m.position.set(px,py,pz);
+m.castShadow=true;
+group.add(m);
+return m;
 }
+
+// Tronco
+part(.95,1.1,.5,color,0,1.45,0);
+
+// Cabeça
+part(.78,.78,.78,0xffc995,0,2.42,0);
+
+// Cabelo
+part(.81,.19,.82,0x38251c,0,2.83,0);
+
+// Olhos
+part(.09,.1,.03,0x202020,-.17,2.48,-.402);
+part(.09,.1,.03,0x202020,.17,2.48,-.402);
+
+// Boca
+part(.19,.035,.025,0x8c3737,0,2.27,-.405);
+
+let arms=[];
+let legs=[];
+
+for(let side of [-1,1]){
+
+let arm=new THREE.Group();
+arm.position.set(side*.63,1.95,0);
+
+let armMesh=new THREE.Mesh(
+new THREE.BoxGeometry(.32,.95,.38),
+new THREE.MeshStandardMaterial({color:0xffc995})
+);
+armMesh.position.y=-.43;
+arm.add(armMesh);
+group.add(arm);
+arms.push(arm);
+
+let leg=new THREE.Group();
+leg.position.set(side*.24,.95,0);
+
+let lm=new THREE.Mesh(
+new THREE.BoxGeometry(.38,.9,.43),
+new THREE.MeshStandardMaterial({color:0x244a91})
+);
+lm.position.y=-.43;
+leg.add(lm);
+
+let shoe=new THREE.Mesh(
+new THREE.BoxGeometry(.42,.22,.58),
+new THREE.MeshStandardMaterial({color:0x202b38})
+);
+shoe.position.set(0,-.84,-.07);
+leg.add(shoe);
+
+group.add(leg);
+legs.push(leg);
+}
+
+group.userData.arms=arms;
+group.userData.legs=legs;
 group.position.set(x,y,z);
+
 return group;
 }
+
+// MAPAS
 
 function box(x,y,z,w,h,d,color){
 let m=new THREE.Mesh(
@@ -265,117 +370,281 @@ new THREE.BoxGeometry(w,h,d),
 new THREE.MeshStandardMaterial({color})
 );
 m.position.set(x,y,z);
+m.castShadow=true;
+m.receiveShadow=true;
 scene.add(m);
 return m;
 }
 
-function startGame(id){
-currentGame=id;
-document.getElementById("play").style.display="block";
-document.getElementById("gameName").textContent=
-games.find(g=>g.id===id).name;
-buildWorld();
-running=true;
-animate();
+function tree(x,z){
+box(x,1,z,.8,2,.8,0x79502e);
+box(x,3,z,3.5,3.5,3.5,0x248448);
+box(x,4.4,z,2.3,1.5,2.3,0x32a65a);
 }
 
 function buildWorld(){
+
 scene=new THREE.Scene();
-scene.background=new THREE.Color(0x87c8f0);
+scene.background=new THREE.Color(0x83c9f5);
+scene.fog=new THREE.Fog(0x83c9f5,65,140);
 
 camera=new THREE.PerspectiveCamera(
-70,innerWidth/innerHeight,0.1,300
+70,innerWidth/innerHeight,.1,300
 );
 
 renderer=new THREE.WebGLRenderer({
 canvas:document.getElementById("world"),
 antialias:true
 });
+
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=true;
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x667788,2));
+scene.add(new THREE.HemisphereLight(0xffffff,0x64758a,2));
 
-let light=new THREE.DirectionalLight(0xffffff,2);
-light.position.set(10,20,10);
-scene.add(light);
+let sun=new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(15,30,10);
+sun.castShadow=true;
+scene.add(sun);
 
-box(0,-0.5,0,100,1,100,
-currentGame==="football"?0x369c50:0x58ad59);
+box(0,-.5,0,120,1,120,
+activeGame==="football"?0x369c50:0x55a94f);
+
+// Árvores
+for(let i=0;i<24;i++){
+tree((i%6-3)*15-10,-Math.floor(i/6)*22-12);
+}
+
+// OBBY
+if(activeGame==="obby"){
+
+for(let i=0;i<18;i++){
+let x=Math.sin(i*.8)*5;
+let z=-i*4;
+
+box(x,Math.max(.2,i*.15),z,
+3.5,.7,3.5,
+[0xffb52e,0x269be8,0xa66bfa][i%3]);
+}
+
+box(0,3,-76,12,1,12,0x32d58a);
+box(-10,2,-20,2,4,2,0xffd34e);
+box(10,2,-45,2,4,2,0xffd34e);
+}
+
+// ARENA
+if(activeGame==="arena"){
+
+box(0,.2,-8,30,.5,30,0x747f90);
+
+for(let i=0;i<16;i++){
+let a=i*Math.PI/8;
+box(Math.cos(a)*13,1,Math.sin(a)*13,
+2,2,2,0x465a78);
+}
+
+box(0,1,-8,5,2,2,0xd69a43);
+box(-7,1,-5,2,2,5,0x3b82c4);
+box(7,1,-12,2,2,5,0xc44d4d);
+}
+
+// RACING
+if(activeGame==="racing"){
+
+for(let i=0;i<48;i++){
+let a=i*Math.PI/24;
+
+let road=box(
+Math.cos(a)*15,.1,Math.sin(a)*15,
+5,.3,3,0x353b48
+);
+road.rotation.y=-a;
+
+let wall=box(
+Math.cos(a)*19,.8,Math.sin(a)*19,
+1.2,1.6,2,0xffffff
+);
+wall.rotation.y=-a;
+}
+}
+
+// FOOTBALL
+if(activeGame==="football"){
+
+box(0,.1,0,38,.2,25,0x32994b);
+box(0,.23,0,.16,.05,25,0xffffff);
+box(0,.23,-12,38,.05,.16,0xffffff);
+box(0,.23,12,38,.05,.16,0xffffff);
+
+for(let side of [-1,1]){
+box(side*19,1,0,.3,2,8,0xffffff);
+box(side*19,2,0,3,.2,8,0xffffff);
+}
+}
 
 character=makeCharacter(0,0,5,0x2878ed);
 scene.add(character);
 
-if(currentGame==="obby"){
-for(let i=0;i<15;i++){
-box((i%3-1)*4,0.3,-i*4,
-3.5,0.6,3.5,
-[0xffb43b,0x38b8ee,0xa77df5][i%3]);
-}
-}
-if(currentGame==="arena"){
-for(let i=0;i<15;i++){
-let a=i*Math.PI*2/15;
-box(Math.cos(a)*12,1,Math.sin(a)*12,2,2,2,0xb3a16b);
-}
-}
-if(currentGame==="racing"){
-for(let i=0;i<24;i++){
-let a=i*Math.PI/12;
-let m=box(Math.cos(a)*12,0.1,Math.sin(a)*12,5,.2,2,0x333b4c);
-m.rotation.y=-a;
-}
-}
-if(currentGame==="football"){
-box(0,0.05,0,35,.1,23,0x42ae59);
-box(0,0.12,0,.15,.1,23,0xffffff);
-}
-
-for(let i=0;i<12;i++){
-let x=(i%4-2)*12;
-let z=-Math.floor(i/4)*15-10;
-box(x,1,z,.8,2,.8,0x80512f);
-box(x,3,z,3,3,3,0x25874c);
-}
-
 camera.position.set(0,5,12);
+clock=new THREE.Clock();
 }
+
+// JOGABILIDADE
+
+function startGame(id){
+activeGame=id;
+
+document.getElementById("gameTitle").textContent=
+games.find(g=>g.id===id).name;
+
+document.getElementById("play").style.display="block";
+
+buildWorld();
+running=true;
+animate();
+}
+
+function jump(){
+if(!jumping){
+vy=.28;
+jumping=true;
+}
+}
+
+document.getElementById("jump").addEventListener("pointerdown",e=>{
+e.preventDefault();
+jump();
+});
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+if(e.code==="Space")jump();
+});
+
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+});
+
+// JOYSTICK ANALÓGICO
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+let joyPointer=null;
+
+joystick.addEventListener("pointerdown",e=>{
+joyPointer=e.pointerId;
+joystick.setPointerCapture(e.pointerId);
+moveJoy(e);
+});
+
+joystick.addEventListener("pointermove",e=>{
+if(e.pointerId===joyPointer)moveJoy(e);
+});
+
+function moveJoy(e){
+let rect=joystick.getBoundingClientRect();
+
+let dx=e.clientX-(rect.left+rect.width/2);
+let dy=e.clientY-(rect.top+rect.height/2);
+
+let max=40;
+let len=Math.hypot(dx,dy);
+
+if(len>max){
+dx=dx/len*max;
+dy=dy/len*max;
+}
+
+joyX=dx/max;
+joyY=dy/max;
+
+stick.style.transform=`translate(${dx}px,${dy}px)`;
+}
+
+function resetJoy(){
+joyPointer=null;
+joyX=0;
+joyY=0;
+stick.style.transform="translate(0,0)";
+}
+
+joystick.addEventListener("pointerup",resetJoy);
+joystick.addEventListener("pointercancel",resetJoy);
+
+// LOOP 3D
 
 function animate(){
 if(!running)return;
-requestAnimationFrame(animate);
 
-let forward=(keys.w||keys.arrowup?1:0)-
-(keys.s||keys.arrowdown?1:0);
-let side=(keys.d||keys.arrowright?1:0)-
-(keys.a||keys.arrowleft?1:0);
+raf=requestAnimationFrame(animate);
 
-let speed=0.15;
-character.position.x+=side*speed;
-character.position.z-=forward*speed;
+let dt=Math.min(clock.getDelta(),.04);
 
-if(forward||side)character.rotation.y=Math.atan2(side,forward);
+let forward=
+(keys.w||keys.arrowup?1:0)-
+(keys.s||keys.arrowdown?1:0)-joyY;
 
-if(keys[" "]&&!jumping){
-velocity=.28;
-jumping=true;
+let side=
+(keys.d||keys.arrowright?1:0)-
+(keys.a||keys.arrowleft?1:0)+joyX;
+
+let magnitude=Math.hypot(forward,side);
+
+if(magnitude>1){
+forward/=magnitude;
+side/=magnitude;
 }
-character.position.y+=velocity;
-velocity-=.015;
 
-if(character.position.y<0){
+let speed=activeGame==="racing"?12:7;
+
+character.position.x+=side*speed*dt;
+character.position.z-=forward*speed*dt;
+
+if(magnitude>.05){
+
+character.rotation.y=Math.atan2(side,forward);
+
+let t=Date.now()*.012;
+
+character.userData.arms[0].rotation.x=Math.sin(t)*.45;
+character.userData.arms[1].rotation.x=-Math.sin(t)*.45;
+character.userData.legs[0].rotation.x=-Math.sin(t)*.5;
+character.userData.legs[1].rotation.x=Math.sin(t)*.5;
+
+}else{
+character.userData.arms.forEach(a=>a.rotation.x=0);
+character.userData.legs.forEach(l=>l.rotation.x=0);
+}
+
+// PULO
+vy-=18*dt;
+character.position.y+=vy*dt;
+
+if(character.position.y<=0){
 character.position.y=0;
-velocity=0;
+vy=0;
 jumping=false;
 }
 
-camera.position.x=character.position.x;
-camera.position.y=character.position.y+5;
-camera.position.z=character.position.z+9;
-camera.lookAt(character.position.x,character.position.y+1,character.position.z);
+// CÂMERA
+camera.position.set(
+character.position.x,
+character.position.y+5,
+character.position.z+9
+);
 
+camera.lookAt(
+character.position.x,
+character.position.y+1.2,
+character.position.z
+);
+
+// MULTIPLAYER
 if(Date.now()-lastSend>70){
 lastSend=Date.now();
+
 sendAll({
 type:"move",
 x:character.position.x,
@@ -384,20 +653,21 @@ z:character.position.z,
 yaw:character.rotation.y
 });
 }
+
 renderer.render(scene,camera);
 }
 
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true;
-});
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false;
-});
-
 function exitGame(){
 running=false;
+cancelAnimationFrame(raf);
+
 document.getElementById("play").style.display="none";
-if(renderer)renderer.dispose();
+
+if(renderer){
+renderer.dispose();
+renderer=null;
+}
+
 scene=null;
 players={};
 }
@@ -409,6 +679,8 @@ camera.updateProjectionMatrix();
 renderer.setSize(innerWidth,innerHeight);
 }
 });
+
+})();
 </script>
 </body>
 </html>
