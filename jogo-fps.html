@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Goblox — FPS Multiplayer Arena</title>
+<link rel="stylesheet" href="global.css">
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #050508;
+    user-select: none;
+    touch-action: none;
+    font-family: Arial, sans-serif;
+  }
+  #hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  }
+  #mira {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    margin-top: -6px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #mira::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 4px;
+    height: 4px;
+    background: #ef4444;
+    border-radius: 50%;
+  }
+
+  /* BOTÃO DE ATIRAR */
+  #btnAtirar {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    width: 85px;
+    height: 85px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
+    border: 3px solid #fca5a5;
+    color: white;
+    font-weight: 900;
+    font-size: 1.1rem;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #btnAtirar:active {
+    transform: scale(0.92);
+    background: #dc2626;
+  }
+
+  #btnVoltar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    background: #1e1e2d;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20;
+    text-decoration: none;
+  }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="hud">
+  <div>Kills: <span id="scoreKills" style="color: #4ade80;">0</span></div>
+  <div>Vida: <span id="scoreVida" style="color: #ef4444;">100</span>%</div>
+</div>
+
+<div id="mira"></div>
+<button id="btnAtirar">🔫 FIRE</button>
+<a href="lobby.html" id="btnVoltar">⎋ Sair</a>
+
+<script type="module">
+import * as THREE from 'three';
+import { db as database } from './firebase.js';
+import { ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { criarPersonagem } from './personagem.js';
+
+// 1. CENA, CÂMERA E RENDERER
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a14);
+scene.fog = new THREE.FogExp2(0x0a0a14, 0.025);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// ILUMINAÇÃO
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xa855f7, 1.2);
+dirLight.position.set(20, 40, 20);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// 2. PLATAFORMAS DO MAPA
+const plataformas = [];
+
+function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.4 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, y, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  
+  mesh.userData = { minX: x - w/2, maxX: x + w/2, minZ: z - d/2, maxZ: z + d/2, topY: y + h/2 };
+  plataformas.push(mesh);
+}
+
+criarPlataforma(0, 0, 0, 30, 2, 30, 0x181824);
+criarPlataforma(-22, 4, -10, 14, 1.5, 14, 0x312e81);
+criarPlataforma(22, 6, 12, 16, 1.5, 16, 0x312e81);
+criarPlataforma(0, 8, -25, 18, 1.5, 12, 0x4c1d95);
+
+// 3. JOGADOR E MULTIPLAYER FIREBASE
+const meuId = 'player_' + Math.random().toString(36).substr(2, 9);
+const jogadorRef = ref(database, 'fps_jogadores/' + meuId);
+const todosJogadoresRef = ref(database, 'fps_jogadores');
+
+set(jogadorRef, { x: 0, y: 3, z: 10 });
+onDisconnect(jogadorRef).remove();
+
+let playerPos = { x: 0, y: 3, z: 10 };
+let velY = 0;
+const gravidade = -0.015;
+let kills = 0;
+let vida = 100;
+const outrosJogadores = {};
+
+// ARMA NA CÂMERA
+const gunGroup = new THREE.Group();
+const gunBody = new THREE.Mesh(
+  new THREE.BoxGeometry(0.15, 0.2, 0.7),
+  new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 })
+);
+gunBody.position.set(0.3, -0.25, -0.5);
+const gunBarrel = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.04, 0.04, 0.4),
+  new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 })
+);
+gunBarrel.rotation.x = Math.PI / 2;
+gunBarrel.position.set(0.3, -0.2, -0.85);
+gunGroup.add(gunBody, gunBarrel);
+camera.add(gunGroup);
+scene.add(camera);
+
+// ESCUTA OUTROS JOGADORES NO FIREBASE
+onValue(todosJogadoresRef, (snapshot) => {
+  const data = snapshot.val() || {};
+
+  for (let id in outrosJogadores) {
+    if (!data[id]) {
+      scene.remove(outrosJogadores[id].mesh);
+      delete outrosJogadores[id];
+    }
+  }
+
+  for (let id in data) {
+    if (id === meuId) continue;
+    let pos = data[id];
+
+    if (!outrosJogadores[id]) {
+      const meshOutro = criarPersonagem(); // Usa o teu modelo personalizado!
+      scene.add(meshOutro);
+      outrosJogadores[id] = { mesh: meshOutro };
+    }
+
+    if (pos && typeof pos.x === 'number') {
+      outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
+    }
+  }
+});
+
+// 4. SISTEMA DE TIROS
+const projetes = [];
+
+function atirar() {
+  gunGroup.position.z += 0.08;
+  setTimeout(() => gunGroup.position.z = 0, 80);
+
+  const bulletGeo = new THREE.SphereGeometry(0.12, 8, 8);
+  const bulletMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+  const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  bullet.position.copy(camera.position).add(dir.clone().multiplyScalar(0.5));
+  scene.add(bullet);
+
+  projetes.push({ mesh: bullet, dir: dir, life: 100 });
+}
+
+document.getElementById('btnAtirar').addEventListener('click', atirar);
+window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'KeyF') atirar(); });
+
+// 5. CONTROLES DE CÂMERA E MOVIMENTO
+let rotationX = 0, rotationY = 0;
+let isMouseDown = false;
+let lastTouchX = 0, lastTouchY = 0;
+
+window.addEventListener('mousedown', () => isMouseDown = true);
+window.addEventListener('mouseup', () => isMouseDown = false);
+window.addEventListener('mousemove', (e) => {
+  if (isMouseDown) {
+    rotationY -= e.movementX * 0.003;
+    rotationX -= e.movementY * 0.003;
+    rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
+  }
+});
+
+window.addEventListener('touchstart', (e) => {
+  if (e.touches[0].target.id !== 'btnAtirar') {
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+window.addEventListener('touchmove', (e) => {
+  if (e.touches[0].target.id !== 'btnAtirar') {
+    const deltaX = e.touches[0].clientX - lastTouchX;
+    const deltaY = e.touches[0].clientY - lastTouchY;
+    rotationY -= deltaX * 0.005;
+    rotationX -= deltaY * 0.005;
+    rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotationX));
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+
+const keys = {};
+window.addEventListener('keydown', (e) => keys[e.code] = true);
+window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+// 6. LOOP PRINCIPAL
+let ultimoEnvio = 0;
+
+function animate(tempo) {
+  requestAnimationFrame(animate);
+
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = rotationY;
+  camera.rotation.x = rotationX;
+
+  const dirFrente = new THREE.Vector3(-Math.sin(rotationY), 0, -Math.cos(rotationY)).normalize();
+  const dirLado = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY)).normalize();
+  const vel = 0.18;
+
+  if (keys['KeyW']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
+  if (keys['KeyS']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
+  if (keys['KeyA']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
+  if (keys['KeyD']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
+
+  velY += gravidade;
+  playerPos.y += velY;
+
+  let noChao = false;
+  for (let plat of plataformas) {
+    const b = plat.userData;
+    if (playerPos.x >= b.minX && playerPos.x <= b.maxX && playerPos.z >= b.minZ && playerPos.z <= b.maxZ) {
+      if (playerPos.y <= b.topY + 1.6 && playerPos.y >= b.topY - 0.5) {
+        playerPos.y = b.topY + 1.6;
+        velY = 0;
+        noChao = true;
+        break;
+      }
+    }
+  }
+
+  // QUEDA DA PLATAFORMA (RESPAWN)
+  if (playerPos.y < -15) {
+    playerPos = { x: 0, y: 4, z: 0 };
+    velY = 0;
+    vida = Math.max(0, vida - 20);
+    document.getElementById('scoreVida').innerText = vida;
+  }
+
+  camera.position.set(playerPos.x, playerPos.y, playerPos.z);
+
+  // Envia posição para o Firebase de forma otimizada a cada ~50ms
+  if (tempo - ultimoEnvio > 50) {
+    set(jogadorRef, {
+      x: Number(playerPos.x.toFixed(2)),
+      y: Number(playerPos.y.toFixed(2)),
+      z: Number(playerPos.z.toFixed(2))
+    }).catch(() => {});
+    ultimoEnvio = tempo;
+  }
+
+  // Atualiza Projéteis
+  for (let i = projetes.length - 1; i >= 0; i--) {
+    const p = projetes[i];
+    p.mesh.position.add(p.dir.clone().multiplyScalar(0.8));
+    p.life--;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      projetes.splice(i, 1);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate(0);
+</script>
+</body>
+</html>
