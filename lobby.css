@@ -1,46 +1,247 @@
-import { getCurrentNick, logout } from "./authLocal.js";
 
-const boasVindas = document.getElementById("boasVindas");
-const btnPerfil = document.getElementById("btnPerfil");
-const btnSair = document.getElementById("btnSair");
-const toast = document.getElementById("toast");
-
-function mostrarToast(msg, tipo = "info") {
-  if (!toast) return;
-
-  toast.textContent = msg;
-  toast.className = `toast show ${tipo}`;
-
-  clearTimeout(mostrarToast.timer);
-  mostrarToast.timer = setTimeout(() => {
-    toast.className = "toast";
-  }, 2500);
+:root {
+  --bg: #090b14;
+  --panel: #111522;
+  --card: #191f30;
+  --purple: #7655ff;
+  --cyan: #31d9ff;
+  --text: #ffffff;
+  --muted: #9ba5bb;
 }
 
-function verificarSessao() {
-  const nick = getCurrentNick();
+* {
+  box-sizing: border-box;
+}
 
-  if (!nick) {
-    window.location.href = "lock.html";
-    return;
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 15% 10%, #4225a044, transparent 45%),
+    radial-gradient(ellipse at 90% 80%, #087bba22, transparent 40%),
+    #090b14;
+}
+
+.topbar {
+  height: 76px;
+  padding: 0 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #101321dd;
+  border-bottom: 1px solid #ffffff12;
+  backdrop-filter: blur(15px);
+}
+
+.logo {
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: white;
+  text-shadow: 0 0 20px #7655ff99;
+}
+
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#boasVindas {
+  color: #c7cce0;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.btn {
+  padding: 11px 19px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: .2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-light {
+  background: #292e43;
+  color: white;
+}
+
+.btn-dark {
+  background: #d83c5b;
+  color: white;
+}
+
+.container {
+  width: min(1150px, 92%);
+  margin: 65px auto;
+}
+
+.panel {
+  background: linear-gradient(145deg, #151a2b, #101421);
+  border: 1px solid #ffffff12;
+  border-radius: 20px;
+  padding: 38px;
+  box-shadow: 0 20px 70px #0005;
+}
+
+.label {
+  color: var(--cyan);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: bold;
+}
+
+h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  margin: 12px 0 25px;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 35px;
+}
+
+.stats span {
+  padding: 13px 19px;
+  background: #20263a;
+  border: 1px solid #ffffff0c;
+  border-radius: 10px;
+  color: #dce1f5;
+  font-size: 14px;
+}
+
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.game-card {
+  min-height: 190px;
+  padding: 25px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 13px;
+  background: linear-gradient(135deg, #222b45, #171c2d);
+  border: 1px solid #ffffff12;
+  border-radius: 15px;
+  color: white;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--purple);
+  box-shadow: 0 12px 35px #7655ff30;
+  background: linear-gradient(135deg, #30265a, #191d31);
+}
+
+.game-card strong {
+  font-size: 25px;
+}
+
+.game-card small {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tag {
+  width: fit-content;
+  padding: 6px 11px;
+  border-radius: 6px;
+  background: #7655ff30;
+  color: #b9aaff;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  padding: 15px 22px;
+  background: #20263a;
+  border: 1px solid #7655ff;
+  border-radius: 10px;
+  color: white;
+  opacity: 0;
+  transform: translateY(15px);
+  pointer-events: none;
+  transition: .25s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.warning {
+  border-color: #ffb547;
+}
+
+.toast.info {
+  border-color: var(--cyan);
+}
+
+@media (max-width: 650px) {
+  .topbar {
+    height: auto;
+    min-height: 75px;
+    padding: 15px 4%;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
-  boasVindas.textContent = `Olá, ${nick}!`;
+  .logo {
+    font-size: 22px;
+  }
+
+  .user-box {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  #boasVindas {
+    width: 100%;
+    margin: 0;
+  }
+
+  .container {
+    margin: 30px auto;
+  }
+
+  .panel {
+    padding: 22px;
+  }
+
+  .game-list {
+    grid-template-columns: 1fr;
+  }
+
+  .game-card {
+    min-height: 155px;
+  }
 }
-
-btnPerfil.addEventListener("click", () => {
-  mostrarToast("Tela de perfil em construção!", "warning");
-});
-
-btnSair.addEventListener("click", () => {
-  logout();
-});
-
-document.querySelectorAll(".game-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    const nome = card.dataset.game || "Jogo";
-    mostrarToast(`${nome} em desenvolvimento!`, "info");
-  });
-});
-
-verificarSessao();
