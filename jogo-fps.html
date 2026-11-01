@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — FPS Tático</title>
+<title>Goblox — FPS Tático (PVP Ativo)</title>
 <link rel="stylesheet" href="global.css">
 <style>
   body {
@@ -335,15 +335,31 @@ function criarBot(x, y, z) {
 criarBot(-35, 2, -35);
 criarBot(35, 2, 35);
 
-// ESCUTA OUTROS JOGADORES
+// ESCUTA OUTROS JOGADORES E VERIFICA A PRÓPRIA VIDA (PVP & RESPAWN)
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
+
+  // Verifica se o nosso próprio jogador recebeu dano de outro player no banco de dados
+  if (data[meuId] && typeof data[meuId].vida === 'number') {
+    vida = data[meuId].vida;
+    document.getElementById('scoreVida').innerText = vida;
+    
+    if (vida <= 0) {
+      // Respawn automático se a vida acabar
+      playerPos = { x: 0, y: 5, z: 45 };
+      vida = 100;
+      document.getElementById('scoreVida').innerText = vida;
+      set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
+    }
+  }
+
   for (let id in outrosJogadores) {
     if (!data[id]) {
       scene.remove(outrosJogadores[id].mesh);
       delete outrosJogadores[id];
     }
   }
+
   for (let id in data) {
     if (id === meuId) continue;
     let pos = data[id];
@@ -359,7 +375,7 @@ onValue(todosJogadoresRef, (snapshot) => {
   }
 });
 
-// 4. TIROS
+// 4. TIROS E COLISÃO PVP (Player vs Player)
 const projetes = [];
 function atirar() {
   gunGroup.position.z += 0.08;
@@ -374,7 +390,9 @@ function atirar() {
   bullet.position.copy(camera.position).add(dir.clone().multiplyScalar(0.8));
   scene.add(bullet);
 
-  projetes.push({ mesh: bullet, dir: dir, life: 120, dano: armaAtual === 1 ? 2 : 1 });
+  // Cada arma tem um dano diferente
+  const danoArma = armaAtual === 1 ? 35 : (armaAtual === 2 ? 20 : 25);
+  projetes.push({ mesh: bullet, dir: dir, life: 120, dano: danoArma });
 }
 
 // 5. CONTROLES MULTI-TOQUE LIVRE PARA MOBILE E MOUSE PARA PC
@@ -398,7 +416,6 @@ document.addEventListener('mousemove', (e) => {
   }
 });
 
-// SISTEMA MULTI-TOQUE PERFEITO (Joystick + Câmera + Botões Independentes)
 const joystickBase = document.getElementById('joystickBase');
 const joystickStick = document.getElementById('joystickStick');
 let joystickTouchId = null;
@@ -412,17 +429,13 @@ window.addEventListener('touchstart', (e) => {
     const touch = e.changedTouches[i];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     
-    // Ignora se o toque começou em cima de botões ou inventário
     if (target && (target.closest('#btnPular') || target.closest('#btnAtirar') || target.closest('#inventario') || target.closest('#btnVoltar'))) {
       continue;
     }
 
-    // Lado esquerdo da tela controla o Joystick
     if (joystickTouchId === null && touch.clientX < window.innerWidth / 2) {
       joystickTouchId = touch.identifier;
-    } 
-    // Lado direito da tela controla a Câmera
-    else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
+    } else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
       cameraTouchId = touch.identifier;
       lastTouchX = touch.clientX;
       lastTouchY = touch.clientY;
@@ -475,7 +488,6 @@ window.addEventListener('touchend', (e) => {
   }
 });
 
-// Botões de Ação com pointerdown para não bloquear o multi-toque
 document.getElementById('btnPular').addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (noChao) { velY = forcaPulo; noChao = false; }
@@ -553,9 +565,9 @@ function animate(tempo) {
   }
 
   if (playerPos.y < -20) {
-    playerPos = { x: 0, y: 5, z: 0 };
+    playerPos = { x: 0, y: 5, z: 45 };
     velY = 0;
-    vida = Math.max(0, vida - 20);
+    vida = Math.max(0, vida - 25);
     document.getElementById('scoreVida').innerText = vida;
   }
 
@@ -571,16 +583,19 @@ function animate(tempo) {
     ultimoEnvio = tempo;
   }
 
+  // ATUALIZAÇÃO DOS TIROS E DETECÇÃO DE IMPACTO (PVP)
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
     p.mesh.position.add(p.dir.clone().multiplyScalar(1.2));
     p.life--;
 
     let acertou = false;
+
+    // Atingir BOTS
     for (let j = bots.length - 1; j >= 0; j--) {
       const b = bots[j];
       if (p.mesh.position.distanceTo(b.mesh.position) < 1.8) {
-        b.vida -= p.dano;
+        b.vida -= 1;
         acertou = true;
         if (b.vida <= 0) {
           scene.remove(b.mesh);
@@ -593,14 +608,21 @@ function animate(tempo) {
       }
     }
 
+    // Atingir OUTROS JOGADORES (PVP Real)
     if (!acertou) {
       for (let id in outrosJogadores) {
         const outro = outrosJogadores[id];
+        // Distância de colisão com o boneco 3D do outro player
         if (p.mesh.position.distanceTo(outro.mesh.position) < 1.8) {
+          const novaVidaOutro = Math.max(0, outro.vida - p.dano);
           const outroRef = ref(database, 'fps_tatico/' + id + '/vida');
-          set(outroRef, Math.max(0, outro.vida - (p.dano * 15))).catch(() => {});
-          kills++;
-          document.getElementById('scoreKills').innerText = kills;
+          set(outroRef, novaVidaOutro).catch(() => {});
+
+          if (novaVidaOutro <= 0) {
+            kills++;
+            document.getElementById('scoreKills').innerText = kills;
+          }
+
           acertou = true;
           break;
         }
