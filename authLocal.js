@@ -17,10 +17,10 @@ async function hashPassword(password, salt) {
     encoder.encode(password),
     "PBKDF2",
     false,
-    ["deriveBits", "deriveKey"]
+    ["deriveBits"]
   );
 
-  const key = await crypto.subtle.deriveKey(
+  const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       salt,
@@ -28,13 +28,10 @@ async function hashPassword(password, salt) {
       hash: "SHA-256"
     },
     keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
+    256
   );
 
-  const exported = await crypto.subtle.exportKey("raw", key);
-  return Array.from(new Uint8Array(exported));
+  return Array.from(new Uint8Array(bits));
 }
 
 export async function createAccount(nick, password) {
@@ -60,7 +57,7 @@ export async function createAccount(nick, password) {
 
   accounts[key] = {
     nick: cleanNick,
-    passwordHash: Array.from(passwordHash),
+    passwordHash: passwordHash,
     salt: Array.from(salt),
     createdAt: Date.now()
   };
@@ -91,7 +88,6 @@ export async function loginAccount(nick, password) {
   }
 
   setSession(cleanNick);
-
   return { nick: cleanNick };
 }
 
