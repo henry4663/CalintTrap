@@ -23,7 +23,6 @@
   .modal-title { font-size: 1.4rem; font-weight: 800; color: #a78bfa; }
   .btn-close { background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; }
   
-  /* Opções de Configuração */
   .config-group { margin-bottom: 20px; }
   .config-label { font-size: 0.95rem; color: #aaa; margin-bottom: 8px; display: block; }
   .config-options { display: flex; gap: 10px; }
@@ -37,7 +36,7 @@
     box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
   }
 
-  /* ESTILOS DINÂMICOS PARA MODO MOBILE */
+  /* ESTILOS MODO MOBILE */
   body.mode-mobile button, 
   body.mode-mobile .game-card, 
   body.mode-mobile .icon-btn {
@@ -75,27 +74,17 @@
   
   <div class="game-grid">
     
-    <!-- Jogo 1: FPS Arena -->
-    <div class="game-card card-fps" onclick="abrirJogo('FPS Arena')">
+    <!-- Jogo 1: FPS Arena Multiplayer -->
+    <a href="jogo-fps.html" class="game-card card-fps">
       <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop" class="card-img" alt="FPS">
-      <div class="card-badge badge-blue">AÇÃO</div>
+      <div class="card-badge badge-blue">MULTIPLAYER</div>
       <div class="card-content">
         <h3>FPS Arena</h3>
-        <p>Combate tático 3D</p>
+        <p>Batalha 3D com armas e bots</p>
       </div>
-    </div>
+    </a>
 
-    <!-- Jogo 2: Pique Esconde -->
-    <div class="game-card card-esconde" onclick="abrirJogo('Pique Esconde 3D')">
-      <img src="https://images.unsplash.com/photo-1511882150382-421056c89033?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Pique Esconde">
-      <div class="card-badge badge-green">MULTIPLAYER</div>
-      <div class="card-content">
-        <h3>Pique Esconde 3D</h3>
-        <p>Fuja ou procure</p>
-      </div>
-    </div>
-
-    <!-- Jogo 3: Parkour Extremo -->
+    <!-- Jogo 2: Parkour Extremo -->
     <a href="jogo-parkour.html" class="game-card card-parkour">
       <img src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Parkour">
       <div class="card-badge badge-purple">NOVO</div>
@@ -105,13 +94,13 @@
       </div>
     </a>
 
-    <!-- Jogo 4: Arena 3D -->
+    <!-- Jogo 3: Arena 3D Clássica -->
     <a href="jogo-3d.html" class="game-card card-arena">
       <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=600&auto=format&fit=crop" class="card-img" alt="Arena 3D">
-      <div class="card-badge badge-yellow">JOGAR AGORA</div>
+      <div class="card-badge badge-yellow">LIVRE</div>
       <div class="card-content">
         <h3>Arena 3D</h3>
-        <p>Explore o mapa</p>
+        <p>Explore o mapa livremente</p>
       </div>
     </a>
 
@@ -133,11 +122,6 @@
         <button class="btn-mode" id="btnModoMobile">📱 Mobile (Touch)</button>
       </div>
     </div>
-
-    <div class="config-group">
-      <label class="config-label">Orientação de Tela:</label>
-      <p style="font-size: 0.85rem; color: #888;">No modo Mobile, a tela trava em modo Paisagem (Horizontal) automaticamente nos jogos.</p>
-    </div>
   </div>
 </div>
 
@@ -152,7 +136,6 @@
   const btnPC = document.getElementById('btnModoPC');
   const btnMobile = document.getElementById('btnModoMobile');
 
-  // Detecta ou carrega a preferência salva
   let modoAtual = localStorage.getItem('goblox_modo');
   if (!modoAtual) {
     const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth < 768;
@@ -169,7 +152,6 @@
       btnMobile.classList.add('active');
       btnPC.classList.remove('active');
 
-      // Tenta forçar modo paisagem no celular se suportado
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').catch(() => {});
       }
@@ -181,10 +163,8 @@
     }
   }
 
-  // Inicializa o modo
   aplicarModo(modoAtual);
 
-  // Eventos do Modal
   btnConfig.addEventListener('click', () => modal.classList.add('active'));
   fecharConfig.addEventListener('click', () => modal.classList.remove('active'));
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
@@ -196,7 +176,7 @@
 
   btnMobile.addEventListener('click', () => {
     aplicarModo('mobile');
-    toast("Modo Mobile ativado (Botões maiores)!", "sucesso");
+    toast("Modo Mobile ativado!", "sucesso");
   });
 </script>
 <script type="module" src="lobby.js"></script>
