@@ -1,462 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Goblox — Parkour Extremo</title>
+<link rel="stylesheet" href="global.css">
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #050508;
+    user-select: none;
+    touch-action: none;
+    font-family: Arial, sans-serif;
+  }
+  #hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  }
+  #btnVoltar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    background: #1e1e2d;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20;
+    text-decoration: none;
+  }
+  
+  /* JOYSTICK VIRTUAL MOBILE */
+  #joystickBase {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    z-index: 20;
+    display: none;
+    touch-action: none;
+  }
+  #joystickStick {
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle, #8b5cf6 0%, #6d28d9 100%);
+    border: 2px solid #c4b5fd;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+  }
 
-(async function iniciarParkour() {
-  const status = document.getElementById("status");
+  /* BOTÃO DE PULAR MOBILE */
+  #btnPular {
+    position: absolute;
+    bottom: 50px;
+    right: 40px;
+    width: 85px;
+    height: 85px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #10b981 0%, #047857 100%);
+    border: 3px solid #6ee7b7;
+    color: white;
+    font-weight: 900;
+    font-size: 1.1rem;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+    cursor: pointer;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  #btnPular:active { transform: scale(0.92); }
+</style>
 
-  // CARREGAMENTO DO THREE.JS
-  let THREE;
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
 
-  try {
-    THREE = await import(
-      "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
-    );
-  } catch (e) {
-    try {
-      THREE = await import(
-        "https://unpkg.com/three@0.170.0/build/three.module.js"
-      );
-    } catch (e2) {
-      status.textContent = "Erro ao carregar o motor 3D. Verifique a internet.";
-      console.error("Three.js não carregou:", e, e2);
-      return;
+<div id="hud">
+  <div>Altura (Topo): <span id="scoreAltura" style="color: #4ade80;">0</span>m</div>
+</div>
+
+<!-- CONTROLES MOBILE -->
+<div id="joystickBase">
+  <div id="joystickStick"></div>
+</div>
+<button id="btnPular">⬆ PULAR</button>
+
+<a href="lobby.html" id="btnVoltar">⎋ Sair</a>
+
+<script type="module">
+import * as THREE from 'three';
+import { db as database } from './firebase.js';
+import { ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { criarPersonagem } from './personagem.js';
+
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+if (isMobile) {
+  document.getElementById('joystickBase').style.display = 'block';
+  document.getElementById('btnPular').style.display = 'flex';
+}
+
+// 1. CENA, CÂMERA E RENDERER
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a14);
+scene.fog = new THREE.FogExp2(0x0a0a14, 0.015);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// ILUMINAÇÃO
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xa855f7, 1.2);
+dirLight.position.set(30, 50, 30);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// 2. TORRE DE PLATAFORMAS DE PARKOUR
+const plataformas = [];
+
+function criarBlocoParkour(x, y, z, w, h, d, cor = 0x8b5cf6) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.3 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, y, z);
+  mesh.receiveShadow = true;
+  mesh.castShadow = true;
+  scene.add(mesh);
+  
+  mesh.userData = { minX: x - w/2 - 1, maxX: x + w/2 + 1, minZ: z - d/2 - 1, maxZ: z + d/2 + 1, topY: y + h/2 };
+  plataformas.push(mesh);
+}
+
+criarBlocoParkour(0, 0, 0, 25, 2, 25, 0x181824);
+
+let alturaAtual = 4;
+for (let i = 0; i < 30; i++) {
+  const offsetX = (Math.sin(i * 1.5) * 9);
+  const offsetZ = (Math.cos(i * 1.2) * 9);
+  criarBlocoParkour(offsetX, alturaAtual, offsetZ, 6, 1.2, 6, i % 2 === 0 ? 0x6366f1 : 0xa855f7);
+  alturaAtual += 3.5;
+}
+
+// 3. MULTIPLAYER E JOGADOR COM ANTI-FANTASMA
+const meuId = 'player_parkour_' + Math.random().toString(36).substr(2, 9);
+const jogadorRef = ref(database, 'parkour_jogadores/' + meuId);
+const todosJogadoresRef = ref(database, 'parkour_jogadores');
+
+let playerPos = { x: 0, y: 3, z: 0 };
+let velY = 0;
+const gravidade = -0.012;
+const forcaPulo = 0.35;
+let noChao = false;
+const outrosJogadores = {};
+
+function sairDoJogoLimpo() {
+  remove(jogadorRef).catch(() => {});
+}
+
+onDisconnect(jogadorRef).remove();
+window.addEventListener('beforeunload', sairDoJogoLimpo);
+window.addEventListener('pagehide', sairDoJogoLimpo);
+
+document.getElementById('btnVoltar').addEventListener('click', (e) => {
+  e.preventDefault();
+  sairDoJogoLimpo();
+  setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
+});
+
+set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z });
+
+onValue(todosJogadoresRef, (snapshot) => {
+  const data = snapshot.val() || {};
+
+  for (let id in outrosJogadores) {
+    if (!data[id]) {
+      scene.remove(outrosJogadores[id].mesh);
+      delete outrosJogadores[id];
     }
   }
 
-  status.textContent = "Preparando cenário...";
+  for (let id in data) {
+    if (id === meuId) continue;
+    let pos = data[id];
 
-  // CENA
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87caff);
-  scene.fog = new THREE.Fog(0x87caff, 35, 110);
-
-  const camera = new THREE.PerspectiveCamera(
-    70, innerWidth / innerHeight, 0.1, 200
-  );
-
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: "high-performance"
-  });
-
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-  document.body.appendChild(renderer.domElement);
-
-  // ILUMINAÇÃO
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x53647d, 2));
-
-  const sol = new THREE.DirectionalLight(0xffffff, 2.5);
-  sol.position.set(-15, 25, 12);
-  sol.castShadow = true;
-  sol.shadow.mapSize.set(1024, 1024);
-  scene.add(sol);
-
-  // MATERIAIS
-  function material(cor, metalness = 0) {
-    return new THREE.MeshStandardMaterial({
-      color: cor,
-      roughness: 0.75,
-      metalness
-    });
-  }
-
-  const cores = {
-    verde: material(0x35d995),
-    roxo: material(0x7955ff),
-    azul: material(0x269cff),
-    amarelo: material(0xffcb45),
-    vermelho: material(0xff5369),
-    pele: material(0xffc18b),
-    roupa: material(0x2678ed),
-    calca: material(0x242b43),
-    cabelo: material(0x29202a),
-    branco: material(0xffffff),
-    chao: material(0x29394e)
-  };
-
-  // CRIADOR DE BLOCOS
-  function criarBloco(x, y, z, sx, sy, sz, mat) {
-    const objeto = new THREE.Mesh(
-      new THREE.BoxGeometry(sx, sy, sz),
-      mat
-    );
-
-    objeto.position.set(x, y, z);
-    objeto.castShadow = true;
-    objeto.receiveShadow = true;
-    scene.add(objeto);
-
-    return objeto;
-  }
-
-  // CHÃO
-  criarBloco(0, -2, -25, 200, 1, 200, cores.chao);
-
-  // PLATAFORMAS
-  const plataformas = [];
-
-  function plataforma(x, y, z, largura, profundidade, mat) {
-    const objeto = criarBloco(
-      x, y, z, largura, 0.7, profundidade, mat
-    );
-
-    plataformas.push({
-      x, y: y + 0.35, z,
-      largura,
-      profundidade
-    });
-
-    // Borda decorativa
-    criarBloco(
-      x, y - 0.36, z,
-      largura + 0.15, 0.12, profundidade + 0.15,
-      cores.branco
-    );
-
-    return objeto;
-  }
-
-  plataforma(0, 0, 0, 10, 10, cores.verde);
-  plataforma(0, 1, -10, 5, 5, cores.roxo);
-  plataforma(5, 2, -17, 4, 4, cores.azul);
-  plataforma(0, 3, -24, 4, 4, cores.amarelo);
-  plataforma(-5, 4, -31, 4, 4, cores.verde);
-  plataforma(-5, 5, -39, 6, 6, cores.roxo);
-  plataforma(2, 6, -47, 4, 4, cores.azul);
-  plataforma(8, 7, -55, 6, 6, cores.amarelo);
-
-  // CHECKPOINT
-  criarBloco(-5, 5.4, -39, 1.7, 0.15, 1.7, cores.verde);
-
-  // PLATAFORMA FINAL
-  criarBloco(8, 7.42, -55, 2, 0.12, 2, cores.verde);
-
-  // DECORAÇÃO DO MAPA
-  for (let i = 0; i < 18; i++) {
-    const x = i % 2 === 0 ? -13 : 13;
-    const z = -i * 4;
-
-    criarBloco(
-      x, 1, z,
-      2, 2 + Math.random() * 3, 2,
-      i % 2 ? cores.roxo : cores.azul
-    );
-  }
-
-  // BANDEIRA DE CHEGADA
-  criarBloco(8, 9, -55, 0.25, 3, 0.25, cores.vermelho);
-  criarBloco(9, 10.2, -55, 2, 0.8, 0.15, cores.amarelo);
-
-  // PERSONAGEM
-  const jogador = new THREE.Group();
-  scene.add(jogador);
-
-  const corpo = new THREE.Group();
-  jogador.add(corpo);
-
-  function parte(parent, x, y, z, sx, sy, sz, mat) {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(sx, sy, sz),
-      mat
-    );
-
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    parent.add(mesh);
-
-    return mesh;
-  }
-
-  // TRONCO
-  parte(corpo, 0, 1.55, 0, 0.9, 1.1, 0.48, cores.roupa);
-
-  // CABEÇA
-  parte(corpo, 0, 2.48, 0, 0.75, 0.75, 0.75, cores.pele);
-
-  // CABELO
-  parte(corpo, 0, 2.91, 0, 0.79, 0.18, 0.79, cores.cabelo);
-
-  // OLHOS
-  parte(corpo, -0.17, 2.53, -0.38, 0.09, 0.09, 0.04, cores.cabelo);
-  parte(corpo, 0.17, 2.53, -0.38, 0.09, 0.09, 0.04, cores.cabelo);
-
-  // BRAÇOS
-  const bracoE = new THREE.Group();
-  const bracoD = new THREE.Group();
-
-  bracoE.position.set(-0.58, 1.95, 0);
-  bracoD.position.set(0.58, 1.95, 0);
-
-  corpo.add(bracoE, bracoD);
-
-  parte(bracoE, 0, -0.38, 0, 0.3, 0.85, 0.35, cores.roupa);
-  parte(bracoD, 0, -0.38, 0, 0.3, 0.85, 0.35, cores.roupa);
-
-  // PERNAS
-  const pernaE = new THREE.Group();
-  const pernaD = new THREE.Group();
-
-  pernaE.position.set(-0.25, 1, 0);
-  pernaD.position.set(0.25, 1, 0);
-
-  corpo.add(pernaE, pernaD);
-
-  parte(pernaE, 0, -0.43, 0, 0.35, 0.95, 0.4, cores.calca);
-  parte(pernaD, 0, -0.43, 0, 0.35, 0.95, 0.4, cores.calca);
-
-  // ESTADO DO JOGADOR
-  jogador.position.set(0, 0.36, 0);
-
-  let velocidadeY = 0;
-  let noChao = false;
-  let venceu = false;
-  let anguloCamera = 0;
-  let checkpoint = new THREE.Vector3(0, 0.36, 0);
-
-  const velocidade = 7;
-  const gravidade = 22;
-  const forcaPulo = 10;
-
-  const teclas = {};
-
-  // TECLADO
-  addEventListener("keydown", e => {
-    teclas[e.code] = true;
-
-    if (e.code === "Space") {
-      e.preventDefault();
-      pular();
-    }
-  });
-
-  addEventListener("keyup", e => {
-    teclas[e.code] = false;
-  });
-
-  function pular() {
-    if (noChao && !venceu) {
-      velocidadeY = forcaPulo;
-      noChao = false;
-    }
-  }
-
-  // CONTROLES MOBILE
-  document.querySelectorAll(".move").forEach(botao => {
-    const tecla = botao.dataset.key;
-
-    botao.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      teclas[tecla] = true;
-      botao.setPointerCapture(e.pointerId);
-    });
-
-    function soltar() {
-      teclas[tecla] = false;
+    if (!outrosJogadores[id]) {
+      const meshOutro = criarPersonagem();
+      scene.add(meshOutro);
+      outrosJogadores[id] = { id: id, mesh: meshOutro };
     }
 
-    botao.addEventListener("pointerup", soltar);
-    botao.addEventListener("pointercancel", soltar);
-    botao.addEventListener("lostpointercapture", soltar);
-  });
-
-  const botaoPulo = document.getElementById("pular");
-
-  botaoPulo.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    pular();
-  });
-
-  // CÂMERA GIRATÓRIA
-  let arrastando = false;
-  let ultimaX = 0;
-
-  renderer.domElement.addEventListener("pointerdown", e => {
-    arrastando = true;
-    ultimaX = e.clientX;
-    renderer.domElement.setPointerCapture(e.pointerId);
-  });
-
-  renderer.domElement.addEventListener("pointermove", e => {
-    if (!arrastando) return;
-
-    anguloCamera -= (e.clientX - ultimaX) * 0.006;
-    ultimaX = e.clientX;
-  });
-
-  function pararCamera() {
-    arrastando = false;
-  }
-
-  renderer.domElement.addEventListener("pointerup", pararCamera);
-  renderer.domElement.addEventListener("pointercancel", pararCamera);
-
-  // MOVIMENTO E COLISÃO
-  function atualizar(dt) {
-    if (venceu) return;
-
-    const frente =
-      (teclas.KeyW || teclas.ArrowUp ? 1 : 0) -
-      (teclas.KeyS || teclas.ArrowDown ? 1 : 0);
-
-    const lado =
-      (teclas.KeyD || teclas.ArrowRight ? 1 : 0) -
-      (teclas.KeyA || teclas.ArrowLeft ? 1 : 0);
-
-    const direcao = new THREE.Vector3(lado, 0, -frente);
-
-    if (direcao.lengthSq() > 0) {
-      direcao.normalize();
-      direcao.applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        anguloCamera
-      );
-
-      jogador.position.x += direcao.x * velocidade * dt;
-      jogador.position.z += direcao.z * velocidade * dt;
-
-      jogador.rotation.y =
-        Math.atan2(direcao.x, direcao.z) + Math.PI;
-
-      const passo = Math.sin(performance.now() * 0.012);
-
-      pernaE.rotation.x = passo * 0.65;
-      pernaD.rotation.x = -passo * 0.65;
-      bracoE.rotation.x = -passo * 0.5;
-      bracoD.rotation.x = passo * 0.5;
-    } else {
-      pernaE.rotation.x = THREE.MathUtils.damp(
-        pernaE.rotation.x, 0, 10, dt
-      );
-      pernaD.rotation.x = THREE.MathUtils.damp(
-        pernaD.rotation.x, 0, 10, dt
-      );
-      bracoE.rotation.x = THREE.MathUtils.damp(
-        bracoE.rotation.x, 0, 10, dt
-      );
-      bracoD.rotation.x = THREE.MathUtils.damp(
-        bracoD.rotation.x, 0, 10, dt
-      );
+    if (pos && typeof pos.x === 'number') {
+      outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
     }
+  }
+});
 
-    // GRAVIDADE
-    const alturaAnterior = jogador.position.y;
+// 4. CONTROLES DE CÂMERA E MOVIMENTO
+if (!isMobile) {
+  renderer.domElement.addEventListener('click', () => {
+    if (document.pointerLockElement !== renderer.domElement) {
+      renderer.domElement.requestPointerLock();
+    }
+  });
+}
 
-    velocidadeY -= gravidade * dt;
-    jogador.position.y += velocidadeY * dt;
+let rotationX = 0;
+let rotationY = 0;
 
+document.addEventListener('mousemove', (e) => {
+  if (!isMobile && document.pointerLockElement === renderer.domElement) {
+    const sensitivity = 0.0022;
+    rotationY -= e.movementX * sensitivity;
+    rotationX -= e.movementY * sensitivity;
+    rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
+  }
+});
+
+// Joystick Mobile
+const joystickBase = document.getElementById('joystickBase');
+const joystickStick = document.getElementById('joystickStick');
+let joystickAtivo = false;
+let joyX = 0, joyY = 0;
+
+joystickBase.addEventListener('touchstart', () => { joystickAtivo = true; });
+
+window.addEventListener('touchmove', (e) => {
+  if (!joystickAtivo) return;
+  const touch = e.touches[0];
+  const rect = joystickBase.getBoundingClientRect();
+  const centroX = rect.left + rect.width / 2;
+  const centroY = rect.top + rect.height / 2;
+  
+  let deltaX = touch.clientX - centroX;
+  let deltaY = touch.clientY - centroY;
+  const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+  const angulo = Math.atan2(deltaY, deltaX);
+
+  joyX = Math.cos(angulo) * (distancia / 50);
+  joyY = Math.sin(angulo) * (distancia / 50);
+
+  joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
+});
+
+window.addEventListener('touchend', () => {
+  joystickAtivo = false;
+  joyX = 0;
+  joyY = 0;
+  joystickStick.style.transform = `translate(0px, 0px)`;
+});
+
+let lastTouchX = 0, lastTouchY = 0;
+window.addEventListener('touchstart', (e) => {
+  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnPular') {
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+window.addEventListener('touchmove', (e) => {
+  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnPular') {
+    const deltaX = e.touches[0].clientX - lastTouchX;
+    const deltaY = e.touches[0].clientY - lastTouchY;
+    rotationY -= deltaX * 0.004;
+    rotationX -= deltaY * 0.004;
+    rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  }
+});
+
+document.getElementById('btnPular').addEventListener('click', () => {
+  if (noChao) {
+    velY = forcaPulo;
     noChao = false;
+  }
+});
 
-    // COLISÕES
-    for (const p of plataformas) {
-      const dentroX =
-        Math.abs(jogador.position.x - p.x) < p.largura / 2 + 0.3;
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape') {
+    sairDoJogoLimpo();
+    if (!isMobile && document.pointerLockElement) document.exitPointerLock();
+    setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
+  }
+  if (e.code === 'Space' && noChao) {
+    velY = forcaPulo;
+    noChao = false;
+  }
+});
 
-      const dentroZ =
-        Math.abs(jogador.position.z - p.z) < p.profundidade / 2 + 0.3;
+const keys = {};
+window.addEventListener('keydown', (e) => keys[e.code] = true);
+window.addEventListener('keyup', (e) => keys[e.code] = false);
 
-      const passouPeloTopo =
-        alturaAnterior >= p.y - 0.05 &&
-        jogador.position.y <= p.y;
+// 5. LOOP PRINCIPAL
+let ultimoEnvio = 0;
 
-      if (
-        dentroX &&
-        dentroZ &&
-        velocidadeY <= 0 &&
-        passouPeloTopo
-      ) {
-        jogador.position.y = p.y;
-        velocidadeY = 0;
-        noChao = true;
+function animate(tempo) {
+  requestAnimationFrame(animate);
+
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = rotationY;
+  camera.rotation.x = rotationX;
+
+  const dirFrente = new THREE.Vector3(-Math.sin(rotationY), 0, -Math.cos(rotationY)).normalize();
+  const dirLado = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY)).normalize();
+  const vel = 0.22;
+
+  if (keys['KeyW'] || keys['ArrowUp']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
+  if (keys['KeyS'] || keys['ArrowDown']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
+  if (keys['KeyA'] || keys['ArrowLeft']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
+  if (keys['KeyD'] || keys['ArrowRight']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
+
+  if (joystickAtivo) {
+    playerPos.x += (dirFrente.x * (-joyY) + dirLado.x * joyX) * vel;
+    playerPos.z += (dirFrente.z * (-joyY) + dirLado.z * joyX) * vel;
+  }
+
+  velY += gravidade;
+  playerPos.y += velY;
+
+  let alturaSolo = 2;
+  for (let plat of plataformas) {
+    const b = plat.userData;
+    if (playerPos.x >= b.minX && playerPos.x <= b.maxX && playerPos.z >= b.minZ && playerPos.z <= b.maxZ) {
+      if (b.topY + 1.6 > alturaSolo && playerPos.y >= b.topY - 0.5 && velY <= 0) {
+        alturaSolo = b.topY + 1.6;
       }
     }
-
-    // CHECKPOINT
-    if (
-      jogador.position.z < -36 &&
-      jogador.position.z > -42 &&
-      jogador.position.x < -2 &&
-      jogador.position.x > -8 &&
-      noChao
-    ) {
-      checkpoint.set(
-        jogador.position.x,
-        jogador.position.y,
-        jogador.position.z
-      );
-
-      document.getElementById("status").textContent =
-        "Checkpoint ativado!";
-    }
-
-    // VITÓRIA
-    if (jogador.position.z < -57 && jogador.position.x > 5) {
-      venceu = true;
-      document.getElementById("mensagem").style.display = "block";
-      document.getElementById("status").textContent = "Você venceu!";
-    }
-
-    // QUEDA
-    if (jogador.position.y < -12) {
-      jogador.position.copy(checkpoint);
-      velocidadeY = 0;
-      noChao = false;
-    }
-
-    // LIMITES
-    jogador.position.x = THREE.MathUtils.clamp(
-      jogador.position.x, -20, 20
-    );
   }
 
-  // CÂMERA TERCEIRA PESSOA
-  function atualizarCamera(dt) {
-    const distancia = 8;
-
-    const destino = new THREE.Vector3(
-      jogador.position.x + Math.sin(anguloCamera) * distancia,
-      jogador.position.y + 3.5,
-      jogador.position.z + Math.cos(anguloCamera) * distancia
-    );
-
-    camera.position.lerp(
-      destino,
-      1 - Math.exp(-6 * dt)
-    );
-
-    camera.lookAt(
-      jogador.position.x,
-      jogador.position.y + 1.5,
-      jogador.position.z
-    );
+  if (playerPos.y <= alturaSolo) {
+    playerPos.y = alturaSolo;
+    velY = 0;
+    noChao = true;
+  } else {
+    noChao = false;
   }
 
-  // INICIALIZAÇÃO
-  const relogio = new THREE.Clock();
-
-  function animar() {
-    requestAnimationFrame(animar);
-
-    const dt = Math.min(relogio.getDelta(), 0.04);
-
-    atualizar(dt);
-    atualizarCamera(dt);
-
-    renderer.render(scene, camera);
+  if (playerPos.y < -15) {
+    playerPos = { x: 0, y: 3, z: 0 };
+    velY = 0;
   }
 
-  addEventListener("resize", () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
+  camera.position.set(playerPos.x, playerPos.y, playerPos.z);
+  document.getElementById('scoreAltura').innerText = Math.max(0, Math.floor(playerPos.y));
 
-  status.textContent = "Chegue até a bandeira final!";
+  if (tempo - ultimoEnvio > 50) {
+    set(jogadorRef, {
+      x: Number(playerPos.x.toFixed(2)),
+      y: Number(playerPos.y.toFixed(2)),
+      z: Number(playerPos.z.toFixed(2))
+    }).catch(() => {});
+    ultimoEnvio = tempo;
+  }
 
-  animar();
+  renderer.render(scene, camera);
+}
 
-  console.log("Goblox Parkour iniciado!");
-})();
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate(0);
+</script>
+</body>
+</html>
