@@ -20,82 +20,74 @@ header {
 .icon-btn:hover { background: var(--accent); transform: scale(1.05); }
 
 /* ===== LOBBY ===== */
-.container {
-  max-width: 900px; margin: 0 auto; padding: 30px 20px;
-}
+.container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
 .welcome { margin-bottom: 30px; }
 .welcome h1 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
 .welcome p { color: var(--muted); }
+.section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
 
-.section-title {
-  font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;
-  display: flex; align-items: center; gap: 8px;
-}
-
-/* ===== CARDS DE JOGO ===== */
+/* ===== CARDS DE JOGO (ESTILO ROBLOX) ===== */
 .game-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
 }
 
 .game-card {
-  position: relative; background: var(--card); border-radius: 20px;
-  padding: 24px; text-decoration: none; color: var(--text);
-  display: flex; flex-direction: column; align-items: flex-start;
-  border: 1px solid rgba(255,255,255,.05); overflow: hidden;
-  transition: .3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
-}
-
-.game-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,.1), transparent);
-  opacity: 0; transition: .3s;
+  position: relative; background: var(--card); border-radius: 16px;
+  text-decoration: none; color: var(--text); overflow: hidden;
+  display: flex; flex-direction: column; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.05);
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  aspect-ratio: 4 / 5; /* Formato vertical igual Roblox */
 }
 
 .game-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-8px) scale(1.02);
   border-color: rgba(255,255,255,.2);
-  box-shadow: 0 20px 40px rgba(0,0,0,.5);
+  box-shadow: 0 20px 40px rgba(0,0,0,.6);
 }
-.game-card:hover::before { opacity: 1; }
 
+/* Imagem de fundo do card */
+.card-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 0; transition: .5s;
+  opacity: 0.7;
+}
+.game-card:hover .card-img { transform: scale(1.1); opacity: 0.9; }
+
+/* Gradiente escuro para o texto ficar legível */
+.game-card::after {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to top, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0.2) 60%, transparent 100%);
+}
+
+.card-content {
+  position: relative; z-index: 2; padding: 20px;
+  margin-top: auto; /* Empurra o texto pro rodapé do card */
+}
+
+.card-content h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0,0,0,.8); }
+.card-content p { color: #ccc; font-size: .85rem; font-weight: 500; }
+
+/* Badges de cima */
 .card-badge {
-  position: absolute; top: 16px; right: 16px;
-  background: rgba(0,0,0,.5); padding: 4px 10px; border-radius: 20px;
-  font-size: .65rem; font-weight: 700; letter-spacing: 1px;
-  border: 1px solid rgba(255,255,255,.1);
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  padding: 4px 10px; border-radius: 8px;
+  font-size: .65rem; font-weight: 900; letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.5);
 }
-
-.card-icon {
-  font-size: 3.5rem; margin-bottom: 16px;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.3));
-}
-
-.card-info { position: relative; z-index: 1; }
-.card-info h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
-.card-info p { color: var(--muted); font-size: .9rem; }
-
-/* Cores específicas dos cards */
-.card-3d {
-  background: linear-gradient(145deg, #1a1025, #14141f);
-  border-color: rgba(124,58,237,.3);
-}
-.card-3d:hover { border-color: var(--accent); box-shadow: 0 10px 40px rgba(124,58,237,.3); }
-.card-3d .card-badge { background: var(--accent); color: #fff; border: none; }
-.card-3d .card-icon { animation: float 3s ease-in-out infinite; }
-
-.card-velha { opacity: 0.7; }
-.card-snake { opacity: 0.7; }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
+.badge-blue { background: #3b82f6; color: #fff; }
+.badge-green { background: #22c55e; color: #fff; }
+.badge-purple { background: #a855f7; color: #fff; }
+.badge-yellow { background: #eab308; color: #000; }
 
 /* ===== MOBILE ===== */
 @media (max-width: 500px) {
   .welcome h1 { font-size: 1.6rem; }
-  .game-grid { grid-template-columns: 1fr; }
-  .game-card { padding: 20px; flex-direction: row; align-items: center; gap: 16px; }
-  .card-icon { font-size: 2.5rem; margin-bottom: 0; }
+  .game-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .card-content { padding: 12px; }
+  .card-content h3 { font-size: 1rem; }
+  .card-content p { display: none; } /* Esconde a descrição no celular pra caber */
+  .card-badge { font-size: .55rem; padding: 3px 6px; }
 }
