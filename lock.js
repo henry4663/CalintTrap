@@ -1,94 +1,135 @@
-import { db, ref, set, get, toast } from "./firebase.js";
+import {
+    auth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+    onAuthStateChanged
+} from "./firebase.js";
 
-const $ = id => document.getElementById(id);
+const form = document.getElementById("authForm");
+const loginUsername = document.getElementById("loginUsername");
+const username = document.getElementById("username");
+const password = document.getElementById("password");
 
-// --- FUNÇÕES ---
-async function fazerLogin() {
-  const u = $("inUser").value.trim();
-  const p = $("inPass").value;
-  const m = $("msgLogin");
+const nameGroup = document.getElementById("nameGroup");
+const message = document.getElementById("message");
+const submitButton = document.getElementById("submitButton");
+const switchMode = document.getElementById("switchMode");
+const switchText = document.getElementById("switchText");
 
-  if (!u || !p) {
-    m.textContent = "Preencha usuário e senha.";
-    return;
-  }
+let registerMode = false;
+let loading = false;
 
-  m.textContent = "Verificando...";
-  m.style.color = "var(--muted)";
-
-  try {
-    const snap = await get(ref(db, "users/" + u));
-    if (!snap.exists() || snap.val().pass !== p) {
-      m.style.color = "var(--danger)";
-      m.textContent = "Usuário ou senha incorretos";
-      return;
-    }
-
-    localStorage.setItem("goblox_user", u);
-    m.style.color = "var(--success)";
-    m.textContent = "Logado! Redirecionando...";
-    
-    setTimeout(() => {
-      window.location.replace("lobby.html");
-    }, 800);
-
-  } catch (e) {
-    m.style.color = "var(--danger)";
-    m.textContent = "Erro no banco. Verifique o console.";
-    console.error("Erro no Firebase:", e);
-  }
+// Identificador interno. Não é um endereço de e-mail real.
+function usernameToInternalId(name) {
+    return name.trim().toLowerCase() + "@accounts.goblox.invalid";
 }
 
-async function fazerRegistro() {
-  const u = $("inUser").value.trim();
-  const p = $("inPass").value;
-  const m = $("msgLogin");
-
-  if (!u || u.length < 3) { m.textContent = "Usuário precisa ter 3+ caracteres"; return; }
-  if (p.length < 4) { m.textContent = "Senha precisa ter 4+ caracteres"; return; }
-
-  m.textContent = "Criando conta...";
-  m.style.color = "var(--muted)";
-
-  try {
-    const snap = await get(ref(db, "users/" + u));
-    if (snap.exists()) { 
-      m.style.color = "var(--danger)";
-      m.textContent = "Esse usuário já existe"; 
-      return; 
-    }
-
-    await set(ref(db, "users/" + u), {
-      pass: p, criado: Date.now(), bio: "", avatar: "", jogos: 0, vitorias: 0, nivel: 1
-    });
-
-    m.style.color = "var(--success)";
-    m.textContent = "Conta criada! Clique em Entrar.";
-    toast("Conta criada com sucesso!", "success");
-  } catch (e) {
-    m.style.color = "var(--danger)";
-    m.textContent = "Erro ao criar conta. Verifique o console.";
-    console.error("Erro no Firebase:", e);
-  }
+function showMessage(text, success = false) {
+    message.textContent = text;
+    message.style.color = success ? "#55ee99" : "#ff5555";
 }
 
-// --- ESPERA O HTML CARREGAR E CONECTA OS BOTÕES ---
-document.addEventListener("DOMContentLoaded", () => {
-  const btnLogin = $("btnLogin");
-  const btnRegistrar = $("btnRegistrar");
-  const inPass = $("inPass");
+switchMode.addEventListener("click", () => {
+    registerMode = !registerMode;
 
-  if (btnLogin) btnLogin.addEventListener("click", fazerLogin);
-  if (btnRegistrar) btnRegistrar.addEventListener("click", fazerRegistro);
-  
-  if (inPass) {
-    inPass.addEventListener("keydown", e => {
-      if (e.key === "Enter") fazerLogin();
-    });
-  }
+    nameGroup.hidden = !registerMode;
+    loginUsername.parentElement.querySelector("label").textContent =
+        "Usuário";
+
+    loginUsername.required = !registerMode;
+    username.required = registerMode;
+
+    submitButton.textContent = registerMode
+        ? "CRIAR CONTA"
+        : "ENTRAR";
+
+    switchText.textContent = registerMode
+        ? "Já possui uma conta?"
+        : "Não tem uma conta?";
+
+    switchMode.textContent = registerMode
+        ? "Entrar"
+        : "Criar conta";
+
+    message.textContent = "";
 });
 
-// Se já estiver logado, vai pro lobby
-if (localStorage.getItem("goblox_user")) {
-  window.location.replace("lobby.html");
-}
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (loading) return;
+
+    const name = registerMode
+        ? username.value.trim()
+        : loginUsername.value.trim();
+
+    const pass = password.value;
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(name)) {
+        showMessage("Use de 3 a 20 caracteres: letras, números ou _.");
+        return;
+    }
+
+    if (pass.length < 6) {
+        showMessage("A senha precisa ter pelo menos 6 caracteres.");
+        return;
+    }
+
+    loading = true;
+    submitButton.disabled = true;
+    submitButton.textContent = "AGUARDE...";
+
+    try {
+        const internalId = usernameToInternalId(name);
+
+        if (registerMode) {
+            const result = await createUserWithEmailAndPassword(
+                auth,
+                internalId,
+                pass
+            );
+
+            await updateProfile(result.user, {
+                displayName: name
+            });
+
+            showMessage("Conta criada com sucesso!", true);
+
+        } else {
+            await signInWithEmailAndPassword(
+                auth,
+                internalId,
+                pass
+            );
+
+            showMessage("Login realizado!", true);
+        }
+
+        window.location.replace("index.html");
+
+    } catch (error) {
+        const errors = {
+            "auth/email-already-in-use": "Esse usuário já existe.",
+            "auth/invalid-credential": "Usuário ou senha incorretos.",
+            "auth/weak-password": "Senha muito fraca.",
+            "auth/network-request-failed": "Erro de conexão.",
+            "auth/operation-not-allowed": "Ative Email/Senha no Firebase."
+        };
+
+        showMessage(errors[error.code] || "Erro ao acessar sua conta.");
+
+    } finally {
+        loading = false;
+        submitButton.disabled = false;
+        submitButton.textContent = registerMode
+            ? "CRIAR CONTA"
+            : "ENTRAR";
+    }
+});
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        window.location.replace("index.html");
+    }
+});
