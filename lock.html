@@ -1,43 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOBLOX - Login</title>
-    <link rel="stylesheet" href="global.css">
-    <link rel="stylesheet" href="lock.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOBLOX - Login</title>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="lock.css">
 </head>
 <body>
+  <div class="lock-background"></div>
 
-<div class="lock-background"></div>
-
-<main class="lock-container">
+  <main class="lock-container">
     <div class="logo">GO<span>BLOX</span></div>
     <p class="subtitle">Seu universo começa aqui.</p>
 
     <form id="authForm">
-        <div id="nameGroup" hidden>
-            <label>Escolha seu nick</label>
-            <input id="username" type="text" maxlength="20" placeholder="Seu nick">
-        </div>
+      <div id="nameGroup" hidden>
+        <label>Escolha seu nick</label>
+        <input id="username" type="text" maxlength="20" placeholder="Seu nick">
+      </div>
 
-        <label>Nick</label>
-        <input id="loginUsername" type="text" maxlength="20" placeholder="Seu nick" required>
+      <label>Nick</label>
+      <input id="loginUsername" type="text" maxlength="20" placeholder="Seu nick" required>
 
-        <label>Senha</label>
-        <input id="password" type="password" placeholder="Sua senha" required>
+      <label>Senha</label>
+      <input id="password" type="password" placeholder="Sua senha" required>
 
-        <button type="submit" id="submitButton">ENTRAR</button>
+      <button type="submit" id="submitButton">ENTRAR</button>
     </form>
 
     <p id="message"></p>
 
     <div class="links">
-        <span id="switchText">Não tem uma conta?</span>
-        <button type="button" id="switchMode">Criar conta</button>
+      <span id="switchText">Não tem uma conta?</span>
+      <button type="button" id="switchMode">Criar conta</button>
     </div>
-</main>
+  </main>
 
-<script type="module" src="lock.js"></script>
+  <script type="module" src="lock.js"></script>
 </body>
 </html>
