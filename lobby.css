@@ -1,0 +1,101 @@
+/* ===== HEADER ===== */
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px; background: rgba(20,20,31,.85);
+  backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06);
+  position: sticky; top: 0; z-index: 50;
+}
+.header-logo {
+  font-size: 1.5rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-right { display: flex; gap: 12px; }
+.icon-btn {
+  width: 42px; height: 42px; border: none; border-radius: 12px;
+  background: var(--card2); color: var(--text); font-size: 1.2rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: .2s; border: 1px solid rgba(255,255,255,.05);
+}
+.icon-btn:hover { background: var(--accent); transform: scale(1.05); }
+
+/* ===== LOBBY ===== */
+.container {
+  max-width: 900px; margin: 0 auto; padding: 30px 20px;
+}
+.welcome { margin-bottom: 30px; }
+.welcome h1 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+.welcome p { color: var(--muted); }
+
+.section-title {
+  font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ===== CARDS DE JOGO ===== */
+.game-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.game-card {
+  position: relative; background: var(--card); border-radius: 20px;
+  padding: 24px; text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; align-items: flex-start;
+  border: 1px solid rgba(255,255,255,.05); overflow: hidden;
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+}
+
+.game-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.1), transparent);
+  opacity: 0; transition: .3s;
+}
+
+.game-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255,255,255,.2);
+  box-shadow: 0 20px 40px rgba(0,0,0,.5);
+}
+.game-card:hover::before { opacity: 1; }
+
+.card-badge {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(0,0,0,.5); padding: 4px 10px; border-radius: 20px;
+  font-size: .65rem; font-weight: 700; letter-spacing: 1px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+.card-icon {
+  font-size: 3.5rem; margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.3));
+}
+
+.card-info { position: relative; z-index: 1; }
+.card-info h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+.card-info p { color: var(--muted); font-size: .9rem; }
+
+/* Cores específicas dos cards */
+.card-3d {
+  background: linear-gradient(145deg, #1a1025, #14141f);
+  border-color: rgba(124,58,237,.3);
+}
+.card-3d:hover { border-color: var(--accent); box-shadow: 0 10px 40px rgba(124,58,237,.3); }
+.card-3d .card-badge { background: var(--accent); color: #fff; border: none; }
+.card-3d .card-icon { animation: float 3s ease-in-out infinite; }
+
+.card-velha { opacity: 0.7; }
+.card-snake { opacity: 0.7; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 500px) {
+  .welcome h1 { font-size: 1.6rem; }
+  .game-grid { grid-template-columns: 1fr; }
+  .game-card { padding: 20px; flex-direction: row; align-items: center; gap: 16px; }
+  .card-icon { font-size: 2.5rem; margin-bottom: 0; }
+}
