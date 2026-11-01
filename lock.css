@@ -1,0 +1,21 @@
+.login-box {
+  background: var(--card); padding: 36px 28px; border-radius: 20px;
+  width: 100%; max-width: 380px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  position: relative; overflow: hidden;
+}
+.login-box::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: conic-gradient(from 0deg, transparent, var(--accent), transparent 30%);
+  animation: spin 6s linear infinite; opacity: .08; z-index: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.login-box > * { position: relative; z-index: 1; }
+
+.logo {
+  font-size: 2.4rem; font-weight: 900; margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+.logo-sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
