@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — FPS Arena Estável</title>
+<title>Goblox — FPS Arena Multiplayer</title>
 <link rel="stylesheet" href="global.css">
 <style>
   body {
@@ -48,7 +48,33 @@
     border-radius: 50%;
   }
 
-  /* BOTÃO DE ATIRAR */
+  /* BOTÕES MOBILE */
+  #joystickBase {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    z-index: 20;
+    display: none;
+    touch-action: none;
+  }
+  #joystickStick {
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
+    border: 2px solid #fca5a5;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  }
+
   #btnAtirar {
     position: absolute;
     bottom: 40px;
@@ -64,14 +90,32 @@
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
     cursor: pointer;
     z-index: 20;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
   }
-  #btnAtirar:active {
-    transform: scale(0.92);
-    background: #dc2626;
+  #btnAtirar:active { transform: scale(0.92); }
+
+  #btnPular {
+    position: absolute;
+    bottom: 140px;
+    right: 50px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+    border: 2px solid #93c5fd;
+    color: white;
+    font-weight: 900;
+    font-size: 0.9rem;
+    cursor: pointer;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
   }
+  #btnPular:active { transform: scale(0.92); }
 
   #btnVoltar {
     position: absolute;
@@ -101,9 +145,10 @@
     border-radius: 16px;
     z-index: 30;
     text-align: center;
-    border: 2px solid rgba(139, 92, 246, 0.5);
+    border: 2px solid rgba(239, 68, 68, 0.5);
     box-shadow: 0 0 20px rgba(0,0,0,0.8);
     cursor: pointer;
+    display: none;
   }
 </style>
 
@@ -123,17 +168,32 @@
 </div>
 
 <div id="mira"></div>
-<div id="instrucaoMouse">CLICA AQUI PARA JOGAR<br><small style="font-size: 0.9rem; color: #aaa;">Mova o rato para olhar • ESC para sair</small></div>
-<button id="btnAtirar">🔫 FIRE</button>
+<div id="instrucaoMouse">CLICA AQUI PARA JOGAR<br><small style="font-size: 0.9rem; color: #aaa;">Mova o rato • WASD para andar • ESC para sair</small></div>
+
+<!-- CONTROLES MOBILE -->
+<div id="joystickBase">
+  <div id="joystickStick"></div>
+</div>
+<button id="btnPular">PULAR</button>
+<button id="btnAtirar">🔫</button>
+
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
 <script type="module">
 import * as THREE from 'three';
 import { db as database } from './firebase.js';
-import { ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { criarPersonagem } from './personagem.js';
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+if (isMobile) {
+  document.getElementById('joystickBase').style.display = 'block';
+  document.getElementById('btnPular').style.display = 'flex';
+  document.getElementById('btnAtirar').style.display = 'flex';
+} else {
+  document.getElementById('instrucaoMouse').style.display = 'block';
+}
 
 // 1. CENA, CÂMERA E RENDERER
 const scene = new THREE.Scene();
@@ -155,7 +215,7 @@ dirLight.position.set(50, 80, 50);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// 2. MAPA E PLATAFORMAS
+// 2. MAPA E PLATAFORMAS (Movimentação livre sem travar)
 const plataformas = [];
 
 function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
@@ -167,7 +227,7 @@ function criarPlataforma(x, y, z, w, h, d, cor = 0x1e1e2e) {
   mesh.castShadow = true;
   scene.add(mesh);
   
-  mesh.userData = { minX: x - w/2, maxX: x + w/2, minZ: z - d/2, maxZ: z + d/2, topY: y + h/2 };
+  mesh.userData = { minX: x - w/2 - 1, maxX: x + w/2 + 1, minZ: z - d/2 - 1, maxZ: z + d/2 + 1, topY: y + h/2 };
   plataformas.push(mesh);
 }
 
@@ -178,41 +238,37 @@ criarPlataforma(-35, 8, 35, 25, 2, 25, 0x4c1d95);
 criarPlataforma(35, 8, -35, 25, 2, 25, 0x4c1d95);
 criarPlataforma(0, 12, 0, 30, 2, 30, 0x5b21b6);
 
-function criarBarricada(x, y, z) {
-  const geo = new THREE.BoxGeometry(3, 3.5, 3);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x6366f1 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x, y + 1.75, z);
-  mesh.castShadow = true;
-  scene.add(mesh);
-  
-  plataformas.push({
-    userData: { minX: x - 1.5, maxX: x + 1.5, minZ: z - 1.5, maxZ: z + 1.5, topY: y + 3.5 }
-  });
-}
-criarBarricada(-15, 0, -15);
-criarBarricada(15, 0, 15);
-criarBarricada(-15, 0, 15);
-criarBarricada(15, 0, -15);
-criarBarricada(0, 0, -25);
-criarBarricada(0, 0, 25);
-
-// 3. MULTIPLAYER E JOGADOR
-const meuId = 'player_' + Math.random().toString(36).substr(2, 9);
+// 3. MULTIPLAYER COM SISTEMA ANTI-FANTASMA BLINDADO
+const meuId = 'player_fps_' + Math.random().toString(36).substr(2, 9);
 const jogadorRef = ref(database, 'fps_jogadores/' + meuId);
 const todosJogadoresRef = ref(database, 'fps_jogadores');
 
 let playerPos = { x: 0, y: 3, z: 40 };
 let velY = 0;
-const gravidade = -0.015;
+const gravidade = -0.012;
+const forcaPulo = 0.32;
+let noChao = false;
 let kills = 0;
 let vida = 100;
 const outrosJogadores = {};
 
-set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
-onDisconnect(jogadorRef).remove();
+function sairDoJogoLimpo() {
+  remove(jogadorRef).catch(() => {});
+}
 
-// ARMA 3D ESTABILIZADA NA CÂMERA
+onDisconnect(jogadorRef).remove();
+window.addEventListener('beforeunload', sairDoJogoLimpo);
+window.addEventListener('pagehide', sairDoJogoLimpo);
+
+document.getElementById('btnVoltar').addEventListener('click', (e) => {
+  e.preventDefault();
+  sairDoJogoLimpo();
+  setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
+});
+
+set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z, vida: vida });
+
+// ARMA 3D NA CÂMERA
 const gunGroup = new THREE.Group();
 const gunBody = new THREE.Mesh(
   new THREE.BoxGeometry(0.15, 0.2, 0.7),
@@ -247,7 +303,7 @@ function criarBot(x, y, z) {
 criarBot(-30, 2, -30);
 criarBot(30, 2, 30);
 
-// ESCUTA OUTROS JOGADORES
+// ESCUTA OUTROS JOGADORES (REMOVE FANTASMAS INSTANTANEAMENTE)
 onValue(todosJogadoresRef, (snapshot) => {
   const data = snapshot.val() || {};
 
@@ -295,12 +351,8 @@ function atirar() {
   projetes.push({ mesh: bullet, dir: dir, life: 120 });
 }
 
-// 5. CONTROLES DE CÂMERA LIMPOS E ESTÁVEIS
+// 5. CONTROLES DE MOUSE E ESC
 const instrucaoMouse = document.getElementById('instrucaoMouse');
-
-if (isMobile) {
-  instrucaoMouse.style.display = 'none';
-}
 
 function solicitarPointerLock() {
   if (!isMobile) {
@@ -325,7 +377,6 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
-// Variáveis de rotação limpas e limitadas
 let rotationX = 0;
 let rotationY = 0;
 
@@ -334,40 +385,82 @@ document.addEventListener('mousemove', (e) => {
     const sensitivity = 0.0022;
     rotationY -= e.movementX * sensitivity;
     rotationX -= e.movementY * sensitivity;
-
-    // Limita o olhar para cima e para baixo para evitar bug de rotação invertida
-    const limiteVertical = Math.PI / 2.2;
-    rotationX = Math.max(-limiteVertical, Math.min(limiteVertical, rotationX));
+    rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
   }
 });
 
-// Controles Touch para Telemóvel
+// Joystick Mobile
+const joystickBase = document.getElementById('joystickBase');
+const joystickStick = document.getElementById('joystickStick');
+let joystickAtivo = false;
+let joyX = 0, joyY = 0;
+
+joystickBase.addEventListener('touchstart', () => { joystickAtivo = true; });
+
+window.addEventListener('touchmove', (e) => {
+  if (!joystickAtivo) return;
+  const touch = e.touches[0];
+  const rect = joystickBase.getBoundingClientRect();
+  const centroX = rect.left + rect.width / 2;
+  const centroY = rect.top + rect.height / 2;
+  
+  let deltaX = touch.clientX - centroX;
+  let deltaY = touch.clientY - centroY;
+  const distancia = Math.min(50, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+  const angulo = Math.atan2(deltaY, deltaX);
+
+  joyX = Math.cos(angulo) * (distancia / 50);
+  joyY = Math.sin(angulo) * (distancia / 50);
+
+  joystickStick.style.transform = `translate(${Math.cos(angulo) * distancia}px, ${Math.sin(angulo) * distancia}px)`;
+});
+
+window.addEventListener('touchend', () => {
+  joystickAtivo = false;
+  joyX = 0;
+  joyY = 0;
+  joystickStick.style.transform = `translate(0px, 0px)`;
+});
+
+// Rotação de câmera por toque na tela (Mobile)
 let lastTouchX = 0, lastTouchY = 0;
 window.addEventListener('touchstart', (e) => {
-  if (isMobile && e.touches[0].target.id !== 'btnAtirar') {
+  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnAtirar' && e.touches[0].target.id !== 'btnPular') {
     lastTouchX = e.touches[0].clientX;
     lastTouchY = e.touches[0].clientY;
   }
 });
 window.addEventListener('touchmove', (e) => {
-  if (isMobile && e.touches[0].target.id !== 'btnAtirar') {
+  if (isMobile && e.touches[0].target.id !== 'joystickBase' && e.touches[0].target.id !== 'btnAtirar' && e.touches[0].target.id !== 'btnPular') {
     const deltaX = e.touches[0].clientX - lastTouchX;
     const deltaY = e.touches[0].clientY - lastTouchY;
-    const touchSens = 0.004;
-    rotationY -= deltaX * touchSens;
-    rotationX -= deltaY * touchSens;
+    rotationY -= deltaX * 0.004;
+    rotationX -= deltaY * 0.004;
     rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
     lastTouchX = e.touches[0].clientX;
     lastTouchY = e.touches[0].clientY;
   }
 });
 
+document.getElementById('btnPular').addEventListener('click', () => {
+  if (noChao) {
+    velY = forcaPulo;
+    noChao = false;
+  }
+});
+
+document.getElementById('btnAtirar').addEventListener('click', atirar);
+
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Escape') {
+    sairDoJogoLimpo();
     if (!isMobile && document.pointerLockElement) document.exitPointerLock();
-    window.location.href = 'lobby.html';
+    setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
   }
-  if (e.code === 'Space' || e.code === 'KeyF') atirar();
+  if (e.code === 'Space' && noChao) {
+    velY = forcaPulo;
+    noChao = false;
+  }
 });
 
 window.addEventListener('mousedown', (e) => {
@@ -375,8 +468,6 @@ window.addEventListener('mousedown', (e) => {
     atirar();
   }
 });
-
-document.getElementById('btnAtirar').addEventListener('click', atirar);
 
 const keys = {};
 window.addEventListener('keydown', (e) => keys[e.code] = true);
@@ -388,7 +479,6 @@ let ultimoEnvio = 0;
 function animate(tempo) {
   requestAnimationFrame(animate);
 
-  // Aplicação limpa de rotação na câmara usando Euler Order YXZ (evita distorção de 360º)
   camera.rotation.order = 'YXZ';
   camera.rotation.y = rotationY;
   camera.rotation.x = rotationX;
@@ -397,23 +487,35 @@ function animate(tempo) {
   const dirLado = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY)).normalize();
   const vel = 0.22;
 
-  if (keys['KeyW']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
-  if (keys['KeyS']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
-  if (keys['KeyA']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
-  if (keys['KeyD']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
+  if (keys['KeyW'] || keys['ArrowUp']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
+  if (keys['KeyS'] || keys['ArrowDown']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
+  if (keys['KeyA'] || keys['ArrowLeft']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
+  if (keys['KeyD'] || keys['ArrowRight']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
+
+  if (joystickAtivo) {
+    playerPos.x += (dirFrente.x * (-joyY) + dirLado.x * joyX) * vel;
+    playerPos.z += (dirFrente.z * (-joyY) + dirLado.z * joyX) * vel;
+  }
 
   velY += gravidade;
   playerPos.y += velY;
 
+  let alturaSolo = 2;
   for (let plat of plataformas) {
     const b = plat.userData;
     if (playerPos.x >= b.minX && playerPos.x <= b.maxX && playerPos.z >= b.minZ && playerPos.z <= b.maxZ) {
-      if (playerPos.y <= b.topY + 1.6 && playerPos.y >= b.topY - 0.5) {
-        playerPos.y = b.topY + 1.6;
-        velY = 0;
-        break;
+      if (b.topY + 1.6 > alturaSolo) {
+        alturaSolo = b.topY + 1.6;
       }
     }
+  }
+
+  if (playerPos.y <= alturaSolo) {
+    playerPos.y = alturaSolo;
+    velY = 0;
+    noChao = true;
+  } else {
+    noChao = false;
   }
 
   if (playerPos.y < -20) {
@@ -435,6 +537,7 @@ function animate(tempo) {
     ultimoEnvio = tempo;
   }
 
+  // ATUALIZAÇÃO DOS TIROS E IMPACTOS
   for (let i = projetes.length - 1; i >= 0; i--) {
     const p = projetes[i];
     p.mesh.position.add(p.dir.clone().multiplyScalar(1.2));
@@ -484,7 +587,7 @@ function animate(tempo) {
     dirBot.y = 0;
     dirBot.normalize();
     bot.mesh.position.add(dirBot.multiplyScalar(bot.speed));
-    bot.mesh.lookAt(camera.position.x, bot.mesh.position.y, camera.position.z);
+    bot.mesh.lookAt(camera.position.x, camera.position.y, camera.position.z);
   });
 
   renderer.render(scene, camera);
