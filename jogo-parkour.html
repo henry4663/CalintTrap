@@ -1,324 +1,548 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox — Parkour Extremo</title>
-<link rel="stylesheet" href="global.css">
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #050508;
-    user-select: none;
-    touch-action: none;
-    font-family: Arial, sans-serif;
-  }
-  #hud {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    color: #fff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    z-index: 10;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  }
-  #btnVoltar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 10px 18px;
-    background: #1e1e2d;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 20;
-    text-decoration: none;
-  }
-  #instrucaoMouse {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-size: 1.4rem;
-    font-weight: bold;
-    background: rgba(0,0,0,0.85);
-    padding: 24px 36px;
-    border-radius: 16px;
-    z-index: 30;
-    text-align: center;
-    border: 2px solid rgba(139, 92, 246, 0.5);
-    box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    cursor: pointer;
-  }
-</style>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-  }
-}
-</script>
-</head>
-<body>
-
-<div id="hud">
-  <div>Altura (Topo): <span id="scoreAltura" style="color: #4ade80;">0</span>m</div>
-</div>
-
-<div id="instrucaoMouse">CLICA AQUI PARA JOGAR<br><small style="font-size: 0.9rem; color: #aaa;">WASD para mover • Espaço para saltar • ESC para sair</small></div>
-<a href="lobby.html" id="btnVoltar">⎋ Sair</a>
-
-<script type="module">
-import * as THREE from 'three';
-import { db as database } from './firebase.js';
-import { ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { criarPersonagem } from './personagem.js';
-
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-
-// 1. CENA, CÂMERA E RENDERER
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a14);
-scene.fog = new THREE.FogExp2(0x0a0a14, 0.015);
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
-
-// ILUMINAÇÃO
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambientLight);
-
-const dirLight = new THREE.DirectionalLight(0xa855f7, 1.2);
-dirLight.position.set(30, 50, 30);
-dirLight.castShadow = true;
-scene.add(dirLight);
-
-// 2. TORRE DE PLATAFORMAS DE PARKOUR
-const plataformas = [];
-
-function criarBlocoParkour(x, y, z, w, h, d, cor = 0x8b5cf6) {
-  const geo = new THREE.BoxGeometry(w, h, d);
-  const mat = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.3 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x, y, z);
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
-  scene.add(mesh);
-  
-  // Margem segura para nunca emperrar os passos
-  mesh.userData = { minX: x - w/2 - 0.8, maxX: x + w/2 + 0.8, minZ: z - d/2 - 0.8, maxZ: z + d/2 + 0.8, topY: y + h/2 };
-  plataformas.push(mesh);
-}
-
-// Base Inicial
-criarBlocoParkour(0, 0, 0, 20, 2, 20, 0x181824);
-
-// Torre de Obstáculos Subindo
-let alturaAtual = 4;
-for (let i = 0; i < 25; i++) {
-  const offsetX = (Math.sin(i * 1.5) * 8);
-  const offsetZ = (Math.cos(i * 1.2) * 8);
-  criarBlocoParkour(offsetX, alturaAtual, offsetZ, 6, 1.2, 6, i % 2 === 0 ? 0x6366f1 : 0xa855f7);
-  alturaAtual += 3.5;
-}
-
-// 3. MULTIPLAYER E JOGADOR COM ANTI-FANTASMA
-const meuId = 'player_parkour_' + Math.random().toString(36).substr(2, 9);
-const jogadorRef = ref(database, 'parkour_jogadores/' + meuId);
-const todosJogadoresRef = ref(database, 'parkour_jogadores');
-
-let playerPos = { x: 0, y: 3, z: 0 };
-let velY = 0;
-const gravidade = -0.012;
-const forcaPulo = 0.32;
-let noChao = false;
-const outrosJogadores = {};
-
-function sairDoJogoLimpo() {
-  remove(jogadorRef).catch(() => {});
-}
-
-onDisconnect(jogadorRef).remove();
-window.addEventListener('beforeunload', sairDoJogoLimpo);
-window.addEventListener('pagehide', sairDoJogoLimpo);
-
-document.getElementById('btnVoltar').addEventListener('click', (e) => {
-  e.preventDefault();
-  sairDoJogoLimpo();
-  setTimeout(() => {
-    window.location.href = 'lobby.html';
-  }, 100);
-});
-
-set(jogadorRef, { x: playerPos.x, y: playerPos.y, z: playerPos.z });
-
-// ESCUTA OUTROS JOGADORES NO FIREBASE
-onValue(todosJogadoresRef, (snapshot) => {
-  const data = snapshot.val() || {};
-
-  for (let id in outrosJogadores) {
-    if (!data[id]) {
-      scene.remove(outrosJogadores[id].mesh);
-      delete outrosJogadores[id];
-    }
-  }
-
-  for (let id in data) {
-    if (id === meuId) continue;
-    let pos = data[id];
-
-    if (!outrosJogadores[id]) {
-      const meshOutro = criarPersonagem();
-      scene.add(meshOutro);
-      outrosJogadores[id] = { id: id, mesh: meshOutro };
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Goblox — Parkour</title>
+  <style>
+    :root {
+      --bg-top: #bfe8ff;
+      --bg-bottom: #dff7ff;
+      --panel: rgba(13, 17, 27, 0.7);
+      --line: rgba(255,255,255,0.12);
+      --text: #edf6ff;
+      --muted: #c9d8eb;
+      --purple: #8b5cf6;
+      --cyan: #38bdf8;
+      --green: #22c55e;
+      --danger: #ef4444;
     }
 
-    if (pos && typeof pos.x === 'number') {
-      outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(var(--bg-top), var(--bg-bottom));
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      touch-action: none;
+      user-select: none;
     }
-  }
-});
 
-// 4. CONTROLES DE MOUSE E TECLADO
-const instrucaoMouse = document.getElementById('instrucaoMouse');
-
-function solicitarPointerLock() {
-  if (!isMobile) {
-    document.body.requestPointerLock();
-  }
-}
-
-instrucaoMouse.addEventListener('click', solicitarPointerLock);
-document.body.addEventListener('click', (e) => {
-  if (!isMobile && e.target.id !== 'btnVoltar' && document.pointerLockElement !== document.body) {
-    solicitarPointerLock();
-  }
-});
-
-document.addEventListener('pointerlockchange', () => {
-  if (!isMobile) {
-    if (document.pointerLockElement === document.body) {
-      instrucaoMouse.style.display = 'none';
-    } else {
-      instrucaoMouse.style.display = 'block';
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(#9fdcff, #dfefff);
     }
-  }
-});
 
-let rotationX = 0;
-let rotationY = 0;
-
-document.addEventListener('mousemove', (e) => {
-  if (!isMobile && document.pointerLockElement === document.body) {
-    const sensitivity = 0.0022;
-    rotationY -= e.movementX * sensitivity;
-    rotationX -= e.movementY * sensitivity;
-    rotationX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationX));
-  }
-});
-
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape') {
-    sairDoJogoLimpo();
-    if (!isMobile && document.pointerLockElement) document.exitPointerLock();
-    setTimeout(() => {
-      window.location.href = 'lobby.html';
-    }, 100);
-  }
-  // Pular com espaço
-  if ((e.code === 'Space' || e.code === 'KeyW') && noChao) {
-    if (e.code === 'Space') {
-      velY = forcaPulo;
-      noChao = false;
+    #hud {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 20;
+      background: rgba(10, 16, 25, 0.56);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      backdrop-filter: blur(6px);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
     }
-  }
-});
 
-const keys = {};
-window.addEventListener('keydown', (e) => keys[e.code] = true);
-window.addEventListener('keyup', (e) => keys[e.code] = false);
+    #hud strong {
+      color: #fff;
+    }
 
-// 5. LOOP PRINCIPAL DO PARKOUR
-let ultimoEnvio = 0;
+    #btnVoltar {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 20;
+      background: rgba(10,16,25,0.72);
+      color: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
 
-function animate(tempo) {
-  requestAnimationFrame(animate);
+    #joystickBase {
+      position: absolute;
+      left: 26px;
+      bottom: 26px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.18);
+      display: none;
+      z-index: 20;
+      touch-action: none;
+    }
 
-  camera.rotation.order = 'YXZ';
-  camera.rotation.y = rotationY;
-  camera.rotation.x = rotationX;
+    #joystickStick {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      left: 34px;
+      top: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #8b5cf6 0%, #5b21b6 100%);
+      border: 2px solid rgba(255,255,255,0.2);
+      box-shadow: 0 0 20px rgba(139,92,246,.45);
+    }
 
-  const dirFrente = new THREE.Vector3(-Math.sin(rotationY), 0, -Math.cos(rotationY)).normalize();
-  const dirLado = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY)).normalize();
-  const vel = 0.18;
+    #btnPular {
+      position: absolute;
+      right: 28px;
+      bottom: 110px;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      border: none;
+      background: radial-gradient(circle, #38bdf8 0%, #0ea5e9 100%);
+      color: white;
+      font-weight: 900;
+      font-size: 0.8rem;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+      display: none;
+      z-index: 20;
+      touch-action: none;
+    }
 
-  if (keys['KeyW'] || keys['ArrowUp']) { playerPos.x += dirFrente.x * vel; playerPos.z += dirFrente.z * vel; }
-  if (keys['KeyS'] || keys['ArrowDown']) { playerPos.x -= dirFrente.x * vel; playerPos.z -= dirFrente.z * vel; }
-  if (keys['KeyA'] || keys['ArrowLeft']) { playerPos.x -= dirLado.x * vel; playerPos.z -= dirLado.z * vel; }
-  if (keys['KeyD'] || keys['ArrowRight']) { playerPos.x += dirLado.x * vel; playerPos.z += dirLado.z * vel; }
+    #instrucao {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      background: rgba(10, 15, 20, 0.6);
+      border: 1px solid rgba(139,92,246,0.5);
+      border-radius: 18px;
+      padding: 20px 24px;
+      text-align: center;
+      color: white;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      display: none;
+    }
 
-  // Física de Gravidade
-  velY += gravidade;
-  playerPos.y += velY;
-
-  // Verificação de piso nas plataformas do Parkour
-  let chaoEncontrado = false;
-  for (let plat of plataformas) {
-    const b = plat.userData;
-    if (playerPos.x >= b.minX && playerPos.x <= b.maxX && playerPos.z >= b.minZ && playerPos.z <= b.maxZ) {
-      if (playerPos.y <= b.topY + 1.6 && playerPos.y >= b.topY - 0.6 && velY <= 0) {
-        playerPos.y = b.topY + 1.6;
-        velY = 0;
-        noChao = true;
-        chaoEncontrado = true;
-        break;
+    @media (max-width: 768px) {
+      #joystickBase, #btnPular {
+        display: block;
       }
     }
-  }
+  </style>
 
-  if (!chaoEncontrado) {
-    noChao = false;
-  }
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="hud">
+    <div>Tempo: <strong id="tempo">0.0s</strong></div>
+    <div>Checkpoint: <strong id="checkpoint">1</strong></div>
+  </div>
 
-  // Queda fora da torre (Respawn embaixo)
-  if (playerPos.y < -10) {
-    playerPos = { x: 0, y: 3, z: 0 };
-    velY = 0;
-  }
+  <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
-  camera.position.set(playerPos.x, playerPos.y, playerPos.z);
+  <div id="joystickBase">
+    <div id="joystickStick"></div>
+  </div>
 
-  // Atualiza marcador de altura na tela
-  document.getElementById('scoreAltura').innerText = Math.max(0, Math.floor(playerPos.y));
+  <button id="btnPular">PULAR</button>
 
-  if (tempo - ultimoEnvio > 50) {
-    set(jogadorRef, {
-      x: Number(playerPos.x.toFixed(2)),
-      y: Number(playerPos.y.toFixed(2)),
-      z: Number(playerPos.z.toFixed(2))
-    }).catch(() => {});
-    ultimoEnvio = tempo;
-  }
+  <div id="instrucao">
+    Clique para iniciar<br>
+    <small style="color:#cbd5e1; font-weight: normal;">WASD / Mouse / Touch</small>
+  </div>
 
-  renderer.render(scene, camera);
-}
+  <script type="module">
+    import * as THREE from 'three';
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
-animate(0);
-</script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xbfe8ff);
+    scene.fog = new THREE.Fog(0xbfe8ff, 30, 160);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+    scene.add(camera);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x9bb2c5, 1.2);
+    scene.add(hemi);
+
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sunLight.position.set(25, 40, 15);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    scene.add(sunLight);
+
+    const sun = new THREE.Mesh(
+      new THREE.SphereGeometry(4, 24, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0xffd166,
+        emissive: 0xffc857,
+        emissiveIntensity: 0.8
+      })
+    );
+    sun.position.set(55, 45, -25);
+    scene.add(sun);
+
+    const ground = new THREE.Mesh(
+      new THREE.BoxGeometry(200, 2, 200),
+      new THREE.MeshStandardMaterial({
+        color: 0x9cd37e,
+        roughness: 0.95,
+        metalness: 0.05
+      })
+    );
+    ground.position.set(0, -1, 0);
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    const platforms = [];
+    const checkpoints = [
+      { x: 0, y: 1.2, z: 0 },
+      { x: 8, y: 2.2, z: -10 },
+      { x: 18, y: 3.7, z: -20 },
+      { x: 28, y: 5.5, z: -32 },
+      { x: 38, y: 7.2, z: -44 }
+    ];
+
+    function addPlatform(x, y, z, w, h, d, color = 0x4b5563) {
+      const geo = new THREE.BoxGeometry(w, h, d);
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      world.add(mesh);
+
+      platforms.push({
+        x, y, z, w, h, d,
+        minX: x - w / 2,
+        maxX: x + w / 2,
+        minZ: z - d / 2,
+        maxZ: z + d / 2,
+        top: y + h / 2
+      });
+    }
+
+    addPlatform(0, 0.8, 0, 22, 1.4, 22, 0x7c8ca2);
+    addPlatform(7, 2.2, -10, 8, 1.1, 8, 0x7d8f9c);
+    addPlatform(16, 3.8, -20, 8, 1.1, 8, 0x7389ad);
+    addPlatform(26, 5.7, -32, 8, 1.2, 8, 0x7e8db8);
+    addPlatform(36, 7.5, -44, 10, 1.2, 10, 0x8196b3);
+
+    const finish = new THREE.Mesh(
+      new THREE.BoxGeometry(5, 1, 5),
+      new THREE.MeshStandardMaterial({
+        color: 0x22c55e,
+        emissive: 0x14532d,
+        emissiveIntensity: 0.8
+      })
+    );
+    finish.position.set(42, 9.8, -52);
+    finish.castShadow = true;
+    finish.receiveShadow = true;
+    scene.add(finish);
+
+    const playerGroup = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.45, 1.2, 4, 8),
+      new THREE.MeshStandardMaterial({
+        color: 0x8b5cf6,
+        emissive: 0x4c1d95,
+        emissiveIntensity: 0.2
+      })
+    );
+    body.castShadow = true;
+    body.receiveShadow = true;
+    body.position.y = 1.1;
+    playerGroup.add(body);
+
+    const face = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 12, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+    );
+    face.position.set(0, 1.85, 0.18);
+    playerGroup.add(face);
+
+    scene.add(playerGroup);
+
+    const player = {
+      pos: new THREE.Vector3(0, 1.7, 6),
+      velocity: new THREE.Vector3(),
+      yaw: 0,
+      pitch: 0,
+      grounded: false,
+      checkpointIndex: 0,
+      alive: true
+    };
+
+    let started = false;
+    let elapsed = 0;
+
+    const move = { forward: false, backward: false, left: false, right: false };
+    let jumpQueued = false;
+    let lastTime = performance.now();
+
+    const joystickBase = document.getElementById('joystickBase');
+    const joystickStick = document.getElementById('joystickStick');
+    const btnPular = document.getElementById('btnPular');
+    const instrucao = document.getElementById('instrucao');
+
+    function startGame() {
+      started = true;
+      instrucao.style.display = 'none';
+      if (!isMobile) {
+        document.body.requestPointerLock?.();
+      }
+    }
+
+    if (isMobile) {
+      instrucao.style.display = 'block';
+      instrucao.addEventListener('click', startGame);
+    } else {
+      instrucao.style.display = 'block';
+      instrucao.addEventListener('click', startGame);
+      document.body.addEventListener('click', (e) => {
+        if (e.target.id !== 'btnVoltar' && document.pointerLockElement !== document.body) {
+          startGame();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') move.forward = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') move.backward = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') move.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') move.right = true;
+      if (e.code === 'Space') jumpQueued = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') move.forward = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') move.backward = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') move.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') move.right = false;
+    });
+
+    let joyActive = false;
+    let joyX = 0;
+    let joyY = 0;
+
+    function updateJoyFromTouch(touch) {
+      const rect = joystickBase.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      let dx = touch.clientX - cx;
+      let dy = touch.clientY - cy;
+      const dist = Math.min(42, Math.hypot(dx, dy));
+      const ang = Math.atan2(dy, dx);
+
+      joyX = Math.cos(ang) * (dist / 42);
+      joyY = Math.sin(ang) * (dist / 42);
+
+      const moveX = Math.cos(ang) * dist;
+      const moveY = Math.sin(ang) * dist;
+
+      joystickStick.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    }
+
+    joystickBase.addEventListener('touchstart', (e) => {
+      joyActive = true;
+      updateJoyFromTouch(e.touches[0]);
+    });
+
+    joystickBase.addEventListener('touchmove', (e) => {
+      if (!joyActive) return;
+      updateJoyFromTouch(e.touches[0]);
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+      joyActive = false;
+      joyX = 0;
+      joyY = 0;
+      joystickStick.style.transform = 'translate(0px, 0px)';
+    });
+
+    btnPular.addEventListener('click', () => {
+      jumpQueued = true;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isMobile && document.pointerLockElement === document.body && started) {
+        player.yaw -= e.movementX * 0.0025;
+        player.pitch -= e.movementY * 0.0024;
+        player.pitch = THREE.MathUtils.clamp(player.pitch, -1.15, 1.15);
+      }
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      if (!isMobile && document.pointerLockElement === document.body) {
+        instrucao.style.display = 'none';
+      } else if (!started) {
+        instrucao.style.display = 'block';
+      }
+    });
+
+    function handleMovement(dt) {
+      if (!started) return;
+
+      let dirX = 0;
+      let dirZ = 0;
+
+      if (move.forward) dirZ -= 1;
+      if (move.backward) dirZ += 1;
+      if (move.left) dirX -= 1;
+      if (move.right) dirX += 1;
+
+      if (isMobile) {
+        dirX += joyX;
+        dirZ += joyY;
+      }
+
+      if (dirX !== 0 || dirZ !== 0) {
+        const len = Math.hypot(dirX, dirZ) || 1;
+        dirX /= len;
+        dirZ /= len;
+
+        const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw)).normalize();
+        const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw)).normalize();
+
+        const moveDir = new THREE.Vector3();
+        moveDir.addScaledVector(forward, -dirZ);
+        moveDir.addScaledVector(right, dirX);
+
+        const speed = 9.5;
+        player.pos.x += moveDir.x * speed * dt;
+        player.pos.z += moveDir.z * speed * dt;
+      }
+
+      if (jumpQueued && player.grounded) {
+        player.velocity.y = 10.5;
+        player.grounded = false;
+        jumpQueued = false;
+      }
+
+      player.velocity.y -= 24 * dt;
+      player.pos.y += player.velocity.y * dt;
+
+      let onPlatformTop = null;
+
+      for (const plat of platforms) {
+        const inX = player.pos.x >= plat.minX && player.pos.x <= plat.maxX;
+        const inZ = player.pos.z >= plat.minZ && player.pos.z <= plat.maxZ;
+
+        if (inX && inZ) {
+          const top = plat.top + 0.85;
+          if (player.pos.y <= top && player.pos.y >= top - 1.5) {
+            if (player.velocity.y < 0) {
+              player.pos.y = top;
+              player.velocity.y = 0;
+              player.grounded = true;
+              onPlatformTop = plat;
+            }
+          }
+        }
+      }
+
+      if (!player.grounded && player.pos.y < -20) {
+        player.pos.copy(checkpoints[player.checkpointIndex]);
+        player.velocity.set(0, 0, 0);
+        player.grounded = true;
+      }
+
+      if (player.pos.y < -18) {
+        player.pos.copy(checkpoints[player.checkpointIndex]);
+        player.velocity.set(0, 0, 0);
+        player.grounded = true;
+      }
+
+      if (!onPlatformTop && player.pos.y < 0) {
+        player.pos.y = 0.8;
+        player.velocity.y = 0;
+        player.grounded = true;
+      }
+
+      for (let i = 0; i < checkpoints.length; i++) {
+        const cp = checkpoints[i];
+        const d = player.pos.distanceTo(new THREE.Vector3(cp.x, cp.y, cp.z));
+        if (d < 2.4) {
+          player.checkpointIndex = i;
+        }
+      }
+
+      const finishDistance = player.pos.distanceTo(new THREE.Vector3(42, 9.8, -52));
+      if (finishDistance < 3) {
+        alert("Você concluiu o Parkour!");
+        window.location.href = "jogo-3d.html";
+      }
+    }
+
+    function updateCamera() {
+      const targetPos = new THREE.Vector3(
+        player.pos.x - Math.sin(player.yaw) * 7,
+        player.pos.y + 2.2,
+        player.pos.z - Math.cos(player.yaw) * 7
+      );
+
+      const lookAt = new THREE.Vector3(
+        player.pos.x,
+        player.pos.y + 1.4,
+        player.pos.z
+      );
+
+      camera.position.lerp(targetPos, 0.12);
+      camera.lookAt(lookAt);
+    }
+
+    function animate(now) {
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (started) {
+        elapsed += dt;
+        document.getElementById("tempo").textContent = `${elapsed.toFixed(1)}s`;
+        document.getElementById("checkpoint").textContent = String(player.checkpointIndex + 1);
+        handleMovement(dt);
+      }
+
+      updateCamera();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
