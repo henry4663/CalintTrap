@@ -1,97 +1,55 @@
-import { db as database } from './firebase.js';
-import {
-  ref,
-  set,
-  onValue,
-  onDisconnect,
-  remove
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import * as THREE from 'three';
 
-import { criarPersonagem } from './personagem.js';
+export function criarPersonagem() {
+  const grupoPersonagem = new THREE.Group();
 
-export function iniciarMultiplayer({
-  scene,
-  roomKey = 'fps_sala_1',
-  playerIdPrefix = 'player_fps',
-  getLocalState,
-  getPlayerColor = () => 0x7c3aed
-}) {
-  if (!scene || typeof getLocalState !== 'function') {
-    throw new Error('iniciarMultiplayer precisa de scene e getLocalState.');
+  // Materiais padrão com cores vibrantes
+  const materialRoupa = new THREE.MeshStandardMaterial({ color: 0x2678ed, roughness: 0.75 });
+  const materialCalca = new THREE.MeshStandardMaterial({ color: 0x242b43, roughness: 0.75 });
+  const materialPele = new THREE.MeshStandardMaterial({ color: 0xffc18b, roughness: 0.75 });
+  const materialCabelo = new THREE.MeshStandardMaterial({ color: 0x29202a, roughness: 0.75 });
+
+  function criarParte(parent, x, y, z, sx, sy, sz, mat) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
   }
 
-  const outrosJogadores = new Map();
-  const meuId = `${playerIdPrefix}_${Math.random().toString(36).slice(2, 9)}`;
+  // TRONCO
+  criarParte(grupoPersonagem, 0, 1.55, 0, 0.9, 1.1, 0.48, materialRoupa);
 
-  const playerRef = ref(database, `rooms/${roomKey}/players/${meuId}`);
-  const playersRef = ref(database, `rooms/${roomKey}/players`);
+  // CABEÇA
+  criarParte(grupoPersonagem, 0, 2.48, 0, 0.75, 0.75, 0.75, materialPele);
 
-  function removerJogadorLocal() {
-    remove(playerRef).catch(() => {});
-  }
+  // CABELO
+  criarParte(grupoPersonagem, 0, 2.91, 0, 0.79, 0.18, 0.79, materialCabelo);
 
-  onDisconnect(playerRef).remove();
-  window.addEventListener('beforeunload', removerJogadorLocal);
-  window.addEventListener('pagehide', removerJogadorLocal);
+  // OLHOS
+  criarParte(grupoPersonagem, -0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
+  criarParte(grupoPersonagem, 0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
 
-  function sincronizarLocal() {
-    const estado = getLocalState();
+  // BRAÇOS
+  const bracoE = new THREE.Group();
+  const bracoD = new THREE.Group();
+  bracoE.position.set(-0.58, 1.95, 0);
+  bracoD.position.set(0.58, 1.95, 0);
+  grupoPersonagem.add(bracoE, bracoD);
 
-    if (!estado || typeof estado.x !== 'number') return;
+  criarParte(bracoE, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
+  criarParte(bracoD, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
 
-    const payload = {
-      x: Number(estado.x.toFixed(2)),
-      y: Number(estado.y.toFixed(2)),
-      z: Number(estado.z.toFixed(2)),
-      rotY: Number((estado.rotY ?? 0).toFixed(2)),
-      vida: Number((estado.vida ?? 100).toFixed(2)),
-      atualizadoEm: Date.now()
-    };
+  // PERNAS
+  const pernaE = new THREE.Group();
+  const pernaD = new THREE.Group();
+  pernaE.position.set(-0.25, 1, 0);
+  pernaD.position.set(0.25, 1, 0);
+  grupoPersonagem.add(pernaE, pernaD);
 
-    set(playerRef, payload).catch(() => {});
-  }
+  criarParte(pernaE, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+  criarParte(pernaD, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
 
-  onValue(playersRef, (snapshot) => {
-    const data = snapshot.val() || {};
-
-    for (const [id, entry] of outrosJogadores.entries()) {
-      if (!data[id]) {
-        if (entry.mesh) scene.remove(entry.mesh);
-        outrosJogadores.delete(id);
-      }
-    }
-
-    for (const [id, jogador] of Object.entries(data)) {
-      if (id === meuId) continue;
-      if (!jogador || typeof jogador.x !== 'number') continue;
-
-      if (!outrosJogadores.has(id)) {
-        const mesh = criarPersonagem(getPlayerColor(id));
-        scene.add(mesh);
-        outrosJogadores.set(id, {
-          mesh,
-          vida: jogador.vida || 100
-        });
-      }
-
-      const estado = outrosJogadores.get(id);
-      if (!estado || !estado.mesh) continue;
-
-      estado.mesh.position.set(jogador.x, jogador.y, jogador.z);
-
-      if (typeof jogador.rotY === 'number') {
-        estado.mesh.rotation.y = jogador.rotY;
-      }
-
-      estado.vida = jogador.vida || 100;
-    }
-  });
-
-  return {
-    meuId,
-    roomKey,
-    sincronizarLocal,
-    removerJogadorLocal,
-    outrosJogadores
-  };
+  return grupoPersonagem;
 }
