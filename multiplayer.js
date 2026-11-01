@@ -16,9 +16,15 @@ export function iniciarMultiplayer(scene, playerLocalId) {
     onDisconnect(jogadorRef).remove();
 
     // Função para atualizar a nossa posição no Firebase
-    function atualizarPosicao(x, y, z) {
-        set(jogadorRef, { x, y, z });
-    }
+   // No seu multiplayer.js, certifique-se de que o set() recebe números puros:
+function atualizarPosicao(x, y, z) {
+    // Garante que são números puros (caso venham como objetos ou arrays por engano)
+    set(jogadorRef, {
+        x: Number(x) || 0,
+        y: Number(y) || 0,
+        z: Number(z) || 0
+    });
+}
 
     // Fica escutando os outros jogadores em tempo real
     onValue(todosJogadoresRef, (snapshot) => {
