@@ -6,78 +6,65 @@
 <title>Endless Runner 3D</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { overflow: hidden; font-family: 'Arial', sans-serif; background: #000; touch-action: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0033; font-family: Arial, sans-serif; touch-action: none; }
   canvas { display: block; }
   
-  #hud {
-    position: absolute; top: 20px; left: 20px;
-    color: white; font-size: 28px; font-weight: bold;
-    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  #hud, #distance {
+    position: absolute; top: 20px;
+    color: white; font-weight: bold;
+    text-shadow: 0 0 10px #000;
     z-index: 10; pointer-events: none;
+    font-size: 26px;
   }
+  #hud { left: 20px; }
+  #distance { right: 20px; }
   #score { color: #ffdd00; }
   
-  #distance {
-    position: absolute; top: 20px; right: 20px;
-    color: white; font-size: 24px; font-weight: bold;
-    text-shadow: 0 0 10px rgba(0,0,0,0.8);
-    z-index: 10; pointer-events: none;
-  }
-  
-  #overlay {
+  .screen {
     position: absolute; inset: 0;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0,0,0,0.78);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     z-index: 100; color: white; text-align: center;
     padding: 20px;
   }
-  #overlay h1 {
-    font-size: 56px; margin-bottom: 10px;
+  .screen h1 {
+    font-size: 48px; margin-bottom: 15px;
     background: linear-gradient(45deg, #00c6ff, #ff00cc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  #overlay p { font-size: 20px; margin: 10px 0; opacity: 0.9; }
-  #overlay .key {
+  .screen p { font-size: 18px; margin: 8px 0; opacity: 0.9; }
+  .screen .key {
     display: inline-block;
     background: #fff; color: #000;
     padding: 4px 12px; border-radius: 6px;
     font-weight: bold; margin: 0 4px;
   }
-  #startBtn {
-    margin-top: 30px;
-    padding: 18px 60px;
-    font-size: 28px; font-weight: bold;
+  .screen button {
+    margin-top: 25px;
+    padding: 16px 55px;
+    font-size: 24px; font-weight: bold;
     background: linear-gradient(45deg, #00c6ff, #ff00cc);
     color: white; border: none; border-radius: 50px;
     cursor: pointer;
     box-shadow: 0 0 40px rgba(255,0,204,0.5);
-    transition: transform 0.2s;
   }
-  #startBtn:hover { transform: scale(1.05); }
-  #startBtn:active { transform: scale(0.95); }
+  .screen button:active { transform: scale(0.96); }
   
-  #gameOver {
-    display: none;
-  }
-  #gameOver h1 { font-size: 64px; }
-  #finalScore { font-size: 40px; color: #ffdd00; margin: 20px 0; }
-  #restartBtn {
-    padding: 15px 50px; font-size: 24px; font-weight: bold;
-    background: linear-gradient(45deg, #00c6ff, #ff00cc);
-    color: white; border: none; border-radius: 50px;
-    cursor: pointer; margin-top: 20px;
-  }
+  #gameOver { display: none; }
+  #gameOver h1 { font-size: 56px; color: #ff3366; background: none; -webkit-text-fill-color: #ff3366; }
+  #finalScore { font-size: 34px; color: #ffdd00; margin: 15px 0; }
+  #finalCoins { font-size: 20px; opacity: 0.85; }
   
-  #controls-hint {
-    position: absolute; bottom: 30px; left: 50%;
+  #hint {
+    position: absolute; bottom: 25px; left: 50%;
     transform: translateX(-50%);
-    color: rgba(255,255,255,0.7);
-    font-size: 16px; z-index: 10;
+    color: rgba(255,255,255,0.65);
+    font-size: 15px; z-index: 10;
     pointer-events: none;
-    text-shadow: 0 0 10px rgba(0,0,0,0.9);
+    text-shadow: 0 0 8px #000;
     white-space: nowrap;
   }
 </style>
@@ -86,547 +73,520 @@
 
 <div id="hud">🪙 <span id="score">0</span></div>
 <div id="distance">📍 <span id="dist">0</span>m</div>
+<div id="hint">← → mover | ↑ pular</div>
 
-<div id="overlay">
+<div id="startScreen" class="screen">
   <h1>ENDLESS RUNNER</h1>
   <p>Corra o mais longe possível!</p>
-  <p style="margin-top: 20px;">
-    <span class="key">←</span>
-    <span class="key">→</span> ou <span class="key">A</span>
-    <span class="key">D</span> para desviar
+  <p style="margin-top:18px;">
+    <span class="key">←</span><span class="key">→</span> ou <span class="key">A</span><span class="key">D</span> para desviar
   </p>
-  <p>
-    <span class="key">↑</span> ou <span class="key">W</span> / <span class="key">ESPAÇO</span> para pular
-  </p>
+  <p><span class="key">↑</span> / <span class="key">W</span> / <span class="key">ESPAÇO</span> para pular</p>
   <button id="startBtn">JOGAR</button>
 </div>
 
-<div id="gameOver" style="position:absolute; inset:0; background:rgba(0,0,0,0.8); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:100; color:white; text-align:center;">
-  <h1 style="font-size:64px; color:#ff3366;">GAME OVER</h1>
-  <div id="finalScore" style="font-size:40px; color:#ffdd00; margin:20px 0;">0m</div>
-  <div id="finalCoins" style="font-size:24px; opacity:0.8;">🪙 0 moedas</div>
-  <button id="restartBtn" style="padding:15px 50px; font-size:24px; font-weight:bold; background:linear-gradient(45deg,#00c6ff,#ff00cc); color:white; border:none; border-radius:50px; cursor:pointer; margin-top:20px;">JOGAR NOVAMENTE</button>
+<div id="gameOver" class="screen">
+  <h1>GAME OVER</h1>
+  <div id="finalScore">0m</div>
+  <div id="finalCoins">🪙 0 moedas</div>
+  <button id="restartBtn">JOGAR NOVAMENTE</button>
 </div>
 
-<div id="controls-hint">← → mover &nbsp;|&nbsp; ↑ pular</div>
+<!-- Three.js via CDN clássico (sem importmap — mais confiável) -->
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
-  }
-}
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-
-// ============ SETUP ============
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a0033);
-scene.fog = new THREE.Fog(0x1a0033, 40, 110);
-
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 200);
-camera.position.set(0, 5, 8);
-camera.lookAt(0, 1.5, -5);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.body.appendChild(renderer.domElement);
-
-// ============ LUZES ============
-scene.add(new THREE.AmbientLight(0x8866cc, 0.7));
-
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(10, 20, 10);
-sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -20;
-sun.shadow.camera.right = 20;
-sun.shadow.camera.top = 30;
-sun.shadow.camera.bottom = -30;
-sun.shadow.camera.far = 60;
-scene.add(sun);
-
-const backLight = new THREE.PointLight(0xff00cc, 0.8, 40);
-backLight.position.set(0, 8, -20);
-scene.add(backLight);
-
-const frontLight = new THREE.PointLight(0x00ccff, 0.6, 40);
-frontLight.position.set(0, 6, 10);
-scene.add(frontLight);
-
-// ============ CHÃO ============
-const FLOOR_LENGTH = 300;
-const LANE_WIDTH = 3;
-const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
-
-const floorGeo = new THREE.PlaneGeometry(12, FLOOR_LENGTH);
-const floorMat = new THREE.MeshStandardMaterial({ 
-  color: 0x2a1a44,
-  emissive: 0x110022,
-  roughness: 0.8,
-  metalness: 0.2
-});
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI/2;
-floor.position.z = -FLOOR_LENGTH/2 + 10;
-floor.receiveShadow = true;
-scene.add(floor);
-
-// Linhas das pistas
-for (let i = 0; i < 3; i++) {
-  const lineGeo = new THREE.PlaneGeometry(0.1, FLOOR_LENGTH);
-  const lineMat = new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.4 });
-  const line = new THREE.Mesh(lineGeo, lineMat);
-  line.rotation.x = -Math.PI/2;
-  line.position.set(LANES[i], 0.01, -FLOOR_LENGTH/2 + 10);
-  scene.add(line);
-}
-
-// Bordas laterais brilhantes
-const railMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0xff00cc, emissiveIntensity: 0.6 });
-for (let side of [-1, 1]) {
-  const railGeo = new THREE.BoxGeometry(0.2, 0.6, FLOOR_LENGTH);
-  const rail = new THREE.Mesh(railGeo, railMat);
-  rail.position.set(side * (LANE_WIDTH + 1.5), 0.3, -FLOOR_LENGTH/2 + 10);
-  rail.castShadow = true;
-  scene.add(rail);
-}
-
-// ============ JOGADOR (design melhorado) ============
-const player = new THREE.Group();
-player.position.set(0, 0.5, 0);
-
-// Corpo - torso arredondado (cilindro suave)
-const bodyGeo = new THREE.CylinderGeometry(0.35, 0.4, 1.1, 12);
-const bodyMat = new THREE.MeshStandardMaterial({ 
-  color: 0x00e5ff, 
-  emissive: 0x0088aa, 
-  emissiveIntensity: 0.4,
-  roughness: 0.3,
-  metalness: 0.7
-});
-const body = new THREE.Mesh(bodyGeo, bodyMat);
-body.position.y = 0.95;
-body.castShadow = true;
-player.add(body);
-
-// Peito (detalhe)
-const chestGeo = new THREE.SphereGeometry(0.3, 12, 12);
-const chestMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.5 });
-const chest = new THREE.Mesh(chestGeo, chestMat);
-chest.position.set(0, 1.15, 0.2);
-chest.scale.set(1, 0.7, 0.5);
-player.add(chest);
-
-// Cabeça (esfera)
-const headGeo = new THREE.SphereGeometry(0.36, 16, 16);
-const headMat = new THREE.MeshStandardMaterial({ 
-  color: 0xffdd00, 
-  emissive: 0xaa6600, 
-  emissiveIntensity: 0.3,
-  roughness: 0.4,
-  metalness: 0.6
-});
-const head = new THREE.Mesh(headGeo, headMat);
-head.position.y = 1.85;
-head.castShadow = true;
-player.add(head);
-
-// Olhos grandes (estilo cartoon)
-const eyeGeo = new THREE.SphereGeometry(0.09, 8, 8);
-const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x222222 });
-const eyePupilMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-
-const eyeL = new THREE.Mesh(eyeGeo, eyeWhiteMat);
-eyeL.position.set(-0.13, 1.9, 0.3);
-player.add(eyeL);
-const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyePupilMat);
-pupilL.position.set(-0.13, 1.9, 0.38);
-player.add(pupilL);
-
-const eyeR = eyeL.clone();
-eyeR.position.x = 0.13;
-player.add(eyeR);
-const pupilR = pupilL.clone();
-pupilR.position.x = 0.13;
-player.add(pupilR);
-
-// Sorriso (torus pequeno)
-const smileGeo = new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI);
-const smileMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-const smile = new THREE.Mesh(smileGeo, smileMat);
-smile.position.set(0, 1.73, 0.32);
-smile.rotation.z = Math.PI;
-player.add(smile);
-
-// Braços (cilindros) - com pivôs nos ombros
-const armGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8);
-const armMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.3 });
-
-// Pivô esquerdo
-const armPivotL = new THREE.Group();
-armPivotL.position.set(-0.42, 1.35, 0);
-player.add(armPivotL);
-const armL = new THREE.Mesh(armGeo, armMat);
-armL.position.y = -0.3;
-armL.castShadow = true;
-armPivotL.add(armL);
-// Mão
-const handGeo = new THREE.SphereGeometry(0.1, 8, 8);
-const handMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0x664400 });
-const handL = new THREE.Mesh(handGeo, handMat);
-handL.position.y = -0.65;
-armPivotL.add(handL);
-
-// Pivô direito
-const armPivotR = new THREE.Group();
-armPivotR.position.set(0.42, 1.35, 0);
-player.add(armPivotR);
-const armR = new THREE.Mesh(armGeo, armMat);
-armR.position.y = -0.3;
-armR.castShadow = true;
-armPivotR.add(armR);
-const handR = new THREE.Mesh(handGeo, handMat);
-handR.position.y = -0.65;
-armPivotR.add(handR);
-
-// Pernas - com pivôs nos quadris
-const legGeo = new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8);
-const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.4 });
-
-// Pivô esquerdo
-const legPivotL = new THREE.Group();
-legPivotL.position.set(-0.18, 0.5, 0);
-player.add(legPivotL);
-const legL = new THREE.Mesh(legGeo, legMat);
-legL.position.y = -0.28;
-legL.castShadow = true;
-legPivotL.add(legL);
-// Pé
-const footGeo = new THREE.BoxGeometry(0.2, 0.12, 0.3);
-const footMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x666666 });
-const footL = new THREE.Mesh(footGeo, footMat);
-footL.position.set(0, -0.6, 0.05);
-legPivotL.add(footL);
-
-// Pivô direito
-const legPivotR = new THREE.Group();
-legPivotR.position.set(0.18, 0.5, 0);
-player.add(legPivotR);
-const legR = new THREE.Mesh(legGeo, legMat);
-legR.position.y = -0.28;
-legR.castShadow = true;
-legPivotR.add(legR);
-const footR = new THREE.Mesh(footGeo, footMat);
-footR.position.set(0, -0.6, 0.05);
-legPivotR.add(footR);
-
-// Sombra suave abaixo do jogador
-const shadowGeo = new THREE.CircleGeometry(0.5, 16);
-const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 });
-const playerShadow = new THREE.Mesh(shadowGeo, shadowMat);
-playerShadow.rotation.x = -Math.PI/2;
-playerShadow.position.y = 0.02;
-scene.add(playerShadow);
-
-scene.add(player);
-
-// ============ GERENCIAMENTO ============
-const obstacles = [];
-const coins = [];
-const OBSTACLE_TYPES = ['block', 'low', 'tall'];
-
-function createObstacle(lane, zPos, type) {
-  const group = new THREE.Group();
-  group.position.set(LANES[lane], 0, zPos);
-  group.userData.lane = lane;
-  group.userData.type = type;
+<script>
+(function() {
+  'use strict';
   
-  if (type === 'block') {
-    const geo = new THREE.BoxGeometry(2.2, 1.6, 2.2);
-    const mat = new THREE.MeshStandardMaterial({ 
-      color: 0xff3366, emissive: 0x881133, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 0.8;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
+  // ============ SETUP BÁSICO ============
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a0033);
+  scene.fog = new THREE.Fog(0x1a0033, 40, 100);
+  
+  const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.set(0, 5.5, 8);
+  camera.lookAt(0, 1.5, -5);
+  
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild(renderer.domElement);
+  
+  // ============ LUZES ============
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  
+  const sun = new THREE.DirectionalLight(0xffffff, 1);
+  sun.position.set(8, 15, 8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.width = 1024;
+  sun.shadow.mapSize.height = 1024;
+  sun.shadow.camera.left = -15;
+  sun.shadow.camera.right = 15;
+  sun.shadow.camera.top = 15;
+  sun.shadow.camera.bottom = -15;
+  scene.add(sun);
+  
+  // ============ CHÃO E PISTAS ============
+  const LANE_WIDTH = 3;
+  const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
+  
+  const floorGeo = new THREE.PlaneGeometry(12, 300);
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x2a1a44, roughness: 0.9 });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI/2;
+  floor.position.z = -140;
+  floor.receiveShadow = true;
+  scene.add(floor);
+  
+  // Linhas das pistas
+  for (let i = 0; i < 3; i++) {
+    const lineGeo = new THREE.PlaneGeometry(0.08, 300);
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.4 });
+    const line = new THREE.Mesh(lineGeo, lineMat);
+    line.rotation.x = -Math.PI/2;
+    line.position.set(LANES[i], 0.01, -140);
+    scene.add(line);
+  }
+  
+  // Bordas neon
+  for (const side of [-1, 1]) {
+    const railGeo = new THREE.BoxGeometry(0.2, 0.5, 300);
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0xff00cc, emissiveIntensity: 0.5 });
+    const rail = new THREE.Mesh(railGeo, railMat);
+    rail.position.set(side * (LANE_WIDTH + 1.5), 0.25, -140);
+    scene.add(rail);
+  }
+  
+  // ============ PERSONAGEM ============
+  const player = new THREE.Group();
+  
+  // Corpo
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.4, roughness: 0.3, metalness: 0.7 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 1.1, 12), bodyMat);
+  body.position.y = 1.0;
+  body.castShadow = true;
+  player.add(body);
+  
+  // Peitoral
+  const chest = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.5 })
+  );
+  chest.position.set(0, 1.2, 0.22);
+  chest.scale.set(1, 0.7, 0.5);
+  player.add(chest);
+  
+  // Cabeça
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xaa6600, emissiveIntensity: 0.3, roughness: 0.4, metalness: 0.6 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), headMat);
+  head.position.y = 1.85;
+  head.castShadow = true;
+  player.add(head);
+  
+  // Olhos
+  const eyeWhite = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const eyeBlack = new THREE.MeshStandardMaterial({ color: 0x000000 });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), eyeWhite);
+  eyeL.position.set(-0.13, 1.9, 0.3);
+  player.add(eyeL);
+  const pL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyeBlack);
+  pL.position.set(-0.13, 1.9, 0.38);
+  player.add(pL);
+  const eyeR = eyeL.clone(); eyeR.position.x = 0.13; player.add(eyeR);
+  const pR = pL.clone(); pR.position.x = 0.13; player.add(pR);
+  
+  // Sorriso
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
+  );
+  smile.position.set(0, 1.73, 0.32);
+  smile.rotation.z = Math.PI;
+  player.add(smile);
+  
+  // Braços com pivôs
+  const armMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.3 });
+  const handMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0x664400 });
+  
+  const armPivotL = new THREE.Group();
+  armPivotL.position.set(-0.42, 1.35, 0);
+  player.add(armPivotL);
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armL.position.y = -0.3; armL.castShadow = true;
+  armPivotL.add(armL);
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handL.position.y = -0.65;
+  armPivotL.add(handL);
+  
+  const armPivotR = new THREE.Group();
+  armPivotR.position.set(0.42, 1.35, 0);
+  player.add(armPivotR);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armR.position.y = -0.3; armR.castShadow = true;
+  armPivotR.add(armR);
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handR.position.y = -0.65;
+  armPivotR.add(handR);
+  
+  // Pernas com pivôs
+  const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.4 });
+  const footMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x666666 });
+  
+  const legPivotL = new THREE.Group();
+  legPivotL.position.set(-0.18, 0.5, 0);
+  player.add(legPivotL);
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legL.position.y = -0.28; legL.castShadow = true;
+  legPivotL.add(legL);
+  const footL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footL.position.set(0, -0.6, 0.05);
+  legPivotL.add(footL);
+  
+  const legPivotR = new THREE.Group();
+  legPivotR.position.set(0.18, 0.5, 0);
+  player.add(legPivotR);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legR.position.y = -0.28; legR.castShadow = true;
+  legPivotR.add(legR);
+  const footR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footR.position.set(0, -0.6, 0.05);
+  legPivotR.add(footR);
+  
+  scene.add(player);
+  
+  // Sombra do jogador
+  const playerShadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.55, 16),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
+  );
+  playerShadow.rotation.x = -Math.PI/2;
+  playerShadow.position.y = 0.02;
+  scene.add(playerShadow);
+  
+  // ============ OBSTÁCULOS E MOEDAS ============
+  const obstacles = [];
+  const coins = [];
+  const TYPES = ['block', 'low', 'tall'];
+  
+  function createObstacle(lane, z, type) {
+    const group = new THREE.Group();
+    group.position.set(LANES[lane], 0, z);
     
-    const edgeGeo = new THREE.BoxGeometry(2.3, 0.1, 2.3);
-    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff00aa });
-    const edge = new THREE.Mesh(edgeGeo, edgeMat);
-    edge.position.y = 1.6;
-    group.add(edge);
-    
-    group.userData.height = 1.6;
-    group.userData.width = 2.2;
-  } 
-  else if (type === 'low') {
-    const geo = new THREE.BoxGeometry(2.4, 0.5, 1.5);
-    const mat = new THREE.MeshStandardMaterial({ 
-      color: 0xffaa00, emissive: 0xaa5500, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.5 
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 0.25;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    
-    group.userData.height = 0.5;
-    group.userData.width = 2.4;
-  }
-  else {
-    const geo = new THREE.BoxGeometry(2.0, 3.0, 1.2);
-    const mat = new THREE.MeshStandardMaterial({ 
-      color: 0xaa00ff, emissive: 0x550088, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 1.5;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    
-    group.userData.height = 3.0;
-    group.userData.width = 2.0;
-  }
-  
-  scene.add(group);
-  obstacles.push(group);
-  return group;
-}
-
-function createCoin(lane, zPos) {
-  const geo = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16);
-  const mat = new THREE.MeshStandardMaterial({ 
-    color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.9 
-  });
-  const coin = new THREE.Mesh(geo, mat);
-  coin.rotation.x = Math.PI/2;
-  coin.position.set(LANES[lane], 1.0, zPos);
-  coin.castShadow = true;
-  coin.userData.lane = lane;
-  coin.userData.baseY = 1.0;
-  scene.add(coin);
-  coins.push(coin);
-  return coin;
-}
-
-// ============ ESTADO ============
-const GAME = {
-  running: false,
-  over: false,
-  speed: 0.22,          // MAIS FÁCIL (era 0.35)
-  baseSpeed: 0.22,
-  maxSpeed: 0.55,       // MAIS FÁCIL (era 0.9)
-  score: 0,
-  coins: 0,
-  distance: 0,
-  targetLane: 1,
-  currentLane: 1,
-  laneChangeSpeed: 0.18,
-  isJumping: false,
-  jumpVelocity: 0,
-  jumpHeight: 0,
-  gravity: 0.022,
-  jumpPower: 0.32,      // MAIS ALTO para pular com folga
-  spawnTimer: 0,
-  spawnInterval: 90,    // MAIS ESPAÇADO (era 60)
-  lastTime: 0,
-  runCycle: 0,
-  // Animações suaves
-  visualJumpY: 0,
-  animPhase: 0
-};
-
-const keys = { left: false, right: false, jump: false };
-let jumpPressed = false;
-
-// ============ CONTROLES ============
-function handleKeyDown(e) {
-  const k = e.key.toLowerCase();
-  if (k === 'arrowleft' || k === 'a') { keys.left = true; e.preventDefault(); }
-  if (k === 'arrowright' || k === 'd') { keys.right = true; e.preventDefault(); }
-  if (k === 'arrowup' || k === 'w' || k === ' ') { 
-    if (!keys.jump) jumpPressed = true;
-    keys.jump = true; e.preventDefault(); 
-  }
-}
-function handleKeyUp(e) {
-  const k = e.key.toLowerCase();
-  if (k === 'arrowleft' || k === 'a') keys.left = false;
-  if (k === 'arrowright' || k === 'd') keys.right = false;
-  if (k === 'arrowup' || k === 'w' || k === ' ') keys.jump = false;
-}
-window.addEventListener('keydown', handleKeyDown);
-window.addEventListener('keyup', handleKeyUp);
-
-let touchStartX = 0, touchStartY = 0;
-window.addEventListener('touchstart', (e) => {
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-}, { passive: true });
-window.addEventListener('touchend', (e) => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-    if (dx < 0) moveLeft(); else moveRight();
-  } else if (dy < -30) {
-    jumpPressed = true;
-  }
-}, { passive: true });
-
-function moveLeft() {
-  if (GAME.targetLane > 0) GAME.targetLane--;
-}
-function moveRight() {
-  if (GAME.targetLane < 2) GAME.targetLane++;
-}
-
-// ============ RESET ============
-function resetGame() {
-  obstacles.forEach(o => scene.remove(o));
-  obstacles.length = 0;
-  coins.forEach(c => scene.remove(c));
-  coins.length = 0;
-  
-  player.position.set(0, 0.5, 0);
-  player.rotation.set(0, 0, 0);
-  
-  GAME.running = true;
-  GAME.over = false;
-  GAME.speed = GAME.baseSpeed;
-  GAME.score = 0;
-  GAME.coins = 0;
-  GAME.distance = 0;
-  GAME.targetLane = 1;
-  GAME.currentLane = 1;
-  GAME.isJumping = false;
-  GAME.jumpVelocity = 0;
-  GAME.jumpHeight = 0;
-  GAME.spawnTimer = 0;
-  GAME.animPhase = 0;
-  GAME.visualJumpY = 0;
-  
-  document.getElementById('score').textContent = '0';
-  document.getElementById('dist').textContent = '0';
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('gameOver').style.display = 'none';
-  
-  // Spawn inicial espaçado
-  for (let i = 0; i < 4; i++) {
-    spawnRow(-i * 20 - 25);
-  }
-}
-
-function gameOver() {
-  GAME.running = false;
-  GAME.over = true;
-  document.getElementById('gameOver').style.display = 'flex';
-  document.getElementById('finalScore').textContent = Math.floor(GAME.distance) + 'm';
-  document.getElementById('finalCoins').textContent = '🪙 ' + GAME.coins + ' moedas';
-}
-
-// ============ SPAWN ============
-function spawnRow(zPos) {
-  const numObstacles = Math.random() < 0.35 ? 2 : 1;
-  const lanes = [0, 1, 2];
-  const shuffled = lanes.sort(() => Math.random() - 0.5);
-  const chosenLanes = shuffled.slice(0, numObstacles);
-  
-  chosenLanes.forEach(lane => {
-    const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
-    createObstacle(lane, zPos, type);
-  });
-  
-  const freeLanes = lanes.filter(l => !chosenLanes.includes(l));
-  freeLanes.forEach(lane => {
-    if (Math.random() < 0.7) {
-      createCoin(lane, zPos - 4);
-      if (Math.random() < 0.5) createCoin(lane, zPos - 8);
+    if (type === 'block') {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 1.6, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x881133, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 })
+      );
+      mesh.position.y = 0.8; mesh.castShadow = true; mesh.receiveShadow = true;
+      group.add(mesh);
+      group.userData = { type, width: 2.2, height: 1.6 };
+    } 
+    else if (type === 'low') {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 0.5, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xaa5500, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.5 })
+      );
+      mesh.position.y = 0.25; mesh.castShadow = true; mesh.receiveShadow = true;
+      group.add(mesh);
+      group.userData = { type, width: 2.4, height: 0.5 };
     }
-  });
-}
-
-// ============ LOOP ============
-function animate() {
-  requestAnimationFrame(animate);
-  
-  const now = performance.now();
-  const dt = Math.min((now - GAME.lastTime) / 16.67, 3);
-  GAME.lastTime = now;
-  
-  if (GAME.running) {
-    // Velocidade progressiva (bem suave)
-    GAME.speed = Math.min(GAME.speed + 0.00008 * dt, GAME.maxSpeed);
-    GAME.distance += GAME.speed * dt;
-    
-    document.getElementById('dist').textContent = Math.floor(GAME.distance);
-    document.getElementById('score').textContent = GAME.coins;
-    
-    // Movimento lateral
-    if (keys.left) moveLeft();
-    if (keys.right) moveRight();
-    
-    GAME.currentLane += (GAME.targetLane - GAME.currentLane) * GAME.laneChangeSpeed * dt;
-    player.position.x = LANES[0] + GAME.currentLane * LANE_WIDTH;
-    
-    // Pulo
-    if (jumpPressed && !GAME.isJumping) {
-      GAME.isJumping = true;
-      GAME.jumpVelocity = GAME.jumpPower;
-      jumpPressed = false;
+    else {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 3.0, 1.2),
+        new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0x550088, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 })
+      );
+      mesh.position.y = 1.5; mesh.castShadow = true; mesh.receiveShadow = true;
+      group.add(mesh);
+      group.userData = { type, width: 2.0, height: 3.0 };
     }
-    if (!keys.jump) jumpPressed = false;
     
-    if (GAME.isJumping) {
-      GAME.jumpVelocity -= GAME.gravity * dt;
-      GAME.jumpHeight += GAME.jumpVelocity * dt;
+    scene.add(group);
+    obstacles.push(group);
+  }
+  
+  function createCoin(lane, z) {
+    const coin = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.9 })
+    );
+    coin.rotation.x = Math.PI/2;
+    coin.position.set(LANES[lane], 1.0, z);
+    coin.castShadow = true;
+    coin.userData.baseY = 1.0;
+    scene.add(coin);
+    coins.push(coin);
+  }
+  
+  // ============ ESTADO ============
+  const G = {
+    running: false,
+    speed: 0.22,
+    baseSpeed: 0.22,
+    maxSpeed: 0.5,
+    distance: 0,
+    coins: 0,
+    currentLane: 1,
+    targetLane: 1,
+    isJumping: false,
+    jumpVel: 0,
+    jumpY: 0,
+    gravity: 0.022,
+    jumpPower: 0.32,
+    spawnTimer: 0,
+    spawnInterval: 95,
+    lastTime: 0,
+    animPhase: 0,
+    visualJumpY: 0
+  };
+  
+  const keys = { left: false, right: false };
+  let jumpPressed = false;
+  
+  // ============ CONTROLES ============
+  function onKeyDown(e) {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') { keys.left = true; e.preventDefault(); }
+    else if (k === 'arrowright' || k === 'd') { keys.right = true; e.preventDefault(); }
+    else if (k === 'arrowup' || k === 'w' || k === ' ' || k === 'spacebar') { 
+      jumpPressed = true; e.preventDefault();
+    }
+  }
+  function onKeyUp(e) {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') keys.left = false;
+    else if (k === 'arrowright' || k === 'd') keys.right = false;
+  }
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  
+  // Toque (mobile)
+  let tStartX = 0, tStartY = 0;
+  window.addEventListener('touchstart', (e) => {
+    tStartX = e.touches[0].clientX;
+    tStartY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - tStartX;
+    const dy = e.changedTouches[0].clientY - tStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
+      if (dx < 0 && G.targetLane > 0) G.targetLane--;
+      if (dx > 0 && G.targetLane < 2) G.targetLane++;
+    } else if (dy < -25) {
+      jumpPressed = true;
+    }
+  }, { passive: true });
+  
+  // ============ SPAWN ============
+  function spawnRow(z) {
+    const num = Math.random() < 0.35 ? 2 : 1;
+    const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+    const chosen = lanes.slice(0, num);
+    
+    chosen.forEach(lane => {
+      const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+      createObstacle(lane, z, type);
+    });
+    
+    // Moedas nas pistas livres
+    lanes.slice(num).forEach(lane => {
+      if (Math.random() < 0.7) createCoin(lane, z - 4);
+    });
+  }
+  
+  // ============ RESET ============
+  function reset() {
+    obstacles.forEach(o => scene.remove(o));
+    obstacles.length = 0;
+    coins.forEach(c => scene.remove(c));
+    coins.length = 0;
+    
+    player.position.set(0, 0.5, 0);
+    player.rotation.set(0, 0, 0);
+    player.scale.set(1, 1, 1);
+    
+    G.running = true;
+    G.speed = G.baseSpeed;
+    G.distance = 0;
+    G.coins = 0;
+    G.currentLane = 1;
+    G.targetLane = 1;
+    G.isJumping = false;
+    G.jumpVel = 0;
+    G.jumpY = 0;
+    G.visualJumpY = 0;
+    G.spawnTimer = 0;
+    G.animPhase = 0;
+    
+    document.getElementById('score').textContent = '0';
+    document.getElementById('dist').textContent = '0';
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameOver').style.display = 'none';
+    
+    // Spawn inicial (bem longe para dar tempo)
+    for (let i = 0; i < 3; i++) {
+      spawnRow(-i * 25 - 30);
+    }
+  }
+  
+  function gameOver() {
+    G.running = false;
+    document.getElementById('gameOver').style.display = 'flex';
+    document.getElementById('finalScore').textContent = Math.floor(G.distance) + 'm';
+    document.getElementById('finalCoins').textContent = '🪙 ' + G.coins + ' moedas';
+  }
+  
+  // ============ LOOP PRINCIPAL ============
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    const now = performance.now();
+    const dt = Math.min((now - G.lastTime) / 16.67, 3);
+    G.lastTime = now;
+    
+    if (G.running) {
+      // Velocidade progressiva
+      G.speed = Math.min(G.speed + 0.00008 * dt, G.maxSpeed);
+      G.distance += G.speed * dt;
       
-      if (GAME.jumpHeight <= 0) {
-        GAME.jumpHeight = 0;
-        GAME.jumpVelocity = 0;
-        GAME.isJumping = false;
+      document.getElementById('dist').textContent = Math.floor(G.distance);
+      document.getElementById('score').textContent = G.coins;
+      
+      // Movimento lateral
+      if (keys.left && G.targetLane > 0) G.targetLane--;
+      if (keys.right && G.targetLane < 2) G.targetLane++;
+      
+      G.currentLane += (G.targetLane - G.currentLane) * 0.18 * dt;
+      player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
+      
+      // Pulo
+      if (jumpPressed && !G.isJumping) {
+        G.isJumping = true;
+        G.jumpVel = G.jumpPower;
+        jumpPressed = false;
       }
-    }
-    
-    // ---- ANIMAÇÃO SUAVE DO PULO (efeito de squash e stretch) ----
-    const targetVisualJump = GAME.jumpHeight;
-    GAME.visualJumpY += (targetVisualJump - GAME.visualJumpY) * 0.3 * dt;
-    
-    // Aplicar posição
-    player.position.y = 0.5 + GAME.visualJumpY;
-    
-    // Squash & stretch baseado na velocidade vertical
-    let squashX = 1, squashY = 1;
-    if (GAME.isJumping) {
-      const velNorm = GAME.jumpVelocity / GAME.jumpPower;
-      if (velNorm > 0) {
-        // Subindo: estica
-        squashY = 1 + velNorm * 0.15;
-        squashX = 1 - velNorm * 0.1;
+      
+      if (G.isJumping) {
+        G.jumpVel -= G.gravity * dt;
+        G.jumpY += G.jumpVel * dt;
+        if (G.jumpY <= 0) {
+          G.jumpY = 0;
+          G.jumpVel = 0;
+          G.isJumping = false;
+        }
+      }
+      
+      // Interpolação suave da altura visual
+      G.visualJumpY += (G.jumpY - G.visualJumpY) * 0.35 * dt;
+      
+      // Aplicar posição (base + pulo)
+      player.position.y = 0.5 + G.visualJumpY;
+      
+      // Squash & stretch
+      let sx = 1, sy = 1;
+      if (G.isJumping) {
+        const v = G.jumpVel / G.jumpPower;
+        if (v > 0) { sy = 1 + v * 0.15; sx = 1 - v * 0.1; }
+        else { sy = 1 + v * 0.1; sx = 1 - v * 0.05; }
       } else {
-        // Caindo: comprime
-        squashY = 1 + velNorm * 0.1;
-        squashX = 1 - velNorm * 0.05;
+        sy = 1 + Math.sin(now * 0.005) * 0.02;
+        sx = 1 - Math.sin(now * 0.005) * 0.02;
       }
-    } else {
-      // No chão: leve respiração
-      squashY = 1 + Math.sin(now * 0.005) * 0.02;
-      squashX = 1 - Math.sin(now * 0.005) * 0.02;
-    }
-    player.scale.set(squashX, squashY, squashX);
-    
-    // Rotação leve no ar
-    if (GAME.isJumping) {
-      player.rotation.x = -GAME.visualJumpY * 0.4;
-      player.rotation.z = (GAME.currentLane - 1) * -0.1;
-    } else {
-      player.rotation.x *= 0.9;
-      player.rotation.z = (GAME.currentLane - 1) * -0.15;
-   
+      player.scale.set(sx, sy, sx);
+      
+      // Rotação
+      if (G.isJumping) {
+        player.rotation.x = -G.visualJumpY * 0.35;
+      } else {
+        player.rotation.x *= 0.9;
+      }
+      player.rotation.z = (G.currentLane - 1) * -0.15;
+      
+      // ---- ANIMAÇÃO ----
+      G.animPhase += dt * G.speed * 2.5;
+      const cycle = G.animPhase;
+      
+      if (!G.isJumping) {
+        const swing = Math.sin(cycle) * 0.9;
+        legPivotL.rotation.x = swing;
+        legPivotR.rotation.x = -swing;
+        armPivotL.rotation.x = -swing * 0.8;
+        armPivotR.rotation.x = swing * 0.8;
+        armPivotL.rotation.z = 0;
+        armPivotR.rotation.z = 0;
+        
+        // Head bob
+        const bob = Math.abs(Math.sin(cycle)) * 0.05;
+        player.position.y = 0.5 + G.visualJumpY + bob;
+        
+        body.rotation.z = Math.sin(cycle * 2) * 0.03;
+      } else {
+        legPivotL.rotation.x = 0.7;
+        legPivotR.rotation.x = 0.4;
+        armPivotL.rotation.x = -1.5;
+        armPivotR.rotation.x = -1.5;
+        armPivotL.rotation.z = -0.3;
+        armPivotR.rotation.z = 0.3;
+        body.rotation.z = 0;
+      }
+      
+      // Sombra
+      playerShadow.position.set(player.position.x, 0.02, player.position.z);
+      const ss = Math.max(0.4, 1 - G.visualJumpY / 2);
+      playerShadow.scale.set(ss, ss, 1);
+      playerShadow.material.opacity = 0.35 * ss;
+      
+      // Spawn
+      G.spawnTimer += dt;
+      if (G.spawnTimer > G.spawnInterval) {
+        G.spawnTimer = 0;
+        spawnRow(-90);
+      }
+      
+      // ---- OBSTÁCULOS ----
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.position.z += G.speed * dt;
+        
+        if (obs.position.z > 15) {
+          scene.remove(obs);
+          obstacles.splice(i, 1);
+          continue;
+        }
+        
+        // Colisão
+        const dx = Math.abs(player.position.x - obs.position.x);
+        const dz = Math.abs(player.position.z - obs.position.z);
+        const w = obs.userData.width;
+        const h = obs.userData.height;
+        
+        if (dx < w * 0.5 + 0.35 && dz < 1.3) {
+          const pBottom = player.position.y - 0.5;
+          
+          if (obs.userData.type === 'low' && pBottom > h - 0.15) {
+            // passou por cima
+          } else if (obs.userData.type === 'tall') {
+            // torre alta: só morre se não estiver pulando bem alto
+            if (pBottom < h - 0.8) { gameOver(); return; }
+          } else {
+            gameOver(); return;
+          }
+        }
+      }
+      
+      // ---- MOEDAS ----
+      for (let i = coins.length - 1; i >= 0; i--) {
+        const coin = coins[i];
+        coin.position.z += G.speed * dt;
+        coin.rotation.z += 0.12 * dt;
+        coin.position.y = coin.userData.baseY + Math.sin(now * 0.003 + i) * 0.1;
+        
+        if (coin.position.z > 15) {
+          scene.remove(coin);
+          coins.splice(i, 1);
+          continue;
+        }
+        
+        const dx = Math.abs(player.position.x - coin.position.x);
+        const dz = Math.abs(player.position.z - coin
