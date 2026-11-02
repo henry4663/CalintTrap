@@ -60,12 +60,6 @@
   .msg.ok { color: #28a745; }
   .msg.err { color: #dc3545; }
   .hidden { display: none; }
-  .welcome {
-    text-align: center;
-    color: #333;
-  }
-  .welcome h2 { margin-bottom: 8px; }
-  .welcome p { color: #666; margin-bottom: 20px; }
 </style>
 </head>
 <body>
@@ -93,23 +87,15 @@
     <div class="msg" id="msgCad"></div>
   </div>
 
-  <!-- Tela de Boas-vindas (logado) -->
-  <div id="telaLogado" class="hidden">
-    <div class="welcome">
-      <h2>👋 Olá, <span id="nomeUsuario"></span>!</h2>
-      <p>Você está logado localmente.</p>
-      <button onclick="logout()">Sair</button>
-    </div>
-  </div>
-
 </div>
 
 <script>
 // ============================================================
-// CHAVE ÚNICA NO localStorage
+// CONFIGURAÇÃO
 // ============================================================
 const STORAGE_KEY = "usuarios_locais";
 const SESSION_KEY = "usuario_logado";
+const PAGINA_LOBBY = "lobby.html";
 
 // ------------------------------------------------------------
 // Utilitários
@@ -126,7 +112,7 @@ function setUsuarios(usuarios) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(usuarios));
 }
 
-// Gera um hash simples (NÃO é seguro para produção, só didático)
+// Hash simples (didático — NÃO usar em produção real)
 function hashSenha(senha) {
   let hash = 0;
   for (let i = 0; i < senha.length; i++) {
@@ -145,11 +131,8 @@ function mostrarMsg(id, texto, tipo) {
 function trocarTela(tela) {
   document.getElementById("telaLogin").classList.add("hidden");
   document.getElementById("telaCadastro").classList.add("hidden");
-  document.getElementById("telaLogado").classList.add("hidden");
-
   if (tela === "login") document.getElementById("telaLogin").classList.remove("hidden");
   else if (tela === "cadastro") document.getElementById("telaCadastro").classList.remove("hidden");
-  else if (tela === "logado") document.getElementById("telaLogado").classList.remove("hidden");
 }
 
 // ------------------------------------------------------------
@@ -160,18 +143,10 @@ function cadastrar() {
   const pass = document.getElementById("cadPass").value;
   const pass2 = document.getElementById("cadPass2").value;
 
-  if (!user || !pass) {
-    return mostrarMsg("msgCad", "Preencha todos os campos.", "err");
-  }
-  if (user.length < 3) {
-    return mostrarMsg("msgCad", "Usuário deve ter ao menos 3 caracteres.", "err");
-  }
-  if (pass.length < 4) {
-    return mostrarMsg("msgCad", "Senha deve ter ao menos 4 caracteres.", "err");
-  }
-  if (pass !== pass2) {
-    return mostrarMsg("msgCad", "As senhas não coincidem.", "err");
-  }
+  if (!user || !pass) return mostrarMsg("msgCad", "Preencha todos os campos.", "err");
+  if (user.length < 3) return mostrarMsg("msgCad", "Usuário deve ter ao menos 3 caracteres.", "err");
+  if (pass.length < 4) return mostrarMsg("msgCad", "Senha deve ter ao menos 4 caracteres.", "err");
+  if (pass !== pass2) return mostrarMsg("msgCad", "As senhas não coincidem.", "err");
 
   const usuarios = getUsuarios();
   if (usuarios[user.toLowerCase()]) {
@@ -194,7 +169,7 @@ function cadastrar() {
 }
 
 // ------------------------------------------------------------
-// Login
+// Login — redireciona para lobby.html
 // ------------------------------------------------------------
 function fazerLogin() {
   const user = document.getElementById("loginUser").value.trim().toLowerCase();
@@ -214,36 +189,27 @@ function fazerLogin() {
   // Salva sessão
   localStorage.setItem(SESSION_KEY, user);
 
-  abrirPainel(conta.nome);
+  // Atualiza último login
+  conta.ultimoLogin = new Date().toISOString();
+  setUsuarios(usuarios);
+
+  // Feedback visual + redirecionamento
+  mostrarMsg("msgLogin", "✅ Login efetuado! Redirecionando...", "ok");
+
+  setTimeout(() => {
+    window.location.href = PAGINA_LOBBY;
+  }, 500);
 }
 
 // ------------------------------------------------------------
-// Logout
-// ------------------------------------------------------------
-function logout() {
-  localStorage.removeItem(SESSION_KEY);
-  document.getElementById("loginPass").value = "";
-  mostrarMsg("msgLogin", "", "");
-  trocarTela("login");
-}
-
-// ------------------------------------------------------------
-// Painel logado
-// ------------------------------------------------------------
-function abrirPainel(nome) {
-  document.getElementById("nomeUsuario").textContent = nome;
-  trocarTela("logado");
-}
-
-// ------------------------------------------------------------
-// Verifica sessão ao abrir a página
+// Ao abrir: se já estiver logado, pula direto para lobby
 // ------------------------------------------------------------
 (function iniciar() {
   const logado = localStorage.getItem(SESSION_KEY);
   const usuarios = getUsuarios();
 
   if (logado && usuarios[logado]) {
-    abrirPainel(usuarios[logado].nome);
+    window.location.href = PAGINA_LOBBY;
   } else {
     trocarTela("login");
   }
