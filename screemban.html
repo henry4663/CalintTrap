@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -84,15 +83,68 @@
       <p id="blocoTempo" style="display: none;"><strong>Expira em:</strong> <span id="txtTempo" style="color: #fbbf24;">Carregando...</span></p>
     </div>
 
-    <button class="btn-sair" onclick="tentarNovamente()">Voltar ao Início / Login</button>
+    <button class="btn-sair" onclick="voltarLogin()">Voltar ao Início</button>
   </div>
 
-  <script>
-    // Lê os dados do banimento salvos no localStorage
-    const motivo = localStorage.getItem("goblox_ban_motivo") || "Violação dos termos de uso.";
-    const tipo = localStorage.getItem("goblox_ban_tipo") || "permanente";
-    const expiraEm = parseInt(localStorage.getItem("goblox_ban_expira") || 0);
+  <script type="module">
+    import { db } from "./firebase.js";
+    import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getCurrentNick } from "./authLocal.js";
 
-    document.getElementById("txtMotivo").textContent = motivo;
+    const nick = getCurrentNick() || localStorage.getItem("goblox_player_nick");
 
-    if (tipo === "permanente")
+    async function verificarStatusBan() {
+      if (!nick) {
+        document.getElementById("txtMotivo").textContent = "Nenhum utilizador logado.";
+        document.getElementById("txtTipo").textContent = "Desconhecido";
+        return;
+      }
+
+      // Verifica no Firebase se a conta continua banida
+      const banRef = ref(db, `bans/${nick}`);
+      const snap = await get(banRef);
+
+      if (!snap.exists()) {
+        // Se já não estiver banido no servidor, manda de volta para o lobby
+        window.location.href = "lobby.html";
+        return;
+      }
+
+      const banData = snap.val();
+      document.getElementById("txtMotivo").textContent = banData.motivo || "Conduta inadequada.";
+      
+      if (banData.tipo === "permanente") {
+        document.getElementById("txtTipo").textContent = "Permanente 🚫";
+        document.getElementById("blocoTempo").style.display = "none";
+      } else {
+        document.getElementById("txtTipo").textContent = "Temporário ⏳";
+        document.getElementById("blocoTempo").style.display = "block";
+
+        // Atualiza a contagem regressiva do tempo
+        const expiraEm = banData.expiraEm || 0;
+        const intervalo = setInterval(() => {
+          const agora = Date.now();
+          const restante = expiraEm - agora;
+
+          if (restante <= 0) {
+            clearInterval(intervalo);
+            // O banimento expirou, remove do Firebase e redireciona
+            window.location.href = "lobby.html";
+          } else {
+            const minutos = Math.floor(restante / (1000 * 60));
+            const segundos = Math.floor((restante % (1000 * 60)) / 1000);
+            document.getElementById("txtTempo").textContent = `${minutos}m ${segundos}s`;
+          }
+        }, 1000);
+      }
+    }
+
+    window.voltarLogin = function() {
+      localStorage.removeItem("goblox_player_nick");
+      window.location.href = "index.html"; // ou a tua tela de login
+    };
+
+    verificarStatusBan();
+  </script>
+</body>
+</html>
