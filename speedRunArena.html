@@ -124,7 +124,7 @@ import * as THREE from 'three';
 // ============ SETUP ============
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a0033);
-scene.fog = new THREE.Fog(0x1a0033, 30, 90);
+scene.fog = new THREE.Fog(0x1a0033, 40, 110);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 200);
 camera.position.set(0, 5, 8);
@@ -138,7 +138,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 // ============ LUZES ============
-scene.add(new THREE.AmbientLight(0x8866cc, 0.6));
+scene.add(new THREE.AmbientLight(0x8866cc, 0.7));
 
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(10, 20, 10);
@@ -160,7 +160,7 @@ frontLight.position.set(0, 6, 10);
 scene.add(frontLight);
 
 // ============ CHÃO ============
-const FLOOR_LENGTH = 200;
+const FLOOR_LENGTH = 300;
 const LANE_WIDTH = 3;
 const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
 
@@ -197,12 +197,12 @@ for (let side of [-1, 1]) {
   scene.add(rail);
 }
 
-// ============ JOGADOR ============
+// ============ JOGADOR (design melhorado) ============
 const player = new THREE.Group();
 player.position.set(0, 0.5, 0);
 
-// Corpo
-const bodyGeo = new THREE.BoxGeometry(0.7, 1.4, 0.5);
+// Corpo - torso arredondado (cilindro suave)
+const bodyGeo = new THREE.CylinderGeometry(0.35, 0.4, 1.1, 12);
 const bodyMat = new THREE.MeshStandardMaterial({ 
   color: 0x00e5ff, 
   emissive: 0x0088aa, 
@@ -211,12 +211,20 @@ const bodyMat = new THREE.MeshStandardMaterial({
   metalness: 0.7
 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
-body.position.y = 0.7;
+body.position.y = 0.95;
 body.castShadow = true;
 player.add(body);
 
-// Cabeça
-const headGeo = new THREE.BoxGeometry(0.55, 0.55, 0.55);
+// Peito (detalhe)
+const chestGeo = new THREE.SphereGeometry(0.3, 12, 12);
+const chestMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.5 });
+const chest = new THREE.Mesh(chestGeo, chestMat);
+chest.position.set(0, 1.15, 0.2);
+chest.scale.set(1, 0.7, 0.5);
+player.add(chest);
+
+// Cabeça (esfera)
+const headGeo = new THREE.SphereGeometry(0.36, 16, 16);
 const headMat = new THREE.MeshStandardMaterial({ 
   color: 0xffdd00, 
   emissive: 0xaa6600, 
@@ -225,50 +233,112 @@ const headMat = new THREE.MeshStandardMaterial({
   metalness: 0.6
 });
 const head = new THREE.Mesh(headGeo, headMat);
-head.position.y = 1.7;
+head.position.y = 1.85;
 head.castShadow = true;
 player.add(head);
 
-// Olhos
-const eyeGeo = new THREE.BoxGeometry(0.12, 0.12, 0.05);
-const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-eyeL.position.set(-0.15, 1.75, 0.28);
+// Olhos grandes (estilo cartoon)
+const eyeGeo = new THREE.SphereGeometry(0.09, 8, 8);
+const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x222222 });
+const eyePupilMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+
+const eyeL = new THREE.Mesh(eyeGeo, eyeWhiteMat);
+eyeL.position.set(-0.13, 1.9, 0.3);
 player.add(eyeL);
+const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), eyePupilMat);
+pupilL.position.set(-0.13, 1.9, 0.38);
+player.add(pupilL);
+
 const eyeR = eyeL.clone();
-eyeR.position.x = 0.15;
+eyeR.position.x = 0.13;
 player.add(eyeR);
+const pupilR = pupilL.clone();
+pupilR.position.x = 0.13;
+player.add(pupilR);
 
-// Braços animados
-const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
+// Sorriso (torus pequeno)
+const smileGeo = new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI);
+const smileMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const smile = new THREE.Mesh(smileGeo, smileMat);
+smile.position.set(0, 1.73, 0.32);
+smile.rotation.z = Math.PI;
+player.add(smile);
+
+// Braços (cilindros) - com pivôs nos ombros
+const armGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8);
 const armMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.3 });
-const armL = new THREE.Mesh(armGeo, armMat);
-armL.position.set(-0.5, 1.1, 0);
-armL.castShadow = true;
-player.add(armL);
-const armR = new THREE.Mesh(armGeo, armMat);
-armR.position.set(0.5, 1.1, 0);
-armR.castShadow = true;
-player.add(armR);
 
-// Pernas animadas
-const legGeo = new THREE.BoxGeometry(0.22, 0.6, 0.22);
-const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.3 });
+// Pivô esquerdo
+const armPivotL = new THREE.Group();
+armPivotL.position.set(-0.42, 1.35, 0);
+player.add(armPivotL);
+const armL = new THREE.Mesh(armGeo, armMat);
+armL.position.y = -0.3;
+armL.castShadow = true;
+armPivotL.add(armL);
+// Mão
+const handGeo = new THREE.SphereGeometry(0.1, 8, 8);
+const handMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0x664400 });
+const handL = new THREE.Mesh(handGeo, handMat);
+handL.position.y = -0.65;
+armPivotL.add(handL);
+
+// Pivô direito
+const armPivotR = new THREE.Group();
+armPivotR.position.set(0.42, 1.35, 0);
+player.add(armPivotR);
+const armR = new THREE.Mesh(armGeo, armMat);
+armR.position.y = -0.3;
+armR.castShadow = true;
+armPivotR.add(armR);
+const handR = new THREE.Mesh(handGeo, handMat);
+handR.position.y = -0.65;
+armPivotR.add(handR);
+
+// Pernas - com pivôs nos quadris
+const legGeo = new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8);
+const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.4 });
+
+// Pivô esquerdo
+const legPivotL = new THREE.Group();
+legPivotL.position.set(-0.18, 0.5, 0);
+player.add(legPivotL);
 const legL = new THREE.Mesh(legGeo, legMat);
-legL.position.set(-0.18, 0.3, 0);
+legL.position.y = -0.28;
 legL.castShadow = true;
-player.add(legL);
+legPivotL.add(legL);
+// Pé
+const footGeo = new THREE.BoxGeometry(0.2, 0.12, 0.3);
+const footMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x666666 });
+const footL = new THREE.Mesh(footGeo, footMat);
+footL.position.set(0, -0.6, 0.05);
+legPivotL.add(footL);
+
+// Pivô direito
+const legPivotR = new THREE.Group();
+legPivotR.position.set(0.18, 0.5, 0);
+player.add(legPivotR);
 const legR = new THREE.Mesh(legGeo, legMat);
-legR.position.set(0.18, 0.3, 0);
+legR.position.y = -0.28;
 legR.castShadow = true;
-player.add(legR);
+legPivotR.add(legR);
+const footR = new THREE.Mesh(footGeo, footMat);
+footR.position.set(0, -0.6, 0.05);
+legPivotR.add(footR);
+
+// Sombra suave abaixo do jogador
+const shadowGeo = new THREE.CircleGeometry(0.5, 16);
+const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 });
+const playerShadow = new THREE.Mesh(shadowGeo, shadowMat);
+playerShadow.rotation.x = -Math.PI/2;
+playerShadow.position.y = 0.02;
+scene.add(playerShadow);
 
 scene.add(player);
 
-// ============ GERENCIAMENTO DE OBJETOS ============
+// ============ GERENCIAMENTO ============
 const obstacles = [];
 const coins = [];
-
 const OBSTACLE_TYPES = ['block', 'low', 'tall'];
 
 function createObstacle(lane, zPos, type) {
@@ -278,56 +348,52 @@ function createObstacle(lane, zPos, type) {
   group.userData.type = type;
   
   if (type === 'block') {
-    // Bloco médio - desviar
-    const geo = new THREE.BoxGeometry(2.2, 1.8, 2.2);
+    const geo = new THREE.BoxGeometry(2.2, 1.6, 2.2);
     const mat = new THREE.MeshStandardMaterial({ 
       color: 0xff3366, emissive: 0x881133, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 0.9;
+    mesh.position.y = 0.8;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     group.add(mesh);
     
-    // Detalhes neon
     const edgeGeo = new THREE.BoxGeometry(2.3, 0.1, 2.3);
     const edgeMat = new THREE.MeshBasicMaterial({ color: 0xff00aa });
     const edge = new THREE.Mesh(edgeGeo, edgeMat);
-    edge.position.y = 1.8;
+    edge.position.y = 1.6;
     group.add(edge);
     
-    group.userData.height = 1.8;
+    group.userData.height = 1.6;
     group.userData.width = 2.2;
   } 
   else if (type === 'low') {
-    // Obstáculo baixo - pular
-    const geo = new THREE.BoxGeometry(2.4, 0.6, 1.5);
+    const geo = new THREE.BoxGeometry(2.4, 0.5, 1.5);
     const mat = new THREE.MeshStandardMaterial({ 
       color: 0xffaa00, emissive: 0xaa5500, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.5 
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 0.3;
+    mesh.position.y = 0.25;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     group.add(mesh);
     
-    group.userData.height = 0.6;
+    group.userData.height = 0.5;
     group.userData.width = 2.4;
   }
   else {
-    // Obstáculo alto - não pode pular (bloqueia)
-    const geo = new THREE.BoxGeometry(2.2, 3.5, 1.2);
+    const geo = new THREE.BoxGeometry(2.0, 3.0, 1.2);
     const mat = new THREE.MeshStandardMaterial({ 
       color: 0xaa00ff, emissive: 0x550088, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6 
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 1.75;
+    mesh.position.y = 1.5;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     group.add(mesh);
     
-    group.userData.height = 3.5;
-    group.userData.width = 2.2;
+    group.userData.height = 3.0;
+    group.userData.width = 2.0;
   }
   
   scene.add(group);
@@ -336,7 +402,7 @@ function createObstacle(lane, zPos, type) {
 }
 
 function createCoin(lane, zPos) {
-  const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16);
+  const geo = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16);
   const mat = new THREE.MeshStandardMaterial({ 
     color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.9 
   });
@@ -345,35 +411,37 @@ function createCoin(lane, zPos) {
   coin.position.set(LANES[lane], 1.0, zPos);
   coin.castShadow = true;
   coin.userData.lane = lane;
-  coin.userData.rotSpeed = 0.1;
+  coin.userData.baseY = 1.0;
   scene.add(coin);
   coins.push(coin);
   return coin;
 }
 
-// ============ ESTADO DO JOGO ============
+// ============ ESTADO ============
 const GAME = {
   running: false,
   over: false,
-  speed: 0.35,
-  baseSpeed: 0.35,
-  maxSpeed: 0.9,
+  speed: 0.22,          // MAIS FÁCIL (era 0.35)
+  baseSpeed: 0.22,
+  maxSpeed: 0.55,       // MAIS FÁCIL (era 0.9)
   score: 0,
   coins: 0,
   distance: 0,
   targetLane: 1,
   currentLane: 1,
-  laneChangeSpeed: 0.15,
+  laneChangeSpeed: 0.18,
   isJumping: false,
   jumpVelocity: 0,
   jumpHeight: 0,
-  gravity: 0.025,
-  jumpPower: 0.28,
+  gravity: 0.022,
+  jumpPower: 0.32,      // MAIS ALTO para pular com folga
   spawnTimer: 0,
-  spawnInterval: 60,
-  coinTimer: 0,
-  coinInterval: 40,
-  lastTime: 0
+  spawnInterval: 90,    // MAIS ESPAÇADO (era 60)
+  lastTime: 0,
+  runCycle: 0,
+  // Animações suaves
+  visualJumpY: 0,
+  animPhase: 0
 };
 
 const keys = { left: false, right: false, jump: false };
@@ -398,7 +466,6 @@ function handleKeyUp(e) {
 window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('keyup', handleKeyUp);
 
-// Touch controls
 let touchStartX = 0, touchStartY = 0;
 window.addEventListener('touchstart', (e) => {
   touchStartX = e.touches[0].clientX;
@@ -421,19 +488,16 @@ function moveRight() {
   if (GAME.targetLane < 2) GAME.targetLane++;
 }
 
-// ============ INICIAR / RESET ============
+// ============ RESET ============
 function resetGame() {
-  // Limpar obstáculos e moedas
   obstacles.forEach(o => scene.remove(o));
   obstacles.length = 0;
   coins.forEach(c => scene.remove(c));
   coins.length = 0;
   
-  // Reset jogador
   player.position.set(0, 0.5, 0);
   player.rotation.set(0, 0, 0);
   
-  // Reset estado
   GAME.running = true;
   GAME.over = false;
   GAME.speed = GAME.baseSpeed;
@@ -446,17 +510,17 @@ function resetGame() {
   GAME.jumpVelocity = 0;
   GAME.jumpHeight = 0;
   GAME.spawnTimer = 0;
-  GAME.coinTimer = 0;
+  GAME.animPhase = 0;
+  GAME.visualJumpY = 0;
   
-  // UI
   document.getElementById('score').textContent = '0';
   document.getElementById('dist').textContent = '0';
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('gameOver').style.display = 'none';
   
-  // Spawn inicial
-  for (let i = 0; i < 5; i++) {
-    spawnRow(-i * 15 - 20);
+  // Spawn inicial espaçado
+  for (let i = 0; i < 4; i++) {
+    spawnRow(-i * 20 - 25);
   }
 }
 
@@ -470,8 +534,7 @@ function gameOver() {
 
 // ============ SPAWN ============
 function spawnRow(zPos) {
-  // Escolhe 1 ou 2 pistas para ter obstáculo
-  const numObstacles = Math.random() < 0.4 ? 2 : 1;
+  const numObstacles = Math.random() < 0.35 ? 2 : 1;
   const lanes = [0, 1, 2];
   const shuffled = lanes.sort(() => Math.random() - 0.5);
   const chosenLanes = shuffled.slice(0, numObstacles);
@@ -481,12 +544,11 @@ function spawnRow(zPos) {
     createObstacle(lane, zPos, type);
   });
   
-  // Moedas nas pistas livres
   const freeLanes = lanes.filter(l => !chosenLanes.includes(l));
   freeLanes.forEach(lane => {
-    if (Math.random() < 0.6) {
-      createCoin(lane, zPos - 3);
-      if (Math.random() < 0.5) createCoin(lane, zPos - 6);
+    if (Math.random() < 0.7) {
+      createCoin(lane, zPos - 4);
+      if (Math.random() < 0.5) createCoin(lane, zPos - 8);
     }
   });
 }
@@ -496,15 +558,14 @@ function animate() {
   requestAnimationFrame(animate);
   
   const now = performance.now();
-  const dt = Math.min((now - GAME.lastTime) / 16.67, 3); // normalizado a 60fps
+  const dt = Math.min((now - GAME.lastTime) / 16.67, 3);
   GAME.lastTime = now;
   
   if (GAME.running) {
-    // Aumenta velocidade gradualmente
-    GAME.speed = Math.min(GAME.speed + 0.0001 * dt, GAME.maxSpeed);
+    // Velocidade progressiva (bem suave)
+    GAME.speed = Math.min(GAME.speed + 0.00008 * dt, GAME.maxSpeed);
     GAME.distance += GAME.speed * dt;
     
-    // Atualizar UI
     document.getElementById('dist').textContent = Math.floor(GAME.distance);
     document.getElementById('score').textContent = GAME.coins;
     
@@ -534,121 +595,38 @@ function animate() {
       }
     }
     
-    player.position.y = 0.5 + GAME.jumpHeight;
+    // ---- ANIMAÇÃO SUAVE DO PULO (efeito de squash e stretch) ----
+    const targetVisualJump = GAME.jumpHeight;
+    GAME.visualJumpY += (targetVisualJump - GAME.visualJumpY) * 0.3 * dt;
     
-    // Animação das pernas/braços
-    const runCycle = now * 0.02;
-    if (!GAME.isJumping) {
-      legL.rotation.x = Math.sin(runCycle) * 0.6;
-      legR.rotation.x = -Math.sin(runCycle) * 0.6;
-      armL.rotation.x = -Math.sin(runCycle) * 0.5;
-      armR.rotation.x = Math.sin(runCycle) * 0.5;
+    // Aplicar posição
+    player.position.y = 0.5 + GAME.visualJumpY;
+    
+    // Squash & stretch baseado na velocidade vertical
+    let squashX = 1, squashY = 1;
+    if (GAME.isJumping) {
+      const velNorm = GAME.jumpVelocity / GAME.jumpPower;
+      if (velNorm > 0) {
+        // Subindo: estica
+        squashY = 1 + velNorm * 0.15;
+        squashX = 1 - velNorm * 0.1;
+      } else {
+        // Caindo: comprime
+        squashY = 1 + velNorm * 0.1;
+        squashX = 1 - velNorm * 0.05;
+      }
     } else {
-      legL.rotation.x = 0.3;
-      legR.rotation.x = -0.3;
-      armL.rotation.x = -0.8;
-      armR.rotation.x = -0.8;
+      // No chão: leve respiração
+      squashY = 1 + Math.sin(now * 0.005) * 0.02;
+      squashX = 1 - Math.sin(now * 0.005) * 0.02;
     }
+    player.scale.set(squashX, squashY, squashX);
     
-    // Rotação leve do jogador
-    player.rotation.z = (GAME.currentLane - 1) * -0.15;
-    
-    // Spawn de obstáculos
-    GAME.spawnTimer += dt;
-    if (GAME.spawnTimer > GAME.spawnInterval - GAME.distance * 0.05) {
-      GAME.spawnTimer = 0;
-      spawnRow(-80);
-    }
-    
-    // Mover e checar obstáculos
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      const obs = obstacles[i];
-      obs.position.z += GAME.speed * dt;
-      
-      // Rotação decorativa
-      obs.children.forEach(c => {
-        if (c.material && c.material.emissive) {
-          c.rotation.y += 0.02;
-        }
-      });
-      
-      // Remover se passou
-      if (obs.position.z > 15) {
-        scene.remove(obs);
-        obstacles.splice(i, 1);
-        continue;
-      }
-      
-      // Colisão
-      const dx = Math.abs(player.position.x - obs.position.x);
-      const dz = Math.abs(player.position.z - obs.position.z);
-      const obsWidth = obs.userData.width || 2;
-      const obsHeight = obs.userData.height || 1.5;
-      
-      if (dx < obsWidth * 0.5 + 0.3 && dz < 1.2) {
-        // Verifica colisão vertical
-        const playerBottom = player.position.y - 0.5;
-        const playerTop = player.position.y + 0.9;
-        const obsTop = obsHeight;
-        
-        // Se o jogador está acima do obstáculo baixo, não colide
-        if (obs.userData.type === 'low' && playerBottom > obsTop - 0.1) {
-          // passou por cima
-        } else {
-          gameOver();
-        }
-      }
-    }
-    
-    // Mover moedas
-    for (let i = coins.length - 1; i >= 0; i--) {
-      const coin = coins[i];
-      coin.position.z += GAME.speed * dt;
-      coin.rotation.z += 0.1 * dt;
-      
-      if (coin.position.z > 15) {
-        scene.remove(coin);
-        coins.splice(i, 1);
-        continue;
-      }
-      
-      // Coleta
-      const dx = Math.abs(player.position.x - coin.position.x);
-      const dz = Math.abs(player.position.z - coin.position.z);
-      const dy = Math.abs(player.position.y - coin.position.y);
-      
-      if (dx < 1.0 && dz < 1.0 && dy < 1.5) {
-        GAME.coins++;
-        document.getElementById('score').textContent = GAME.coins;
-        scene.remove(coin);
-        coins.splice(i, 1);
-      }
-    }
-    
-    // Câmera segue suavemente
-    camera.position.x += (player.position.x * 0.4 - camera.position.x) * 0.08;
-    camera.position.z = player.position.z + 8;
-    camera.position.y = 5 + GAME.jumpHeight * 0.5;
-    camera.lookAt(player.position.x * 0.5, 1.5, player.position.z - 5);
-  }
-  
-  renderer.render(scene, camera);
-}
-
-// ============ BOTÕES ============
-document.getElementById('startBtn').addEventListener('click', resetGame);
-document.getElementById('restartBtn').addEventListener('click', resetGame);
-
-// ============ RESIZE ============
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// ============ INICIAR ============
-GAME.lastTime = performance.now();
-animate();
-</script>
-</body>
-</html>
+    // Rotação leve no ar
+    if (GAME.isJumping) {
+      player.rotation.x = -GAME.visualJumpY * 0.4;
+      player.rotation.z = (GAME.currentLane - 1) * -0.1;
+    } else {
+      player.rotation.x *= 0.9;
+      player.rotation.z = (GAME.currentLane - 1) * -0.15;
+   
