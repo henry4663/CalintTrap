@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox - Forest Arena</title>
+<title>Goblox — Forest Arena / FPS Tático</title>
+<link rel="stylesheet" href="global.css">
 <style>
 :root {
   --ui-bg: rgba(8, 13, 18, .78);
@@ -22,6 +23,7 @@ html, body {
   color: var(--ui-text);
   font-family: Arial, Helvetica, sans-serif;
   touch-action: none;
+  user-select: none;
 }
 canvas {
   display: block;
@@ -94,6 +96,7 @@ canvas {
   transform: translate(-50%, -50%);
   width: 18px;
   height: 18px;
+  pointer-events: none;
 }
 #crosshair::before, #crosshair::after {
   content: "";
@@ -117,8 +120,8 @@ canvas {
   position: absolute;
   left: 15px;
   bottom: 15px;
-  width: 150px;
-  height: 150px;
+  width: 130px;
+  height: 130px;
   pointer-events: auto;
 }
 #stickBase {
@@ -159,7 +162,6 @@ canvas {
   place-items: center;
   font-weight: bold;
   user-select: none;
-  -webkit-user-select: none;
 }
 #fireButton {
   width: 76px;
@@ -173,6 +175,7 @@ canvas {
   height: 58px;
   right: 86px;
   bottom: 0;
+  background: rgba(59,130,246,.55);
 }
 #reloadButton {
   width: 48px;
@@ -198,6 +201,7 @@ canvas {
   border: 1px solid #aaa;
   background: rgba(0,0,0,.65);
   font-size: 11px;
+  cursor: pointer;
 }
 .weapon.active {
   border: 2px solid var(--ui-accent);
@@ -263,13 +267,6 @@ canvas {
 @media (hover:hover) and (pointer:fine) {
   #bottomLeft, #bottomRight { display: none; }
 }
-@media (max-width: 600px) {
-  #healthOuter { width: 125px; }
-  #bottomLeft { transform: scale(.86); transform-origin: bottom left; }
-  #bottomRight { transform: scale(.9); transform-origin: bottom right; }
-  #weaponBar { bottom: 8px; }
-  .weapon { min-width: 49px; padding: 7px 4px; }
-}
 </style>
 </head>
 <body>
@@ -282,17 +279,19 @@ canvas {
     <div id="scoreLabel" style="margin-top: 6px; font-size: 12px;">ELIMINAÇÕES: 0</div>
   </div>
   <div id="ammo" class="panel">RIFLE: 30 / 120</div>
-  <div id="status" class="panel">Floresta Arena</div>
+  <div id="status" class="panel">Arena Multiplayer</div>
   <div id="crosshair"></div>
   <button id="menuButton">MENU</button>
+  
   <div id="bottomLeft">
     <div id="stickBase"><div id="stickKnob"></div></div>
   </div>
   <div id="bottomRight">
-    <div id="reloadButton" class="action">RECARREGAR</div>
+    <div id="reloadButton" class="action">RECAR</div>
     <div id="jumpButton" class="action">PULAR</div>
-    <div id="fireButton" class="action">ATIRAR</div>
+    <div id="fireButton" class="action">FIRE</div>
   </div>
+  
   <div id="weaponBar">
     <button class="weapon active" data-weapon="rifle">RIFLE</button>
     <button class="weapon" data-weapon="pistol">PISTOLA</button>
@@ -304,9 +303,7 @@ canvas {
 
 <div id="startScreen">
   <h1>GOBLOX</h1>
-  <p>FOREST ARENA<br>Mapa de floresta com árvores, pedras, trilhas e arbustos. Os blocos antigos foram removidos e as pedras decorativas não bloqueiam o jogador.</p>
-  <p>PC: WASD para andar, mouse para olhar, clique para atirar, espaço para pular, R para recarregar, 1/2/3 para trocar arma.</p>
-  <p>Celular: use o controle esquerdo para andar e os botões da direita para pular, atirar e recarregar.</p>
+  <p>FOREST ARENA — MULTIPLAYER<br>Use o joystick à esquerda para andar e o lado direito da tela para olhar em redor.</p>
   <button id="startButton">ENTRAR NO JOGO</button>
 </div>
 
@@ -330,33 +327,21 @@ import {
   onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-/* ============================================================
-   1. CONFIGURAÇÕES GERAIS
-   ============================================================ */
-
 const CONFIG = {
   worldSize: 180,
-  groundY: 0,
   playerHeight: 1.7,
-  playerRadius: 0.42,
   walkSpeed: 7.2,
-  sprintSpeed: 10.2,
   jumpPower: 7.8,
   gravity: 20,
   mouseSensitivity: 0.0022,
-  mobileSensitivity: 0.004,
-  networkInterval: 120,
-  botCount: 5,
-  maxHealth: 100,
   bulletLifetime: 1.8,
-  treeCount: 40,
-  rockCount: 30
+  maxHealth: 100
 };
 
 const WEAPONS = {
   rifle: { label: "RIFLE", magazine: 30, reserve: 120, damage: 25, delay: 130, reload: 1.45 },
   pistol: { label: "PISTOLA", magazine: 12, reserve: 72, damage: 34, delay: 290, reload: 1.1 },
-  shotgun: { label: "ESCOPETA", magazine: 6, reserve: 36, damage: 13, delay: 650, reload: 1.7 }
+  shotgun: { label: "ESCOPETA", magazine: 6, reserve: 36, damage: 45, delay: 650, reload: 1.7 }
 };
 
 const gameRoot = document.getElementById("game");
@@ -364,7 +349,6 @@ const healthLabel = document.getElementById("healthLabel");
 const healthInner = document.getElementById("healthInner");
 const scoreLabel = document.getElementById("scoreLabel");
 const ammoLabel = document.getElementById("ammo");
-const statusLabel = document.getElementById("status");
 const startScreen = document.getElementById("startScreen");
 const startButton = document.getElementById("startButton");
 const menuButton = document.getElementById("menuButton");
@@ -398,10 +382,7 @@ function updateScoreUI() {
   scoreLabel.textContent = `ELIMINAÇÕES: ${kills}`;
 }
 
-/* ============================================================
-   2. CENA THREE.JS
-   ============================================================ */
-
+// CENA E RENDERER
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9bc6d2);
 scene.fog = new THREE.Fog(0x9bc6d2, 65, 190);
@@ -418,60 +399,20 @@ sun.position.set(-35, 65, 28);
 sun.castShadow = true;
 scene.add(sun);
 
-/* ============================================================
-   3. MATERIAIS E MUNDO
-   ============================================================ */
-
+// MATERIAIS E CHÃO
 const materials = {
   grass: new THREE.MeshStandardMaterial({ color: 0x477d35, roughness: 1 }),
-  dirt: new THREE.MeshStandardMaterial({ color: 0x80603b, roughness: 1 }),
   bark: new THREE.MeshStandardMaterial({ color: 0x68432a, roughness: 1 }),
-  leaf: new THREE.MeshStandardMaterial({ color: 0x286b32, roughness: 1 }),
-  rock: new THREE.MeshStandardMaterial({ color: 0x777b78, roughness: 1 })
+  leaf: new THREE.MeshStandardMaterial({ color: 0x286b32, roughness: 1 })
 };
 
-const solidObstacles = [];
-const bots = [];
-const bullets = [];
-const remotePlayers = new Map();
-
-let gameStarted = false;
-let health = CONFIG.maxHealth;
-let kills = 0;
-let currentWeapon = "rifle";
-let isReloading = false;
-let lastShotTime = 0;
-let playerVelocityY = 0;
-let isGrounded = false;
-let playerYaw = 0;
-let playerPitch = 0;
-let playerId = "player_" + Math.random().toString(36).slice(2, 11);
-
-const magazines = { rifle: 30, pistol: 12, shotgun: 6 };
-const reserves = { rifle: 120, pistol: 72, shotgun: 36 };
-
-function selectWeapon(name) {
-  if (!WEAPONS[name]) return;
-  currentWeapon = name;
-  document.querySelectorAll(".weapon").forEach(button => {
-    button.classList.toggle("active", button.dataset.weapon === name);
-  });
-  updateAmmoUI();
-  showNotice(`Arma: ${WEAPONS[name].label}`);
-}
-
-document.querySelectorAll(".weapon").forEach(button => {
-  button.addEventListener("click", () => selectWeapon(button.dataset.weapon));
-});
-
-// Chão da Floresta
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.worldSize, CONFIG.worldSize), materials.grass);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Gerar Árvores Simples
-for (let i = 0; i < CONFIG.treeCount; i++) {
+// GERAR ÁRVORES DECORATIVAS
+for (let i = 0; i < 40; i++) {
   const x = (Math.random() - 0.5) * (CONFIG.worldSize - 20);
   const z = (Math.random() - 0.5) * (CONFIG.worldSize - 20);
   if (Math.abs(x) < 5 && Math.abs(z) < 5) continue;
@@ -490,26 +431,69 @@ for (let i = 0; i < CONFIG.treeCount; i++) {
   tree.add(crown);
 
   scene.add(tree);
-  solidObstacles.push({ minX: x - 0.5, maxX: x + 0.5, minZ: z - 0.5, maxZ: z + 0.5 });
 }
 
-/* ============================================================
-   4. MULTIPLAYER FIREBASE (Opcional / Seguro)
-   ============================================================ */
+// ESTADOS DO JOGADOR
+let gameStarted = false;
+let health = CONFIG.maxHealth;
+let kills = 0;
+let currentWeapon = "rifle";
+let isReloading = false;
+let lastShotTime = 0;
+let playerVelocityY = 0;
+let isGrounded = false;
+let playerYaw = 0;
+let playerPitch = 0;
+const playerId = "player_" + Math.random().toString(36).slice(2, 11);
+const meuNick = localStorage.getItem("goblox_player_nick") || "Jogador";
 
+const magazines = { rifle: 30, pistol: 12, shotgun: 6 };
+const reserves = { rifle: 120, pistol: 72, shotgun: 36 };
+const bullets = [];
+const remotePlayers = new Map();
+
+function selectWeapon(name) {
+  if (!WEAPONS[name]) return;
+  currentWeapon = name;
+  document.querySelectorAll(".weapon").forEach(button => {
+    button.classList.toggle("active", button.dataset.weapon === name);
+  });
+  updateAmmoUI();
+  showNotice(`Arma: ${WEAPONS[name].label}`);
+}
+
+document.querySelectorAll(".weapon").forEach(button => {
+  button.addEventListener("click", () => selectWeapon(button.dataset.weapon));
+});
+
+// FIREBASE MULTIPLAYER
 const playerRef = ref(db, `forest_players/${playerId}`);
 const allPlayersRef = ref(db, "forest_players");
-
 onDisconnect(playerRef).remove();
 
 onValue(allPlayersRef, (snapshot) => {
   const data = snapshot.val() || {};
+
+  // Verifica dano recebido no próprio player
+  if (data[playerId] && typeof data[playerId].vida === "number") {
+    health = data[playerId].vida;
+    updateHealthUI();
+    if (health <= 0) {
+      camera.position.set(0, CONFIG.playerHeight, 15);
+      health = CONFIG.maxHealth;
+      updateHealthUI();
+      showNotice("Você foi eliminado!");
+      set(playerRef, { x: camera.position.x, y: camera.position.y, z: camera.position.z, vida: health, nome: meuNick });
+    }
+  }
+
   for (let id of remotePlayers.keys()) {
     if (!data[id]) {
       scene.remove(remotePlayers.get(id));
       remotePlayers.delete(id);
     }
   }
+
   for (let id in data) {
     if (id === playerId) continue;
     let pos = data[id];
@@ -519,20 +503,19 @@ onValue(allPlayersRef, (snapshot) => {
       remotePlayers.set(id, remoteChar);
     }
     const char = remotePlayers.get(id);
-    char.position.set(pos.x, pos.y - CONFIG.playerHeight / 2, pos.z);
+    // CORREÇÃO DO BUG DO PERSONAGEM VOANDO: Ajuste Y para os pés tocarem o chão perfeitamente
+    char.position.set(pos.x, pos.y - 1.6, pos.z);
   }
 });
 
-/* ============================================================
-   5. CONTROLES E INPUTS
-   ============================================================ */
-
+// INPUTS E CONTROLES PC / MOBILE
 const keys = {};
 window.addEventListener("keydown", (e) => {
   keys[e.code] = true;
   if (e.code === "Digit1") selectWeapon("rifle");
   if (e.code === "Digit2") selectWeapon("pistol");
   if (e.code === "Digit3") selectWeapon("shotgun");
+  if (e.code === "KeyR") recarregarArma();
 });
 window.addEventListener("keyup", (e) => { keys[e.code] = false; });
 
@@ -550,7 +533,77 @@ renderer.domElement.addEventListener("click", () => {
   }
 });
 
-// Ações de Disparo e Pulo
+// SISTEMA DE TOQUE MULTI-TOUCH LIVRE PARA MOBILE
+let joystickTouchId = null;
+let cameraTouchId = null;
+let joyX = 0, joyY = 0;
+let lastTouchX = 0, lastTouchY = 0;
+
+window.addEventListener("touchstart", (e) => {
+  if (!gameStarted) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (target && (target.closest("#bottomRight") || target.closest("#weaponBar") || target.closest("#menuButton"))) {
+      continue;
+    }
+
+    if (joystickTouchId === null && touch.clientX < window.innerWidth / 2) {
+      joystickTouchId = touch.identifier;
+    } else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
+      cameraTouchId = touch.identifier;
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+    }
+  }
+}, { passive: false });
+
+window.addEventListener("touchmove", (e) => {
+  if (!gameStarted) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+
+    if (touch.identifier === joystickTouchId) {
+      const rect = stickBase.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      let dx = touch.clientX - cx;
+      let dy = touch.clientY - cy;
+      const dist = Math.min(50, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+      joyX = Math.cos(angle) * (dist / 50);
+      joyY = Math.sin(angle) * (dist / 50);
+      stickKnob.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+    }
+
+    if (touch.identifier === cameraTouchId) {
+      const deltaX = touch.clientX - lastTouchX;
+      const deltaY = touch.clientY - lastTouchY;
+      playerYaw -= deltaX * 0.004;   // Podes inverter para += se preferires a rotação invertida
+      playerPitch -= deltaY * 0.004;
+      playerPitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, playerPitch));
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+    }
+  }
+}, { passive: false });
+
+window.addEventListener("touchend", (e) => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    if (touch.identifier === joystickTouchId) {
+      joystickTouchId = null;
+      joyX = 0; joyY = 0;
+      stickKnob.style.transform = "translate(0px, 0px)";
+    }
+    if (touch.identifier === cameraTouchId) {
+      cameraTouchId = null;
+    }
+  }
+});
+
+// Ações de Disparo, Pulo e Recarga
 function shoot() {
   if (!gameStarted || isReloading) return;
   const now = performance.now();
@@ -566,7 +619,6 @@ function shoot() {
   updateAmmoUI();
   lastShotTime = now;
 
-  // Criar projétil visual simples
   const bulletMesh = new THREE.Mesh(
     new THREE.SphereGeometry(0.15, 6, 6),
     new THREE.MeshBasicMaterial({ color: 0xffea00 })
@@ -579,13 +631,7 @@ function shoot() {
   bullets.push({ mesh: bulletMesh, dir: dir, life: CONFIG.bulletLifetime, damage: weapon.damage });
 }
 
-fireButton.addEventListener("pointerdown", (e) => { e.preventDefault(); shoot(); });
-jumpButton.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  if (isGrounded) { playerVelocityY = CONFIG.jumpPower; isGrounded = false; }
-});
-reloadButton.addEventListener("pointerdown", (e) => {
-  e.preventDefault();
+function recarregarArma() {
   if (isReloading) return;
   isReloading = true;
   showNotice("Recarregando...");
@@ -595,7 +641,14 @@ reloadButton.addEventListener("pointerdown", (e) => {
     isReloading = false;
     showNotice("Pronto!");
   }, WEAPONS[currentWeapon].reload * 1000);
+}
+
+fireButton.addEventListener("pointerdown", (e) => { e.preventDefault(); shoot(); });
+jumpButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  if (isGrounded) { playerVelocityY = CONFIG.jumpPower; isGrounded = false; }
 });
+reloadButton.addEventListener("pointerdown", (e) => { e.preventDefault(); recarregarArma(); });
 
 window.addEventListener("mousedown", (e) => {
   if (gameStarted && document.pointerLockElement === renderer.domElement && e.button === 0) {
@@ -603,33 +656,7 @@ window.addEventListener("mousedown", (e) => {
   }
 });
 
-// Joystick Virtual Touch (Celular)
-let joystickActive = false;
-let joyX = 0, joyY = 0;
-stickBase.addEventListener("pointerdown", (e) => { joystickActive = true; });
-window.addEventListener("pointermove", (e) => {
-  if (!joystickActive) return;
-  const rect = stickBase.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  let dx = e.clientX - cx;
-  let dy = e.clientY - cy;
-  const dist = Math.min(50, Math.hypot(dx, dy));
-  const angle = Math.atan2(dy, dx);
-  joyX = Math.cos(angle) * (dist / 50);
-  joyY = Math.sin(angle) * (dist / 50);
-  stickKnob.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-});
-window.addEventListener("pointerup", () => {
-  joystickActive = false;
-  joyX = 0; joyY = 0;
-  stickKnob.style.transform = "translate(0px, 0px)";
-});
-
-/* ============================================================
-   6. INICIALIZAÇÃO DO JOGO
-   ============================================================ */
-
+// INICIALIZAÇÃO
 startButton.addEventListener("click", () => {
   startScreen.style.display = "none";
   gameStarted = true;
@@ -646,7 +673,7 @@ menuButton.addEventListener("click", () => {
 });
 
 const clock = new THREE.Clock();
-camera.position.set(0, CONFIG.playerHeight, 10);
+camera.position.set(0, CONFIG.playerHeight, 15);
 
 function animate() {
   requestAnimationFrame(animate);
@@ -654,14 +681,13 @@ function animate() {
 
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  // Movimentação
   const moveDir = new THREE.Vector3();
   if (keys["KeyW"] || keys["ArrowUp"]) moveDir.z -= 1;
   if (keys["KeyS"] || keys["ArrowDown"]) moveDir.z += 1;
   if (keys["KeyA"] || keys["ArrowLeft"]) moveDir.x -= 1;
   if (keys["KeyD"] || keys["ArrowRight"]) moveDir.x += 1;
 
-  if (joystickActive) {
+  if (joystickTouchId !== null) {
     moveDir.x += joyX;
     moveDir.z += joyY;
   }
@@ -669,11 +695,9 @@ function animate() {
   moveDir.normalize();
   moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerYaw);
 
-  const speed = CONFIG.walkSpeed;
-  camera.position.x += moveDir.x * speed * dt;
-  camera.position.z += moveDir.z * speed * dt;
+  camera.position.x += moveDir.x * CONFIG.walkSpeed * dt;
+  camera.position.z += moveDir.z * CONFIG.walkSpeed * dt;
 
-  // Gravidade e Pulo
   playerVelocityY -= CONFIG.gravity * dt;
   camera.position.y += playerVelocityY * dt;
 
@@ -683,29 +707,46 @@ function animate() {
     isGrounded = true;
   }
 
-  // Rotação da Câmera
   camera.rotation.order = "YXZ";
   camera.rotation.y = playerYaw;
   camera.rotation.x = playerPitch;
 
-  // Atualizar Projéteis
+  // Atualizar Projéteis e Colisões PVP
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.mesh.position.addScaledVector(b.dir, 40 * dt);
     b.life -= dt;
-    if (b.life <= 0) {
+
+    let acertou = false;
+    for (let [id, char] of remotePlayers.entries()) {
+      if (b.mesh.position.distanceTo(char.position) < 1.8) {
+        const targetRef = ref(db, `forest_players/${id}/vida`);
+        onValue(targetRef, (snap) => {
+          let vidaAtual = snap.val() ?? CONFIG.maxHealth;
+          set(targetRef, Math.max(0, vidaAtual - b.damage));
+        }, { onlyOnce: true });
+
+        kills++;
+        updateScoreUI();
+        acertou = true;
+        break;
+      }
+    }
+
+    if (acertou || b.life <= 0) {
       scene.remove(b.mesh);
       bullets.splice(i, 1);
     }
   }
 
-  // Enviar dados para o Firebase (Rede)
-  if (Math.random() < 0.2) {
+  // Enviar Posição para o Firebase
+  if (Math.random() < 0.25) {
     set(playerRef, {
       x: Number(camera.position.x.toFixed(2)),
       y: Number(camera.position.y.toFixed(2)),
       z: Number(camera.position.z.toFixed(2)),
-      nome: "Jogador"
+      vida: health,
+      nome: meuNick
     }).catch(() => {});
   }
 
