@@ -6,6 +6,60 @@ import { getWallet, saveWallet } from "./economia.js";
 const toast = document.getElementById("toast");
 const tbody = document.getElementById("listaJogadoresOnline");
 const totalOnlineSpan = document.getElementById("totalOnline");
+import { set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// --- APLICAR BANIMENTO ---
+window.aplicarBan = function() {
+  const nick = document.getElementById("banPlayerNick").value.trim();
+  const motivo = document.getElementById("banMotivo").value.trim() || "Violação das regras do jogo.";
+  const tipo = document.getElementById("banTipo").value;
+  const minutos = parseInt(document.getElementById("banTempoMinutos").value) || 0;
+
+  if (!nick) {
+    mostrarToast("Digite o nick do jogador para banir!", "warning");
+    return;
+  }
+
+  let expiraEm = null;
+  if (tipo === "temporario") {
+    if (minutos <= 0) {
+      mostrarToast("Insira uma quantidade de minutos válida para o ban temporário!", "warning");
+      return;
+    }
+    expiraEm = Date.now() + (minutos * 60 * 1000);
+  }
+
+  const banRef = ref(db, `bans/${nick}`);
+  set(banRef, {
+    motivo: motivo,
+    tipo: tipo,
+    expiraEm: expiraEm,
+    dataBan: Date.now()
+  }).then(() => {
+    mostrarToast(`Jogador ${nick} banido com sucesso!`, "success");
+    document.getElementById("banPlayerNick").value = "";
+    document.getElementById("banMotivo").value = "";
+  }).catch(err => {
+    mostrarToast(`Erro ao banir: ${err.message}`, "danger");
+  });
+};
+
+// --- REMOVER BANIMENTO (DESBANIR) ---
+window.removerBan = function() {
+  const nick = document.getElementById("banPlayerNick").value.trim();
+  if (!nick) {
+    mostrarToast("Digite o nick do jogador para desbanir!", "warning");
+    return;
+  }
+
+  const banRef = ref(db, `bans/${nick}`);
+  remove(banRef).then(() => {
+    mostrarToast(`O jogador ${nick} foi desbanido!`, "success");
+    document.getElementById("banPlayerNick").value = "";
+  }).catch(err => {
+    mostrarToast(`Erro ao desbanir: ${err.message}`, "danger");
+  });
+};
 
 function mostrarToast(msg, tipo = "info") {
   if (!toast) return;
