@@ -14,6 +14,44 @@ function calcularAssinatura(fbux, moedas) {
   return ((Number(fbux) || 0) * 131 + (Number(moedas) || 0) * 17 + 97) | 0;
 }
 
+function getLegacyWalletKey(nick, tipo) {
+  return tipo === 'fbux' ? `goblox_fbux_${nick}` : `goblox_moedas_${nick}`;
+}
+
+function readLegacyWallet(nick) {
+  const fbux = sanitizarValor(localStorage.getItem(getLegacyWalletKey(nick, 'fbux')), 0);
+  const moedas = sanitizarValor(localStorage.getItem(getLegacyWalletKey(nick, 'moedas')), 0);
+
+  return { fbux, moedas };
+}
+
+function migrarWalletLegado(nick, fallback = DEFAULT_WALLET) {
+  const nome = limparNick(nick);
+  const legado = readLegacyWallet(nome);
+  const jaTemValoresLegados = legado.fbux > 0 || legado.moedas > 0;
+
+  if (!jaTemValoresLegados) {
+    const walletPadrao = {
+      fbux: Number(fallback.fbux ?? DEFAULT_WALLET.fbux),
+      moedas: Number(fallback.moedas ?? DEFAULT_WALLET.moedas)
+    };
+
+    saveWallet(nome, walletPadrao);
+    return walletPadrao;
+  }
+
+  const walletMigrado = {
+    fbux: sanitizarValor(legado.fbux, Number(fallback.fbux ?? DEFAULT_WALLET.fbux)),
+    moedas: sanitizarValor(legado.moedas, Number(fallback.moedas ?? DEFAULT_WALLET.moedas))
+  };
+
+  saveWallet(nome, walletMigrado);
+  localStorage.removeItem(getLegacyWalletKey(nome, 'fbux'));
+  localStorage.removeItem(getLegacyWalletKey(nome, 'moedas'));
+
+  return walletMigrado;
+}
+
 export function getWallet(nick, fallback = DEFAULT_WALLET) {
   const nome = limparNick(nick);
   const keyFbux = `goblox_fbux_${nome}`;
@@ -26,16 +64,30 @@ export function getWallet(nick, fallback = DEFAULT_WALLET) {
   const assinaturaAtual = Number(localStorage.getItem(keyAssinatura) || 0);
 
   if (assinaturaAtual !== assinaturaEsperada) {
+    const legado = readLegacyWallet(nome);
     const walletPadrao = {
+      fbux: legado.fbux > 0 || legado.moedas > 0
+        ? legado.fbux
+        : Number(fallback.fbux ?? DEFAULT_WALLET.fbux),
+      moedas: legado.fbux > 0 || legado.moedas > 0
+        ? legado.moedas
+        : Number(fallback.moedas ?? DEFAULT_WALLET.moedas)
+    };
+
+    if (legado.fbux > 0 || legado.moedas > 0) {
+      saveWallet(nome, walletPadrao);
+      localStorage.removeItem(getLegacyWalletKey(nome, 'fbux'));
+      localStorage.removeItem(getLegacyWalletKey(nome, 'moedas'));
+      return walletPadrao;
+    }
+
+    const walletFinal = {
       fbux: Number(fallback.fbux ?? DEFAULT_WALLET.fbux),
       moedas: Number(fallback.moedas ?? DEFAULT_WALLET.moedas)
     };
 
-    localStorage.setItem(keyFbux, String(walletPadrao.fbux));
-    localStorage.setItem(keyMoedas, String(walletPadrao.moedas));
-    localStorage.setItem(keyAssinatura, String(calcularAssinatura(walletPadrao.fbux, walletPadrao.moedas)));
-
-    return walletPadrao;
+    saveWallet(nome, walletFinal);
+    return walletFinal;
   }
 
   const wallet = { fbux: fbuxSalvo, moedas: moedasSalvas };
@@ -55,6 +107,11 @@ export function saveWallet(nick, wallet) {
   localStorage.setItem(keyFbux, String(fbux));
   localStorage.setItem(keyMoedas, String(moedas));
   localStorage.setItem(keyAssinatura, String(calcularAssinatura(fbux, moedas)));
+
+  localStorage.removeItem(`goblox_fbux_${nome}_legacy`);
+  localStorage.removeItem(`goblox_moedas_${nome}_legacy`);
+  localStorage.removeItem(getLegacyWalletKey(nome, 'fbux'));
+  localStorage.removeItem(getLegacyWalletKey(nome, 'moedas'));
 
   return { fbux, moedas };
 }
@@ -86,4 +143,8 @@ export function debitarWallet(nick, custo = {}) {
   };
 
   return { ok: true, wallet: saveWallet(nick, proximo) };
+}
+
+export function migrarParaNovoSistema(nick, fallback = DEFAULT_WALLET) {
+  return migrarWalletLegado(nick, fallback);
 }
