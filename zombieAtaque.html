@@ -1,492 +1,349 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORRA DOS ZUMBIS 3D</title>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; }
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 8px;
-            pointer-events: none;
-            user-select: none;
-            z-index: 100;
-            border-left: 5px solid #ff4444;
-        }
-        #score {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #ffaa00;
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px black;
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            border-radius: 40px;
-            z-index: 100;
-            font-family: monospace;
-        }
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            background: rgba(120, 0, 0, 0.95);
-            padding: 40px 60px;
-            border-radius: 20px;
-            text-align: center;
-            display: none;
-            z-index: 200;
-            box-shadow: 0 0 50px rgba(255,0,0,0.8);
-            border: 3px solid #ff5555;
-            pointer-events: none;
-        }
-        #game-over h1 {
-            font-size: 48px;
-            margin: 0 0 20px;
-            color: #ff5555;
-            text-shadow: 3px 3px 0 black;
-        }
-        #game-over p {
-            font-size: 24px;
-            margin: 10px 0;
-        }
-        #game-over button {
-            margin-top: 20px;
-            padding: 15px 40px;
-            font-size: 24px;
-            font-weight: bold;
-            background: #ffaa00;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            color: #222;
-            pointer-events: auto;
-            transition: transform 0.1s;
-            box-shadow: 0 5px 0 #b36b00;
-        }
-        #game-over button:hover {
-            transform: scale(1.05);
-            background: #ffbb22;
-        }
-        #game-over button:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: rgba(255,255,255,0.8);
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 100;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Goblox - Multiplayer Nativo</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body {
+    min-height: 100vh;
+    background: #080012;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* CANVAS DO JOGO */
+#gameCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #1a0b2e 0%, #080012 100%);
+    z-index: 1;
+}
+
+/* HUD SUPERIOR */
+.hud-top {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 18px;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+.hud-top h2 {
+    font-size: 1.2rem;
+    color: #c5a4ff;
+}
+
+.hud-top p {
+    font-size: 0.85rem;
+    color: #4ade80;
+}
+
+/* BOTÃO VOLTAR AO LOBBY */
+.btn-voltar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.btn-voltar:hover {
+    background: #dc2626;
+}
+
+/* === CONTROLES MOBILE === */
+.mobile-controls {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 30px;
+}
+
+/* JOYSTICK */
+#joystick-base {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    pointer-events: auto;
+    touch-action: none;
+    backdrop-filter: blur(4px);
+}
+
+#joystick-stick {
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #7900ff, #b56cff);
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(121, 0, 255, 0.6);
+    transition: transform 0.05s linear;
+}
+
+/* BOTÃO DE PULO */
+#btn-jump {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.5);
+    pointer-events: auto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+#btn-jump:active {
+    transform: scale(0.9);
+}
+</style>
 </head>
+
 <body>
-    <div id="info">🏃‍♂️ FUJA DOS ZUMBIS! </div>
-    <div id="score">DISTÂNCIA: 0m</div>
-    <div id="controls">WASD / SETAS para mover</div>
-    <div id="game-over">
-        <h1>💀 VOCÊ FOI PEGO! 💀</h1>
-        <p>Distância percorrida: <span id="final-score">0</span>m</p>
-        <button id="restart-btn">TENTAR NOVAMENTE</button>
+
+    <div class="hud-top">
+        <h2 id="playerName">A carregar...</h2>
+        <p>🟢 Multiplayer Ativo</p>
     </div>
 
-    <!-- Importando Three.js e OrbitControls -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
+    <button class="btn-voltar" onclick="sairDoJogo()">🏠 Sair</button>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    <canvas id="gameCanvas"></canvas>
 
-        // ========== CONFIGURAÇÃO INICIAL ==========
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a2e); // Noite escura
-        scene.fog = new THREE.Fog(0x1a1a2e, 20, 80); // Neblina para dar clima
+    <div class="mobile-controls">
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+        <button id="btn-jump">PULAR</button>
+    </div>
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-        camera.position.set(0, 6, 12);
-        camera.lookAt(0, 0, 0);
+<script type="module">
+    import { db } from "./firebase.js";
+    import { ref, set, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getCurrentNick } from "./authLocal.js";
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true; // Sombras
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
+    // 1. Verifica autenticação
+    const nick = getCurrentNick() || "Jogador_" + Math.floor(Math.random() * 1000);
+    document.getElementById("playerName").textContent = nick;
 
-        // ========== LUZES ==========
-        // Ambiente (luz geral)
-        const ambientLight = new THREE.AmbientLight(0x404060);
-        scene.add(ambientLight);
+    // 2. Configuração do Canvas
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-        // Luz direcional (como lua)
-        const dirLight = new THREE.DirectionalLight(0xffeedd, 1);
-        dirLight.position.set(10, 20, 5);
-        dirLight.castShadow = true;
-        dirLight.receiveShadow = true;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        const d = 30;
-        dirLight.shadow.camera.left = -d;
-        dirLight.shadow.camera.right = d;
-        dirLight.shadow.camera.top = d;
-        dirLight.shadow.camera.bottom = -d;
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 50;
-        scene.add(dirLight);
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-        // Luzes de ponto para dar um clima de terror (luz vermelha fraca)
-        const redLight = new THREE.PointLight(0xff0000, 0.5, 30);
-        redLight.position.set(-5, 5, -10);
-        scene.add(redLight);
+    // Posição local do jogador
+    const player = {
+        x: canvas.width / 2,
+        y: canvas.height - 150,
+        size: 40,
+        speed: 4,
+        vy: 0,
+        isJumping: false
+    };
 
-        // ========== CHÃO ==========
-        const groundGeometry = new THREE.PlaneGeometry(200, 200);
-        const groundMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2a2a2a, 
-            roughness: 0.8,
-            metalness: 0.2
-        });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -0.5;
-        ground.receiveShadow = true;
-        scene.add(ground);
+    // ID único para esta aba/conexão no Firebase
+    const clientId = 'player_' + Math.random().toString(36).substring(2, 9);
+    const playerRef = ref(db, `forest_players/${clientId}`);
 
-        // Grade de chão para referência visual (estilo Tron)
-        const gridHelper = new THREE.GridHelper(200, 40, 0x555555, 0x333333);
-        gridHelper.position.y = -0.49;
-        scene.add(gridHelper);
+    // Garante que o player sai do Firebase ao fechar ou sair
+    onDisconnect(playerRef).remove();
 
-        // ========== JOGADOR ==========
-        // Corpo do jogador (cápsula)
-        const playerGroup = new THREE.Group();
+    // Lista de outros jogadores online
+    let outrosJogadores = {};
+
+    // Ouve em tempo real todos os jogadores no Firebase
+    onValue(ref(db, "forest_players"), (snapshot) => {
+        outrosJogadores = snapshot.val() || {};
+    });
+
+    // --- CONTROLO DO JOYSTICK ---
+    const joystickBase = document.getElementById("joystick-base");
+    const joystickStick = document.getElementById("joystick-stick");
+    
+    let joystickActive = false;
+    let touchId = null;
+    let moveVector = { x: 0, y: 0 };
+    
+    const centerX = 65;
+    const centerY = 65;
+    const maxDist = 45;
+
+    joystickBase.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        touchId = touch.identifier;
+        joystickActive = true;
+    }, { passive: false });
+
+    window.addEventListener("touchmove", (e) => {
+        if (!joystickActive) return;
         
-        // Corpo principal
-        const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.8, 8);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a90e2, emissive: 0x1a3a6a });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.castShadow = true;
-        body.receiveShadow = true;
-        body.position.y = 0.9;
-        playerGroup.add(body);
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === touchId) {
+                const rect = joystickBase.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
 
-        // Cabeça
-        const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xffddbb });
-        const head = new THREE.Mesh(headGeo, headMat);
-        head.castShadow = true;
-        head.receiveShadow = true;
-        head.position.y = 2.0;
-        playerGroup.add(head);
+                let dx = touchX - centerX;
+                let dy = touchY - centerY;
+                const distance = Math.hypot(dx, dy);
 
-        // Olhos (para dar personalidade)
-        const eyeGeo = new THREE.SphereGeometry(0.1, 8, 8);
-        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-        leftEye.position.set(-0.2, 2.1, 0.45);
-        playerGroup.add(leftEye);
-        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-        rightEye.position.set(0.2, 2.1, 0.45);
-        playerGroup.add(rightEye);
+                if (distance > maxDist) {
+                    dx = (dx / distance) * maxDist;
+                    dy = (dy / distance) * maxDist;
+                }
 
-        playerGroup.position.set(0, 0, 0);
-        scene.add(playerGroup);
-
-        // ========== ZUMBIS ==========
-        const zombies = [];
-        const ZOMBIE_COUNT = 8;
-        const ZOMBIE_SPEED = 0.045; // Velocidade base (aumenta com o tempo)
-        const ZOMBIE_SPAWN_RADIUS = 25; // Nascem longe
-
-        // Função para criar um zumbi
-        function createZombie() {
-            const group = new THREE.Group();
-            
-            // Corpo do zumbi (cilindro verde)
-            const zBodyGeo = new THREE.CylinderGeometry(0.7, 0.7, 1.8, 6);
-            const zBodyMat = new THREE.MeshStandardMaterial({ color: 0x3a7a3a, emissive: 0x1a3a1a });
-            const zBody = new THREE.Mesh(zBodyGeo, zBodyMat);
-            zBody.castShadow = true;
-            zBody.receiveShadow = true;
-            zBody.position.y = 0.9;
-            group.add(zBody);
-
-            // Cabeça do zumbi
-            const zHeadGeo = new THREE.SphereGeometry(0.55, 8, 8);
-            const zHeadMat = new THREE.MeshStandardMaterial({ color: 0x5a8a5a });
-            const zHead = new THREE.Mesh(zHeadGeo, zHeadMat);
-            zHead.castShadow = true;
-            zHead.receiveShadow = true;
-            zHead.position.y = 2.0;
-            group.add(zHead);
-
-            // Olhos vermelhos brilhantes
-            const zEyeGeo = new THREE.SphereGeometry(0.12, 6, 6);
-            const zEyeMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000 });
-            const zLeftEye = new THREE.Mesh(zEyeGeo, zEyeMat);
-            zLeftEye.position.set(-0.2, 2.15, 0.5);
-            group.add(zLeftEye);
-            const zRightEye = new THREE.Mesh(zEyeGeo, zEyeMat);
-            zRightEye.position.set(0.2, 2.15, 0.5);
-            group.add(zRightEye);
-
-            // Braços (cilindros pequenos)
-            const armGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.0, 6);
-            const armMat = new THREE.MeshStandardMaterial({ color: 0x2a5a2a });
-            const leftArm = new THREE.Mesh(armGeo, armMat);
-            leftArm.position.set(-0.8, 1.5, 0);
-            leftArm.rotation.z = 0.4;
-            leftArm.rotation.x = 0.3;
-            leftArm.castShadow = true;
-            group.add(leftArm);
-            const rightArm = new THREE.Mesh(armGeo, armMat);
-            rightArm.position.set(0.8, 1.5, 0);
-            rightArm.rotation.z = -0.4;
-            rightArm.rotation.x = 0.3;
-            rightArm.castShadow = true;
-            group.add(rightArm);
-
-            // Posição inicial aleatória ao redor do jogador
-            const angle = Math.random() * Math.PI * 2;
-            const dist = ZOMBIE_SPAWN_RADIUS + Math.random() * 10;
-            group.position.x = Math.cos(angle) * dist;
-            group.position.z = Math.sin(angle) * dist;
-            group.position.y = 0;
-
-            // Rotação inicial para olhar para o centro (jogador)
-            group.lookAt(0, 0, 0);
-
-            // Atributos personalizados
-            group.userData = {
-                speed: ZOMBIE_SPEED + Math.random() * 0.01,
-                angleOffset: Math.random() * Math.PI * 2 // Para movimento errático
-            };
-
-            scene.add(group);
-            return group;
-        }
-
-        // Criar todos os zumbis
-        for (let i = 0; i < ZOMBIE_COUNT; i++) {
-            zombies.push(createZombie());
-        }
-
-        // ========== CONTROLES ==========
-        const keys = {
-            w: false, a: false, s: false, d: false,
-            arrowup: false, arrowleft: false, arrowdown: false, arrowright: false
-        };
-
-        window.addEventListener('keydown', (e) => {
-            const k = e.key.toLowerCase();
-            if (k in keys) {
-                keys[k] = true;
-                e.preventDefault();
+                joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+                moveVector.x = dx / maxDist;
+                moveVector.y = dy / maxDist;
             }
+        }
+    }, { passive: false });
+
+    function resetJoystick() {
+        joystickActive = false;
+        touchId = null;
+        moveVector = { x: 0, y: 0 };
+        joystickStick.style.transform = `translate(0px, 0px)`;
+    }
+
+    window.addEventListener("touchend", (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === touchId) {
+                resetJoystick();
+            }
+        }
+    });
+
+    // Botão de Pulo
+    const btnJump = document.getElementById("btn-jump");
+    btnJump.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        if (!player.isJumping) {
+            player.vy = -12;
+            player.isJumping = true;
+        }
+    }, { passive: false });
+
+    // Função de saída
+    window.sairDoJogo = function() {
+        remove(playerRef).then(() => {
+            window.location.href = "lobby.html";
         });
+    };
 
-        window.addEventListener('keyup', (e) => {
-            const k = e.key.toLowerCase();
-            if (k in keys) {
-                keys[k] = false;
-                e.preventDefault();
-            }
-        });
+    // --- LOOP DO JOGO ---
+    function update() {
+        player.x += moveVector.x * player.speed;
+        player.y += moveVector.y * player.speed;
 
-        // ========== ESTADO DO JOGO ==========
-        let gameActive = true;
-        let distance = 0;
-        const PLAYER_SPEED = 0.15;
-        const MAX_DISTANCE = 9999;
-        
-        // Elementos da UI
-        const scoreElement = document.getElementById('score');
-        const gameOverElement = document.getElementById('game-over');
-        const finalScoreElement = document.getElementById('final-score');
-        const restartBtn = document.getElementById('restart-btn');
+        // Gravidade e Solo
+        player.y += player.vy;
+        player.vy += 0.6;
 
-        // ========== COLISÃO E LÓGICA ==========
-        function checkCollisions() {
-            const playerPos = playerGroup.position;
-            for (let zombie of zombies) {
-                const dx = playerPos.x - zombie.position.x;
-                const dz = playerPos.z - zombie.position.z;
-                const dist = Math.sqrt(dx*dx + dz*dz);
-                if (dist < 1.8) { // Raio de colisão
-                    return true;
-                }
-            }
-            return false;
+        const groundLevel = canvas.height - 120;
+        if (player.y > groundLevel) {
+            player.y = groundLevel;
+            player.vy = 0;
+            player.isJumping = false;
         }
 
-        // Reiniciar jogo
-        function resetGame() {
-            gameActive = true;
-            distance = 0;
-            scoreElement.textContent = `DISTÂNCIA: 0m`;
-            gameOverElement.style.display = 'none';
-            
-            // Resetar posição do jogador
-            playerGroup.position.set(0, 0, 0);
-            
-            // Resetar zumbis
-            zombies.forEach((zombie, index) => {
-                const angle = Math.random() * Math.PI * 2;
-                const dist = ZOMBIE_SPAWN_RADIUS + Math.random() * 10;
-                zombie.position.x = Math.cos(angle) * dist;
-                zombie.position.z = Math.sin(angle) * dist;
-                zombie.position.y = 0;
-                zombie.lookAt(0, 0, 0);
-                // Aumentar velocidade base com o tempo? Não, resetamos para o padrão
-                zombie.userData.speed = ZOMBIE_SPEED + Math.random() * 0.01;
-            });
+        // Limites da tela
+        if (player.x < 30) player.x = 30;
+        if (player.x > canvas.width - 30) player.x = canvas.width - 30;
+
+        // Envia a posição atualizada para o Firebase em tempo real
+        set(playerRef, {
+            nome: nick,
+            x: Math.round(player.x),
+            y: Math.round(player.y),
+            atualizadoEm: Date.now()
+        }).catch(() => {});
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Desenha o chão
+        ctx.fillStyle = "#2c1654";
+        ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+        // Desenha TODOS os jogadores online vindos do Firebase
+        for (let id in outrosJogadores) {
+            const p = outrosJogadores[id];
+            const isLocal = (id === clientId);
+
+            ctx.fillStyle = isLocal ? "#7900ff" : "#3b82f6";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, player.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = isLocal ? "#b56cff" : "#93c5fd";
+            ctx.stroke();
+
+            // Nome do jogador
+            ctx.fillStyle = "white";
+            ctx.font = "bold 13px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(p.nome || "Jogador", p.x, p.y - 30);
         }
+    }
 
-        restartBtn.addEventListener('click', resetGame);
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
 
-        // ========== ANIMAÇÃO ==========
-        let clock = new THREE.Clock();
+    loop();
+</script>
 
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            const delta = Math.min(clock.getDelta(), 0.1); // Limitar delta para evitar saltos
-            
-            if (gameActive) {
-                // ===== MOVIMENTO DO JOGADOR =====
-                let moveX = 0;
-                let moveZ = 0;
-                
-                if (keys.w || keys.arrowup) moveZ -= 1;
-                if (keys.s || keys.arrowdown) moveZ += 1;
-                if (keys.a || keys.arrowleft) moveX -= 1;
-                if (keys.d || keys.arrowright) moveX += 1;
-                
-                if (moveX !== 0 || moveZ !== 0) {
-                    // Normalizar para movimento diagonal não ser mais rápido
-                    const length = Math.sqrt(moveX*moveX + moveZ*moveZ);
-                    moveX /= length;
-                    moveZ /= length;
-                    
-                    // Mover jogador
-                    playerGroup.position.x += moveX * PLAYER_SPEED * delta * 60;
-                    playerGroup.position.z += moveZ * PLAYER_SPEED * delta * 60;
-                    
-                    // Rotacionar jogador para a direção do movimento (suave)
-                    const targetAngle = Math.atan2(moveX, moveZ);
-                    playerGroup.rotation.y = targetAngle;
-                }
-                
-                // Limitar posição do jogador (mundo infinito? mas com limites para não fugir muito)
-                const limit = 80;
-                playerGroup.position.x = Math.max(-limit, Math.min(limit, playerGroup.position.x));
-                playerGroup.position.z = Math.max(-limit, Math.min(limit, playerGroup.position.z));
-                
-                // Atualizar distância (baseada na posição, mas como é um corredor, usamos a distância percorrida)
-                // Vamos usar a distância euclidiana da origem como "distância percorrida"
-                const currentDist = Math.floor(Math.sqrt(
-                    playerGroup.position.x * playerGroup.position.x + 
-                    playerGroup.position.z * playerGroup.position.z
-                ));
-                if (currentDist > distance) {
-                    distance = currentDist;
-                    scoreElement.textContent = `DISTÂNCIA: ${distance}m`;
-                }
-                
-                // ===== MOVIMENTO DOS ZUMBIS =====
-                zombies.forEach(zombie => {
-                    // Direção para o jogador
-                    const dx = playerGroup.position.x - zombie.position.x;
-                    const dz = playerGroup.position.z - zombie.position.z;
-                    const distToPlayer = Math.sqrt(dx*dx + dz*dz);
-                    
-                    if (distToPlayer > 0.5) {
-                        // Normalizar
-                        const normX = dx / distToPlayer;
-                        const normZ = dz / distToPlayer;
-                        
-                        // Adicionar um pequeno desvio para movimento errático
-                        const time = performance.now() * 0.002;
-                        const erraticX = Math.sin(time + zombie.userData.angleOffset) * 0.3;
-                        const erraticZ = Math.cos(time + zombie.userData.angleOffset) * 0.3;
-                        
-                        // Movimento em direção ao jogador com desvio
-                        const speed = zombie.userData.speed;
-                        zombie.position.x += (normX + erraticX * 0.2) * speed * delta * 60;
-                        zombie.position.z += (normZ + erraticZ * 0.2) * speed * delta * 60;
-                    }
-                    
-                    // Fazer o zumbi olhar para o jogador (apenas rotação Y)
-                    zombie.lookAt(playerGroup.position.x, zombie.position.y, playerGroup.position.z);
-                    
-                    // Aumentar ligeiramente a velocidade com o tempo (dificuldade)
-                    zombie.userData.speed = Math.min(0.09, zombie.userData.speed + 0.0001);
-                });
-                
-                // Verificar colisão
-                if (checkCollisions()) {
-                    gameActive = false;
-                    finalScoreElement.textContent = distance;
-                    gameOverElement.style.display = 'block';
-                }
-                
-                // ===== CÂMERA SEGUIR O JOGADOR =====
-                // Câmera em terceira pessoa, posicionada atrás e acima
-                const camOffsetX = -Math.sin(playerGroup.rotation.y) * 8;
-                const camOffsetZ = -Math.cos(playerGroup.rotation.y) * 8;
-                const targetCamPos = new THREE.Vector3(
-                    playerGroup.position.x + camOffsetX,
-                    playerGroup.position.y + 5,
-                    playerGroup.position.z + camOffsetZ
-                );
-                
-                // Suavizar movimento da câmera
-                camera.position.lerp(targetCamPos, 0.05);
-                camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.5, playerGroup.position.z);
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        // Ajustar na redimensionamento
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // Iniciar animação
-        animate();
-
-        // Pequeno ajuste: impedir que as teclas de seta rolem a página
-        window.addEventListener('keydown', (e) => {
-            if (e.key.startsWith('Arrow')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Iniciar com uma mensagem
-        console.log('Jogo iniciado! Use WASD ou setas para fugir dos zumbis.');
-    </script>
 </body>
 </html>
