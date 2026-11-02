@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>goblox - Acesso</title>
+  <title>goblox - Plataforma com Firebase</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -12,144 +12,238 @@
     body {
       background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #064e3b 100%);
     }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans">
+<body class="min-h-screen flex flex-col font-sans text-gray-800">
 
-  <!-- Elementos decorativos de fundo -->
-  <div class="absolute inset-0 opacity-10 pointer-events-none flex flex-wrap justify-between p-12">
-    <i data-lucide="gamepad-2" class="w-24 h-24 text-white transform -rotate-12"></i>
-    <i data-lucide="square" class="w-16 h-16 text-white transform rotate-45"></i>
-    <i data-lucide="circle" class="w-20 h-20 text-white"></i>
-    <i data-lucide="triangle" class="w-24 h-24 text-white transform rotate-12"></i>
-  </div>
-
-  <!-- Contentor principal -->
-  <div class="w-full max-w-sm bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-8 relative z-10 text-center">
-    
-    <!-- Logo goblox -->
-    <div class="mb-8 mt-4">
-      <h1 class="text-5xl font-black text-amber-400 tracking-tight lowercase">
-        goblox
-      </h1>
+  <!-- ================= TELA DE AUTENTICAÇÃO (FIREBASE AUTH) ================= -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none flex flex-wrap justify-between p-12">
+      <i data-lucide="gamepad-2" class="w-24 h-24 text-white transform -rotate-12"></i>
+      <i data-lucide="square" class="w-16 h-16 text-white transform rotate-45"></i>
+      <i data-lucide="circle" class="w-20 h-20 text-white"></i>
     </div>
 
-    <!-- FORMULÁRIO DE LOGIN -->
-    <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-      <h2 class="text-white font-bold text-lg mb-2">Entrar na sua conta</h2>
-      
-      <div class="relative">
-        <input 
-          type="text" 
-          id="login-username"
-          required
-          placeholder="Enter Username" 
-          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base"
-        >
+    <div class="w-full max-w-sm bg-slate-900/90 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-8 relative z-10 text-center">
+      <div class="mb-6 mt-2">
+        <h1 class="text-5xl font-black text-red-600 tracking-tight lowercase">
+          goblox
+        </h1>
       </div>
 
-      <div class="relative">
-        <input 
-          type="password" 
-          id="login-password"
-          required
-          placeholder="Enter Password" 
-          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base"
-        >
-      </div>
+      <!-- Formulário de Login -->
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <h2 class="text-white font-bold text-lg mb-2">Entrar na sua conta</h2>
+        <input type="email" id="login-email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
+        <input type="password" id="login-password" required placeholder="Palavra-passe" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
+        <button type="submit" class="w-full mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg">Login</button>
+        <button type="button" onclick="toggleForms()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Criar Nova Conta
+        </button>
+      </form>
 
-      <button 
-        type="submit" 
-        class="w-full mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg"
-      >
-        Login
-      </button>
-
-      <button 
-        type="button" 
-        onclick="toggleForms()"
-        class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2"
-      >
-        <i data-lucide="user-plus" class="w-4 h-4"></i>
-        Criar Nova Conta
-      </button>
-    </form>
-
-    <!-- FORMULÁRIO DE CRIAR CONTA (Oculto inicialmente) -->
-    <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-4 hidden">
-      <h2 class="text-white font-bold text-lg mb-2">Criar nova conta</h2>
-      
-      <div class="relative">
-        <input 
-          type="text" 
-          id="signup-username"
-          required
-          placeholder="Escolha um Username" 
-          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base"
-        >
-      </div>
-
-      <div class="relative">
-        <input 
-          type="password" 
-          id="signup-password"
-          required
-          placeholder="Crie uma Palavra-passe" 
-          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base"
-        >
-      </div>
-
-      <button 
-        type="submit" 
-        class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg"
-      >
-        Registar Conta
-      </button>
-
-      <button 
-        type="button" 
-        onclick="toggleForms()"
-        class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2"
-      >
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        Já tenho conta (Login)
-      </button>
-    </form>
-
-    <!-- Rodapé -->
-    <div class="mt-6 text-xs text-slate-400">
-      <a href="#" class="hover:underline">Ajuda com a conta</a>
+      <!-- Formulário de Criar Conta -->
+      <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-4 hidden">
+        <h2 class="text-white font-bold text-lg mb-2">Criar nova conta</h2>
+        <input type="text" id="signup-username" required placeholder="Nome de Utilizador" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
+        <input type="email" id="signup-email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
+        <input type="password" id="signup-password" required placeholder="Palavra-passe (mín. 6 carateres)" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
+        <button type="submit" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg">Registar e Entrar</button>
+        <button type="button" onclick="toggleForms()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Já tenho conta
+        </button>
+      </form>
     </div>
-
   </div>
 
-  <script>
-    // Inicializar ícones
+
+  <!-- ================= TELA PRINCIPAL (PLATAFORMA DE JOGOS) ================= -->
+  <div id="main-app" class="hidden flex-col min-h-screen bg-gray-100 text-gray-800">
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <span class="text-3xl font-black tracking-tight text-red-600 uppercase">goblox</span>
+        </div>
+        <div class="flex-1 max-w-xl relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+          </div>
+          <input type="text" id="search-input" placeholder="Buscar jogos..." class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition">
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-300">
+            <i data-lucide="coins" class="w-4 h-4 text-yellow-600"></i>
+            <span>1.250</span>
+          </div>
+          <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+            <span id="display-username" class="font-bold text-sm px-2">Player</span>
+            <button onclick="handleLogout()" title="Sair" class="text-red-500 hover:text-red-700 p-1">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 flex max-w-7xl w-full mx-auto">
+      <aside class="w-64 bg-white border-r border-gray-200 p-4 hidden md:block flex-shrink-0">
+        <nav class="space-y-1">
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-red-600 bg-red-50"><i data-lucide="home" class="w-5 h-5"></i> Início</a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="gamepad-2" class="w-5 h-5"></i> Jogos</a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="shopping-bag" class="w-5 h-5"></i> Loja</a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="users" class="w-5 h-5"></i> Amigos</a>
+        </nav>
+      </aside>
+
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div class="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 sm:p-8 text-white mb-8 shadow-md">
+          <h1 id="welcome-banner-title" class="text-3xl sm:text-4xl font-extrabold mb-2">Bem-vindo ao goblox!</h1>
+          <p class="text-red-100 max-w-xl mb-4">Explore milhares de mundos criados pela comunidade no Firebase.</p>
+        </div>
+
+        <section>
+          <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-red-600"></i> Jogos em Destaque
+          </h2>
+          <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ================= SCRIPTS DO FIREBASE ================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // SUBSTITUA COM AS CONFIGURAÇÕES DO SEU PROJETO FIREBASE
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJETO.firebaseapp.com",
+      projectId: "SEU_PROJETO_ID",
+      storageBucket: "SEU_PROJETO.appspot.com",
+      messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
     lucide.createIcons();
 
-    // Alternar entre formulário de Login e Criar Conta
-    function toggleForms() {
-      const loginForm = document.getElementById('login-form');
-      const signupForm = document.getElementById('signup-form');
+    const games = [
+      { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
+      { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800' },
+      { id: 3, title: 'Pet Paradise', creator: 'goblox', players: '25.9k', rating: '97%', color: 'from-cyan-400 to-blue-500' },
+      { id: 4, title: 'City Builder Tycoon', creator: 'goblox', players: '5.3k', rating: '91%', color: 'from-amber-500 to-orange-600' }
+    ];
+
+    // Monitorizar estado de autenticação em tempo real
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Buscar nome de utilizador guardado no Firestore
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        let username = user.email.split('@')[0];
+        
+        if (docSnap.exists()) {
+          username = docSnap.data().username;
+        }
+        
+        enterPlatform(username);
+      } else {
+        showAuthScreen();
+      }
+    });
+
+    window.toggleForms = function() {
+      document.getElementById('login-form').classList.toggle('hidden');
+      document.getElementById('signup-form').classList.toggle('hidden');
+    }
+
+    // Criar Conta com Firebase Auth + Firestore
+    window.handleSignup = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('signup-username').value;
+      const email = document.getElementById('signup-email').value;
+      const pass = document.getElementById('signup-password').value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        const user = userCredential.user;
+
+        // Guardar dados extras na base de dados Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          username: username,
+          email: email,
+          createdAt: new Date()
+        });
+
+        alert(`Conta criada com sucesso! Bem-vindo, ${username}.`);
+      } catch (error) {
+        alert("Erro ao criar conta: " + error.message);
+      }
+    }
+
+    // Login com Firebase Auth
+    window.handleLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (error) {
+        alert("Erro ao entrar: " + error.message);
+      }
+    }
+
+    // Terminar Sessão
+    window.handleLogout = async function() {
+      await signOut(auth);
+    }
+
+    function enterPlatform(username) {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+      document.getElementById('display-username').innerText = username;
+      document.getElementById('welcome-banner-title').innerText = `Bem-vindo de volta, ${username}!`;
+      renderGames();
+    }
+
+    function showAuthScreen() {
+      document.getElementById('main-app').classList.add('hidden');
+      document.getElementById('auth-screen').classList.remove('hidden');
+    }
+
+    function renderGames(filter = '') {
+      const grid = document.getElementById('games-grid');
+      grid.innerHTML = '';
       
-      loginForm.classList.toggle('hidden');
-      signupForm.classList.toggle('hidden');
+      games.filter(g => g.title.toLowerCase().includes(filter.toLowerCase())).forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl overflow-hidden shadow border border-gray-200 hover:shadow-lg transition cursor-pointer';
+        card.innerHTML = `
+          <div class="h-36 bg-gradient-to-br ${game.color} p-4 flex items-end text-white font-black text-lg">${game.title}</div>
+          <div class="p-3">
+            <h3 class="font-bold text-gray-800">${game.title}</h3>
+            <p class="text-xs text-gray-400">Por ${game.creator}</p>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
     }
 
-    // Ação ao clicar em Login
-    function handleLogin(event) {
-      event.preventDefault();
-      const user = document.getElementById('login-username').value;
-      alert(`Bem-vindo de volta ao goblox, ${user}!`);
-    }
-
-    // Ação ao clicar em Criar Conta
-    function handleSignup(event) {
-      event.preventDefault();
-      const user = document.getElementById('signup-username').value;
-      alert(`Conta criada com sucesso para ${user}! Bem-vindo ao goblox.`);
-      toggleForms(); // Volta para o login após criar
-    }
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      renderGames(e.target.value);
+    });
   </script>
 </body>
 </html>
