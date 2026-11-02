@@ -59,7 +59,7 @@
         <!-- Saldo de Gobux -->
         <div class="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-300">
           <i data-lucide="coins" class="w-4 h-4 text-yellow-600"></i>
-          <span>1.250</span>
+          <span id="saldoMoedas">1.250</span>
         </div>
 
         <!-- Perfil -->
@@ -222,24 +222,25 @@
     // Inicializar Ícones Lucide
     lucide.createIcons();
 
-    // Lista de Jogos (Incluindo o Zombie Escape)
+    // Lista de Jogos (Com Speed Run Arena, Zombie Escape e Mundo 3D mapeados)
     const games = [
-      { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
-      { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800' },
-      { id: 3, title: 'Pet Paradise', creator: 'goblox', players: '25.9k', rating: '97%', color: 'from-cyan-400 to-blue-500' },
-      { id: 4, title: 'City Builder Tycoon', creator: 'goblox', players: '5.3k', rating: '91%', color: 'from-amber-500 to-orange-600' },
-      { id: 5, title: 'Space Explorers', creator: 'goblox', players: '3.7k', rating: '85%', color: 'from-indigo-600 to-purple-800' },
-      { id: 6, title: 'Fantasy Quest', creator: 'goblox', players: '15.2k', rating: '93%', color: 'from-purple-600 to-pink-600' },
-      { id: 7, title: 'Ninja Academy', creator: 'goblox', players: '9.8k', rating: '90%', color: 'from-rose-600 to-red-800' },
-      { id: 8, title: 'Dino Park', creator: 'goblox', players: '7.4k', rating: '89%', color: 'from-green-600 to-emerald-700' },
-      { id: 9, title: 'Battle Royale Legends', creator: 'goblox', players: '31.0k', rating: '96%', color: 'from-yellow-500 to-amber-700' },
-      { id: 10, title: 'Cooking Fever', creator: 'goblox', players: '4.1k', rating: '87%', color: 'from-orange-500 to-red-500' },
-      { id: 11, title: 'Obstacle Course Challenge', creator: 'goblox', players: '18.6k', rating: '92%', color: 'from-blue-500 to-cyan-600' },
-      { id: 12, title: 'My Fashion Studio', creator: 'goblox', players: '6.5k', rating: '95%', color: 'from-fuchsia-500 to-purple-600' },
+      { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600', file: 'speedRunArena.html' },
+      { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800', file: 'zombieAtaque.html' },
+      { id: 3, title: 'Mundo 3D', creator: 'goblox', players: '14.2k', rating: '97%', color: 'from-purple-600 to-indigo-800', file: 'jogo3d.html' },
+      { id: 4, title: 'Pet Paradise', creator: 'goblox', players: '25.9k', rating: '97%', color: 'from-cyan-400 to-blue-500' },
+      { id: 5, title: 'City Builder Tycoon', creator: 'goblox', players: '5.3k', rating: '91%', color: 'from-amber-500 to-orange-600' },
+      { id: 6, title: 'Space Explorers', creator: 'goblox', players: '3.7k', rating: '85%', color: 'from-indigo-600 to-purple-800' },
+      { id: 7, title: 'Fantasy Quest', creator: 'goblox', players: '15.2k', rating: '93%', color: 'from-purple-600 to-pink-600' },
+      { id: 8, title: 'Ninja Academy', creator: 'goblox', players: '9.8k', rating: '90%', color: 'from-rose-600 to-red-800' },
+      { id: 9, title: 'Dino Park', creator: 'goblox', players: '7.4k', rating: '89%', color: 'from-green-600 to-emerald-700' },
+      { id: 10, title: 'Battle Royale Legends', creator: 'goblox', players: '31.0k', rating: '96%', color: 'from-yellow-500 to-amber-700' },
+      { id: 11, title: 'Cooking Fever', creator: 'goblox', players: '4.1k', rating: '87%', color: 'from-orange-500 to-red-500' },
+      { id: 12, title: 'Obstacle Course Challenge', creator: 'goblox', players: '18.6k', rating: '92%', color: 'from-blue-500 to-cyan-600' },
     ];
 
     const gamesGrid = document.getElementById('games-grid');
     const searchInput = document.getElementById('search-input');
+    let jogoSelecionado = null;
 
     function renderGames(filterText = '') {
       gamesGrid.innerHTML = '';
@@ -298,6 +299,7 @@
     const progressBar = document.getElementById('progress-bar');
 
     function openModal(game) {
+      jogoSelecionado = game;
       modalTitle.innerText = game.title;
       modalCreator.innerText = `Por ${game.creator}`;
       modalPlayers.innerText = `${game.players} jogando agora`;
@@ -314,16 +316,15 @@
 
     closeModalBtn.onclick = () => modal.classList.add('hidden');
 
-    // Botão JOGAR (Redireciona Zombie Escape para o zombieAtaque.html)
+    // Botão JOGAR (Redirecionamento dinâmico para cada ficheiro de jogo)
     playBtn.onclick = () => {
-      const nomeJogoAtual = modalTitle.innerText.trim();
-
-      if (nomeJogoAtual === 'Zombie Escape') {
+      if (jogoSelecionado && jogoSelecionado.file) {
         modal.classList.add('hidden');
-        window.location.href = 'zombieAtaque.html';
+        window.location.href = jogoSelecionado.file;
         return;
       }
 
+      // Caso o jogo não tenha um ficheiro associado, simula o carregamento padrão
       playContainer.classList.add('hidden');
       loadingContainer.classList.remove('hidden');
 
