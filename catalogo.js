@@ -1,4 +1,5 @@
 import { getCurrentNick, logout } from "./authLocal.js";
+import { getWallet, saveWallet, debitarWallet } from "./economia.js";
 import { db } from "./firebase.js";
 import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -24,17 +25,10 @@ function carregarDados() {
   const nick = getNick();
   if (boasVindas) boasVindas.textContent = `Olá, ${nick}!`;
 
-  const keyFbux = `goblox_fbux_${nick}`;
-  const keyMoedas = `goblox_moedas_${nick}`;
+  const wallet = getWallet(nick, { fbux: 500, moedas: 200 });
 
-  let fbux = localStorage.getItem(keyFbux);
-  let moedas = localStorage.getItem(keyMoedas);
-
-  if (fbux === null) { fbux = 500; localStorage.setItem(keyFbux, fbux); }
-  if (moedas === null) { moedas = 200; localStorage.setItem(keyMoedas, moedas); }
-
-  valFbux.textContent = fbux;
-  valMoedas.textContent = moedas;
+  valFbux.textContent = wallet.fbux;
+  valMoedas.textContent = wallet.moedas;
 
   atualizarInterfaceLojaEInventario(nick);
 }
@@ -46,15 +40,10 @@ window.mudarTab = function(evt, tabName) {
   evt.currentTarget.classList.add("active");
 };
 
-// COMPRAR ITEM
 window.comprarItem = function(idItem, preco, tipoMoeda) {
   const nick = getNick();
-  const keyFbux = `goblox_fbux_${nick}`;
-  const keyMoedas = `goblox_moedas_${nick}`;
   const keyInventario = `goblox_inventario_${nick}`;
 
-  let saldoFbux = parseInt(localStorage.getItem(keyFbux) || 0);
-  let saldoMoedas = parseInt(localStorage.getItem(keyMoedas) || 0);
   let inventario = JSON.parse(localStorage.getItem(keyInventario) || "[]");
 
   if (inventario.includes(idItem)) {
@@ -62,37 +51,28 @@ window.comprarItem = function(idItem, preco, tipoMoeda) {
     return;
   }
 
-  if (tipoMoeda === 'fbux') {
-    if (saldoFbux < preco) {
-      mostrarToast("FBUX insuficientes!", "danger");
-      return;
-    }
-    saldoFbux -= preco;
-    localStorage.setItem(keyFbux, saldoFbux);
-    valFbux.textContent = saldoFbux;
-  } else if (tipoMoeda === 'moedas') {
-    if (saldoMoedas < preco) {
-      mostrarToast("Moedas insuficientes!", "danger");
-      return;
-    }
-    saldoMoedas -= preco;
-    localStorage.setItem(keyMoedas, saldoMoedas);
-    valMoedas.textContent = saldoMoedas;
+  const custo = tipoMoeda === 'fbux' ? { fbux: Number(preco) } : { moedas: Number(preco) };
+  const debito = debitarWallet(nick, custo);
+
+  if (!debito.ok) {
+    mostrarToast(tipoMoeda === 'fbux' ? "FBUX insuficientes!" : "Moedas insuficientes!", "danger");
+    return;
   }
 
   inventario.push(idItem);
   localStorage.setItem(keyInventario, JSON.stringify(inventario));
 
-  // Equipa automaticamente o item recém-comprado
   let equipados = JSON.parse(localStorage.getItem(`goblox_equipados_${nick}`) || "[]");
   if (!equipados.includes(idItem)) equipados.push(idItem);
   localStorage.setItem(`goblox_equipados_${nick}`, JSON.stringify(equipados));
+
+  valFbux.textContent = debito.wallet.fbux;
+  valMoedas.textContent = debito.wallet.moedas;
 
   mostrarToast("Item comprado e equipado!", "success");
   atualizarInterfaceLojaEInventario(nick);
 };
 
-// EQUIPAR / DESEQUIPAR & SINCRONIZAR COM O FIREBASE
 window.alternarEquipamento = function(idItem) {
   const nick = getNick();
   const keyEquipados = `goblox_equipados_${nick}`;
@@ -136,14 +116,14 @@ function atualizarInterfaceLojaEInventario(nick) {
   }
 
   const icones = { coroa: '👑', chupeta: '', cabelo_amarelo: '👱' };
-  
+
   container.innerHTML = inventario.map(item => {
     const estaEquipado = equipados.includes(item);
     return `
       <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 2px solid ${estaEquipado ? '#7dff83' : '#444'}; text-align: center; min-width: 150px;">
         <div style="font-size: 40px; margin-bottom: 5px;">${icones[item] || '🎁'}</div>
         <div style="color: #fff; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">${item.replace('_', ' ')}</div>
-        <button onclick="alternarEquipamento('${item}')" style="width: 100%; padding: 8px; border: none; border-radius: 6px; background: ${estaEquipado ? '#ff5555' : '#63df70'}; color: #000; font-weight: bold; cursor: pointer;">
+        <button onclick="alternarEquipamento('${item}')" style="width: 100%; padding: 8px; border: none; border-radius: 6px; background: ${estaEquipado ? '#ff5555' : '#63df70'}; color: #000; font-weight: 700;">
           ${estaEquipado ? 'Desequipar' : 'Equipar'}
         </button>
       </div>
