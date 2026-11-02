@@ -49,7 +49,7 @@ function verificarSessao() {
   const nick = getCurrentNick();
 
   if (!nick) {
-    window.location.href = "lock.html";
+    window.location.replace("lock.html");
     return;
   }
 

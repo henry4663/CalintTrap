@@ -1,5 +1,6 @@
 const ACCOUNTS_KEY = "goblox_accounts";
 const SESSION_KEY = "goblox_session";
+const PLAYER_NICK_KEY = "goblox_player_nick";
 
 function normalizeNick(nick) {
   return String(nick || "").trim().toLowerCase();
@@ -68,10 +69,18 @@ export function loginAccount(nick, password) {
 }
 
 export function setSession(nick) {
+  const safeNick = String(nick).trim();
+
   localStorage.setItem(SESSION_KEY, JSON.stringify({
-    nick: String(nick).trim(),
+    nick: safeNick,
     loggedAt: Date.now()
   }));
+  localStorage.setItem(PLAYER_NICK_KEY, safeNick);
+}
+
+export function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(PLAYER_NICK_KEY);
 }
 
 export function getSession() {
@@ -87,12 +96,12 @@ export function getSession() {
 
 export function getCurrentNick() {
   const session = getSession();
-  return session ? session.nick : null;
+  return session ? session.nick : localStorage.getItem(PLAYER_NICK_KEY) || null;
 }
 
 export function logout() {
-  localStorage.removeItem(SESSION_KEY);
+  clearSession();
   if (window.location) {
-    window.location.href = "lock.html";
+    window.location.replace("lock.html");
   }
 }

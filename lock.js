@@ -75,7 +75,7 @@ form.addEventListener("submit", async (event) => {
       showMessage("Conta criada com sucesso!", true);
 
       setTimeout(() => {
-        window.location.assign(LOBBY);
+        window.location.replace(LOBBY);
       }, 500);
 
       return;
@@ -85,7 +85,7 @@ form.addEventListener("submit", async (event) => {
     showMessage("Login realizado com sucesso!", true);
 
     setTimeout(() => {
-      window.location.assign(LOBBY);
+      window.location.replace(LOBBY);
     }, 500);
 
   } catch (error) {
