@@ -1,47 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOBLOX - Login</title>
-    <link rel="stylesheet" href="global.css">
-    <link rel="stylesheet" href="lock.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>goblox - Login</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Fundo com gradiente e padrões de ícones */
+    body {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #064e3b 100%);
+    }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans">
+
+  <!-- Elementos decorativos de fundo (Silhuetas/Padrões) -->
+  <div class="absolute inset-0 opacity-10 pointer-events-none flex flex-wrap justify-between p-12">
+    <i data-lucide="gamepad-2" class="w-24 h-24 text-white transform -rotate-12"></i>
+    <i data-lucide="square" class="w-16 h-16 text-white transform rotate-45"></i>
+    <i data-lucide="circle" class="w-20 h-20 text-white"></i>
+    <i data-lucide="triangle" class="w-24 h-24 text-white transform rotate-12"></i>
+  </div>
+
+  <!-- Contentor principal / Mockup de telemóvel -->
+  <div class="w-full max-w-sm bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-8 relative z-10 text-center">
     
-<div class="lock-background"></div>
+    <!-- Logo goblox -->
+    <div class="mb-10 mt-4">
+      <h1 class="text-5xl font-black text-amber-400 tracking-tight lowercase">
+        goblox
+      </h1>
+    </div>
 
-<main class="lock-container">
-    <div class="logo">GO<span>BLOX</span></div>
-    <p class="subtitle">Seu universo começa aqui.</p>
+    <!-- Formulário de Login -->
+    <form onsubmit="handleLogin(event)" class="space-y-5">
+      
+      <!-- Campo Username -->
+      <div class="relative">
+        <input 
+          type="text" 
+          id="username"
+          required
+          placeholder="Enter Username" 
+          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition text-base"
+        >
+      </div>
 
-    <form id="authForm">
+      <!-- Campo Password -->
+      <div class="relative">
+        <input 
+          type="password" 
+          id="password"
+          required
+          placeholder="Enter Password" 
+          class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition text-base"
+        >
+      </div>
 
-        <div id="nameGroup" hidden>
-            <label>Escolha seu usuário</label>
-            <input id="username" type="text" maxlength="20"
-                   placeholder="Seu usuário">
-        </div>
+      <!-- Botão Login -->
+      <button 
+        type="submit" 
+        class="w-full mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-red-600/30 transition duration-200 active:scale-95 text-lg"
+      >
+        Login
+      </button>
 
-        <label>Usuário</label>
-        <input id="loginUsername" type="text" maxlength="20"
-               placeholder="Seu nome de usuário" required>
-
-        <label>Senha</label>
-        <input id="password" type="password"
-               placeholder="Sua senha" required>
-
-        <button type="submit" id="submitButton">ENTRAR</button>
     </form>
 
-    <p id="message"></p>
-
-    <div class="links">
-        <span id="switchText">Não tem uma conta?</span>
-        <button type="button" id="switchMode">Criar conta</button>
+    <!-- Rodapé do Card -->
+    <div class="mt-8 text-xs text-slate-400">
+      <a href="#" class="hover:underline">Esqueceu-se da palavra-passe?</a>
     </div>
-</main>
 
-<script type="module" src="lock.js"></script>
+  </div>
+
+  <script>
+    // Inicializar ícones
+    lucide.createIcons();
+
+    // Ação ao clicar em Login
+    function handleLogin(event) {
+      event.preventDefault();
+      const user = document.getElementById('username').value;
+      alert(`Bem-vindo de volta ao goblox, ${user}!`);
+    }
+  </script>
 </body>
 </html>
