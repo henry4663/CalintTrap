@@ -1,4 +1,4 @@
-```javascript
+javascript
 // ============================================
 // GOBLOX - PAINEL ADMINISTRATIVO
 // ADM.JS
@@ -385,4 +385,4 @@ window.adicionarMoedas = async function () {
 };
 
 } // FIM DA PROTEÇÃO DO PAINEL
-```
+
