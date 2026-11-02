@@ -2,7 +2,14 @@ import * as THREE from 'three';
 
 export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const grupoPersonagem = new THREE.Group();
-  const nomePlayer = nomePersonalizado || localStorage.getItem('goblox_player_nick') || "Jogador";
+
+  const nomeFallback = typeof localStorage !== 'undefined'
+    ? localStorage.getItem('goblox_player_nick') || 'Jogador'
+    : 'Jogador';
+
+  const nomePlayer = typeof nomePersonalizado === 'string' && nomePersonalizado.trim()
+    ? nomePersonalizado.trim()
+    : nomeFallback;
 
   // Se não passar os itens diretamente (ex: jogador local), lê do localStorage
   if (!itensEquipados) {
@@ -18,12 +25,12 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const materialRoupa = new THREE.MeshStandardMaterial({ color: 0x2678ed, roughness: 0.75 });
   const materialCalca = new THREE.MeshStandardMaterial({ color: 0x242b43, roughness: 0.75 });
   const materialPele = new THREE.MeshStandardMaterial({ color: 0xffc18b, roughness: 0.75 });
-  
+
   // Cabelo Amarelo ou Escuro Padrão
   const temCabeloAmarelo = itensEquipados.includes('cabelo_amarelo');
-  const materialCabelo = new THREE.MeshStandardMaterial({ 
-    color: temCabeloAmarelo ? 0xffea00 : 0x29202a, 
-    roughness: 0.75 
+  const materialCabelo = new THREE.MeshStandardMaterial({
+    color: temCabeloAmarelo ? 0xffea00 : 0x29202a,
+    roughness: 0.75
   });
 
   function criarParte(parent, x, y, z, sx, sy, sz, mat) {
@@ -127,7 +134,7 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const texture = new THREE.CanvasTexture(canvas);
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
-  
+
   const alturaNick = itensEquipados.includes('coroa') ? 2.95 : 2.7;
   sprite.position.set(0, alturaNick, 0);
   sprite.scale.set(1.8, 0.45, 1.0);
@@ -151,3 +158,4 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
 
   return grupoPersonagem;
 }
+
