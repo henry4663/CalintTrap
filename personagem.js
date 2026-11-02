@@ -1,16 +1,32 @@
 import * as THREE from 'three';
 
-export function criarPersonagem(nomePersonalizado) {
+export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const grupoPersonagem = new THREE.Group();
 
-  // Pega o nome salvo na plataforma ou usa o fornecido
+  // Pega o nome do jogador
   const nomePlayer = nomePersonalizado || localStorage.getItem('goblox_player_nick') || "Jogador";
 
-  // Materiais padrão com cores vibrantes
+  // Se não forem passados os itens equipados diretamente, tenta carregar do localStorage da conta
+  if (!itensEquipados) {
+    const keyEquipados = `goblox_equipados_${nomePlayer}`;
+    try {
+      itensEquipados = JSON.parse(localStorage.getItem(keyEquipados)) || [];
+    } catch (e) {
+      itensEquipados = [];
+    }
+  }
+
+  // Materiais Padrão
   const materialRoupa = new THREE.MeshStandardMaterial({ color: 0x2678ed, roughness: 0.75 });
   const materialCalca = new THREE.MeshStandardMaterial({ color: 0x242b43, roughness: 0.75 });
   const materialPele = new THREE.MeshStandardMaterial({ color: 0xffc18b, roughness: 0.75 });
-  const materialCabelo = new THREE.MeshStandardMaterial({ color: 0x29202a, roughness: 0.75 });
+  
+  // Cor do Cabelo (Muda se tiver equipado "cabelo_amarelo")
+  const temCabeloAmarelo = itensEquipados.includes('cabelo_amarelo');
+  const materialCabelo = new THREE.MeshStandardMaterial({ 
+    color: temCabeloAmarelo ? 0xffea00 : 0x29202a, 
+    roughness: 0.75 
+  });
 
   function criarParte(parent, x, y, z, sx, sy, sz, mat) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
@@ -21,22 +37,23 @@ export function criarPersonagem(nomePersonalizado) {
     return mesh;
   }
 
-  // --- ESTRUTURA DO CORPO (Pivôs corrigidos na base para alinhar com o chão) ---
+  // --- ESTRUTURA DO CORPO BASE ---
   
   // TRONCO
   criarParte(grupoPersonagem, 0, 1.05, 0, 0.85, 1.0, 0.45, materialRoupa);
 
-  // CABEÇA (Alinhada logo acima do tronco)
+  // CABEÇA
   criarParte(grupoPersonagem, 0, 1.85, 0, 0.7, 0.7, 0.7, materialPele);
 
-  // CABELO
+  // CABELO BASE (OU AMARRELO)
   criarParte(grupoPersonagem, 0, 2.22, 0, 0.74, 0.16, 0.74, materialCabelo);
 
   // OLHOS
-  criarParte(grupoPersonagem, -0.16, 1.88, -0.36, 0.08, 0.08, 0.04, materialCabelo);
-  criarParte(grupoPersonagem, 0.16, 1.88, -0.36, 0.08, 0.08, 0.04, materialCabelo);
+  const matOlhos = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  criarParte(grupoPersonagem, -0.16, 1.88, -0.36, 0.08, 0.08, 0.04, matOlhos);
+  criarParte(grupoPersonagem, 0.16, 1.88, -0.36, 0.08, 0.08, 0.04, matOlhos);
 
-  // BRAÇOS (Pivotados corretamente nos ombros para evitar braços para cima)
+  // BRAÇOS
   const ombroE = new THREE.Group();
   ombroE.position.set(-0.52, 1.45, 0);
   criarParte(ombroE, 0, -0.35, 0, 0.28, 0.75, 0.32, materialRoupa);
@@ -47,7 +64,7 @@ export function criarPersonagem(nomePersonalizado) {
   criarParte(ombroD, 0, -0.35, 0, 0.28, 0.75, 0.32, materialRoupa);
   grupoPersonagem.add(ombroD);
 
-  // PERNAS (Pivotadas nos quadris)
+  // PERNAS
   const pernaE = new THREE.Group();
   pernaE.position.set(-0.22, 0.55, 0);
   criarParte(pernaE, 0, -0.28, 0, 0.32, 0.75, 0.36, materialCalca);
@@ -58,7 +75,49 @@ export function criarPersonagem(nomePersonalizado) {
   criarParte(pernaD, 0, -0.28, 0, 0.32, 0.75, 0.36, materialCalca);
   grupoPersonagem.add(pernaD);
 
-  // --- SISTEMA DE NICKNAME (Posicionado certinho logo acima da cabeça) ---
+  // --- ACESSÓRIOS DA LOJA / SKINS EQUIPADAS ---
+
+  // 1. COROA REAL (Se equipada)
+  if (itensEquipados.includes('coroa')) {
+    const matOuro = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+    const coroaGrupo = new THREE.Group();
+    coroaGrupo.position.set(0, 2.32, 0);
+
+    // Anel Base da Coroa
+    const baseCoroa = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.1, 8), matOuro);
+    coroaGrupo.add(baseCoroa);
+
+    // Pontas da Coroa
+    for (let i = 0; i < 4; i++) {
+      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 4), matOuro);
+      const angulo = (i * Math.PI) / 2;
+      ponta.position.set(Math.cos(angulo) * 0.3, 0.12, Math.sin(angulo) * 0.3);
+      coroaGrupo.add(ponta);
+    }
+    grupoPersonagem.add(coroaGrupo);
+  }
+
+  // 2. CHUPETA LENDÁRIA (Se equipada)
+  if (itensEquipados.includes('chupeta')) {
+    const matChupeta = new THREE.MeshStandardMaterial({ color: 0xff4081, roughness: 0.4 });
+    const matBico = new THREE.MeshStandardMaterial({ color: 0xffeb3b, roughness: 0.3 });
+
+    const chupetaGrupo = new THREE.Group();
+    chupetaGrupo.position.set(0, 1.72, -0.38);
+
+    // Base da Chupeta na boca
+    const baseChupeta = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.05), matChupeta);
+    chupetaGrupo.add(baseChupeta);
+
+    // Bico/Argola
+    const argola = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.02, 8, 16), matBico);
+    argola.position.set(0, 0, -0.05);
+    chupetaGrupo.add(argola);
+
+    grupoPersonagem.add(chupetaGrupo);
+  }
+
+  // --- SISTEMA DE NICKNAME FLUTUANTE ---
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = 512;
@@ -82,8 +141,9 @@ export function criarPersonagem(nomePersonalizado) {
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
   
-  // Altura perfeita logo acima do cabelo (Y = 2.7) para não invadir as plataformas
-  sprite.position.set(0, 2.7, 0);
+  // Posiciona o nick acima da coroa/cabeça
+  const alturaNick = itensEquipados.includes('coroa') ? 2.95 : 2.7;
+  sprite.position.set(0, alturaNick, 0);
   sprite.scale.set(1.8, 0.45, 1.0);
   grupoPersonagem.add(sprite);
 
