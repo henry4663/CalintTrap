@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox - Zombie Apocalypse Multiplayer</title>
+<title>Goblox - Jogo 3D Multiplayer</title>
 
 <style>
 * {
@@ -16,28 +16,24 @@
 }
 
 body {
-    min-height: 100vh;
-    background: #080012;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
     overflow: hidden;
     position: relative;
 }
 
-/* CANVAS DO JOGO */
+/* CANVAS 3D */
 #gameCanvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    background: #0d0614;
-    z-index: 1;
+    display: block;
 }
 
-/* HUD SUPERIOR */
-.hud-top {
+/* HUD / INTERFACE */
+.hud {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -45,53 +41,30 @@ body {
     background: rgba(0, 0, 0, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 12px 20px;
-    border-radius: 14px;
+    border-radius: 12px;
+    color: white;
     backdrop-filter: blur(5px);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
-.hud-top h2 {
-    font-size: 1.1rem;
-    color: #ff4757;
-}
+.hud h2 { font-size: 1.1rem; color: #a855ff; }
+.hud p { font-size: 0.85rem; color: #4ade80; margin-top: 4px; }
 
-.hud-top p {
-    font-size: 0.9rem;
-    color: #f1c40f;
-    font-weight: bold;
-}
-
-/* BOTÕES SUPERIORES */
-.hud-buttons {
+.btn-voltar {
     position: absolute;
     top: 20px;
     right: 20px;
     z-index: 10;
-    display: flex;
-    gap: 10px;
-}
-
-.btn-hud {
-    background: rgba(59, 130, 246, 0.8);
+    background: rgba(239, 68, 68, 0.8);
     color: white;
     border: none;
     padding: 10px 16px;
     border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
-    font-size: 0.9rem;
-    backdrop-filter: blur(5px);
 }
-.btn-hud:hover { background: #2563eb; }
+.btn-voltar:hover { background: #dc2626; }
 
-.btn-sair {
-    background: rgba(239, 68, 68, 0.8);
-}
-.btn-sair:hover { background: #dc2626; }
-
-/* === CONTROLES MOBILE === */
+/* CONTROLES MOBILE (JOYSTICK + AÇÕES) */
 .mobile-controls {
     position: absolute;
     inset: 0;
@@ -103,7 +76,6 @@ body {
     padding: 30px;
 }
 
-/* JOYSTICK DE MOVIMENTO */
 #joystick-base {
     position: relative;
     width: 130px;
@@ -127,23 +99,22 @@ body {
     box-shadow: 0 0 15px rgba(121, 0, 255, 0.6);
 }
 
-/* BOTÕES DE AÇÃO (ATIRAR + PULAR) */
 .action-buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
     pointer-events: auto;
 }
 
-.btn-action {
-    width: 80px;
-    height: 80px;
+.btn-act {
+    width: 75px;
+    height: 75px;
     border: none;
     border-radius: 50%;
     color: white;
-    font-size: 0.9rem;
     font-weight: bold;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    font-size: 0.85rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -151,83 +122,19 @@ body {
     touch-action: manipulation;
 }
 
-#btn-shoot {
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
-}
-#btn-shoot:active { transform: scale(0.9); }
-
-#btn-jump {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
-}
+#btn-jump { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 #btn-jump:active { transform: scale(0.9); }
-
-/* LOJA DE EVOLUÇÃO */
-#shop-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    z-index: 100;
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.shop-content {
-    background: #1a0b2e;
-    border: 2px solid #7900ff;
-    padding: 30px;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-}
-
-.shop-content h2 { color: #f1c40f; margin-bottom: 20px; }
-.shop-item {
-    background: rgba(255,255,255,0.05);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.shop-item button {
-    background: #2ecc71;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.shop-item button:hover { background: #27ae60; }
-.btn-fechar-shop {
-    margin-top: 15px;
-    background: #e74c3c;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-}
 </style>
 </head>
 
 <body>
 
-    <div class="hud-top">
-        <h2 id="playerName">A carregar...</h2>
-        <p>💰 Dinheiro: $<span id="playerMoney">0</span> | Arma: <span id="weaponName">Pistola Básica</span></p>
+    <div class="hud">
+        <h2 id="playerName">Sobrevivente</h2>
+        <p>🟢 3D Multiplayer Ativo</p>
     </div>
 
-    <div class="hud-buttons">
-        <button class="btn-hud" onclick="abrirLoja()">🛒 Loja</button>
-        <button class="btn-hud btn-sair" onclick="sairDoJogo()">🏠 Sair</button>
-    </div>
+    <button class="btn-voltar" onclick="sairDoJogo()">🏠 Sair</button>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -236,24 +143,7 @@ body {
             <div id="joystick-stick"></div>
         </div>
         <div class="action-buttons">
-            <button class="btn-action" id="btn-shoot">💥 ATIRAR</button>
-            <button class="btn-action" id="btn-jump">⬆ PULAR</button>
-        </div>
-    </div>
-
-    <!-- MODAL DA LOJA -->
-    <div id="shop-modal">
-        <div class="shop-content">
-            <h2>LOJA DE ARMAS & EVOLUÇÃO</h2>
-            <div class="shop-item">
-                <span>🔫 Metralhadora (Dano 2x)<br><b>$200</b></span>
-                <button onclick="comprarArma('Metralhadora', 200, 2)">Comprar</button>
-            </div>
-            <div class="shop-item">
-                <span>🔥 Bazuca Laser (Dano 5x)<br><b>$600</b></span>
-                <button onclick="comprarArma('Bazuca Laser', 600, 5)">Comprar</button>
-            </div>
-            <button class="btn-fechar-shop" onclick="fecharLoja()">Fechar</button>
+            <button class="btn-act" id="btn-jump">PULAR</button>
         </div>
     </div>
 
@@ -262,265 +152,246 @@ body {
     import { ref, set, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { getCurrentNick } from "./authLocal.js";
 
-    const nick = getCurrentNick() || "Sobrevivente_" + Math.floor(Math.random() * 1000);
+    const nick = getCurrentNick() || "Player3D_" + Math.floor(Math.random() * 1000);
     document.getElementById("playerName").textContent = nick;
 
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    function resizeCanvas() {
+    function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    window.addEventListener("resize", resize);
+    resize();
 
-    // Dados do Jogador
+    // --- MOTOR 3D INDEPENDENTE ---
     let player = {
-        x: canvas.width / 2,
-        y: canvas.height - 150,
-        size: 40,
-        speed: 4,
-        vy: 0,
-        isJumping: false,
-        dinheiro: 0,
-        danoArma: 1,
-        nomeArma: "Pistola Básica"
+        x: 1.5,
+        y: 1.5,
+        z: 1.5,
+        angulo: 0,
+        velocidade: 0.06,
+        pulando: false,
+        alturaPulo: 0,
+        vy: 0
     };
 
-    const clientId = 'player_' + Math.random().toString(36).substring(2, 9);
-    const playerRef = ref(db, `zombie_room/${clientId}`);
+    // ID único para esta conexão no Firebase
+    const clientId = 'player3d_' + Math.random().toString(36).substring(2, 9);
+    const playerRef = ref(db, `mundo3d_players/${clientId}`);
     onDisconnect(playerRef).remove();
 
     let outrosJogadores = {};
-    onValue(ref(db, "zombie_room"), (snapshot) => {
+    onValue(ref(db, "mundo3d_players"), (snapshot) => {
         outrosJogadores = snapshot.val() || {};
     });
 
-    // ZOMBIES
-    let zombies = [
-        { x: 100, y: canvas.height - 140, hp: 3, speed: 1.5, size: 35 },
-        { x: canvas.width - 150, y: canvas.height - 140, hp: 3, speed: 1.2, size: 35 },
-        { x: canvas.width / 2, y: canvas.height - 140, hp: 3, speed: 1.8, size: 35 }
+    // Mapa 3D (1 = Parede, 0 = Caminho livre)
+    const mapa = [
+        [1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,0,1],
+        [1,0,0,0,0,1,0,1],
+        [1,1,1,0,0,0,0,1],
+        [1,0,0,0,1,1,0,1],
+        [1,0,1,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1]
     ];
+    const tamanhoMapa = 8;
 
-    // BALAS DO JOGADOR
-    let balas = [];
+    let moveForward = 0;
+    let turnSpeed = 0;
 
-    // --- CONTROLO DO JOYSTICK ---
+    // Joystick
     const joystickBase = document.getElementById("joystick-base");
     const joystickStick = document.getElementById("joystick-stick");
     let joystickActive = false;
     let touchId = null;
-    let moveVector = { x: 0, y: 0 };
     const centerX = 65, centerY = 65, maxDist = 45;
 
     joystickBase.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        const touch = e.changedTouches[0];
-        touchId = touch.identifier;
+        const t = e.changedTouches[0];
+        touchId = t.identifier;
         joystickActive = true;
     }, { passive: false });
 
     window.addEventListener("touchmove", (e) => {
         if (!joystickActive) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
-            const touch = e.changedTouches[i];
-            if (touch.identifier === touchId) {
+            const t = e.changedTouches[i];
+            if (t.identifier === touchId) {
                 const rect = joystickBase.getBoundingClientRect();
-                let dx = touch.clientX - rect.left - centerX;
-                let dy = touch.clientY - rect.top - centerY;
-                const distance = Math.hypot(dx, dy);
-                if (distance > maxDist) {
-                    dx = (dx / distance) * maxDist;
-                    dy = (dy / distance) * maxDist;
+                let dx = t.clientX - rect.left - centerX;
+                let dy = t.clientY - rect.top - centerY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > maxDist) {
+                    dx = (dx / dist) * maxDist;
+                    dy = (dy / dist) * maxDist;
                 }
                 joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
-                moveVector.x = dx / maxDist;
-                moveVector.y = dy / maxDist;
+                moveForward = -dy / maxDist;
+                turnSpeed = (dx / maxDist) * 0.04;
             }
         }
     }, { passive: false });
 
-    function resetJoystick() {
+    function resetJoy() {
         joystickActive = false;
         touchId = null;
-        moveVector = { x: 0, y: 0 };
+        moveForward = 0;
+        turnSpeed = 0;
         joystickStick.style.transform = `translate(0px, 0px)`;
     }
     window.addEventListener("touchend", (e) => {
         for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === touchId) resetJoystick();
+            if (e.changedTouches[i].identifier === touchId) resetJoy();
         }
     });
 
-    // BOTÃO DE PULO
+    let keys = {};
+    window.addEventListener("keydown", e => keys[e.key] = true);
+    window.addEventListener("keyup", e => keys[e.key] = false);
+
     document.getElementById("btn-jump").addEventListener("touchstart", (e) => {
         e.preventDefault();
-        if (!player.isJumping) {
-            player.vy = -12;
-            player.isJumping = true;
+        if (!player.pulando) {
+            player.vy = 0.15;
+            player.pulando = true;
         }
     }, { passive: false });
-
-    // BOTÃO DE ATIRAR
-    document.getElementById("btn-shoot").addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        balas.push({
-            x: player.x,
-            y: player.y,
-            vx: moveVector.x !== 0 ? Math.sign(moveVector.x) * 10 : 8,
-            dano: player.danoArma
-        });
-    }, { passive: false });
-
-    // LOJA FUNÇÕES
-    window.abrirLoja = () => document.getElementById("shop-modal").style.display = "flex";
-    window.fecharLoja = () => document.getElementById("shop-modal").style.display = "none";
-
-    window.comprarArma = (nome, preco, dano) => {
-        if (player.dinheiro >= preco) {
-            player.dinheiro -= preco;
-            player.danoArma = dano;
-            player.nomeArma = nome;
-            document.getElementById("playerMoney").textContent = player.dinheiro;
-            document.getElementById("weaponName").textContent = nome;
-            alert(`Compra efetuada! Agora tens a ${nome}!`);
-            fecharLoja();
-        } else {
-            alert("Dinheiro insuficiente!");
-        }
-    };
 
     window.sairDoJogo = function() {
         remove(playerRef).then(() => window.location.href = "lobby.html");
     };
 
-    // --- LOOP DO JOGO ---
     function update() {
-        player.x += moveVector.x * player.speed;
-        player.y += player.vy;
-        player.vy += 0.6; // Gravidade
+        if (keys["ArrowLeft"] || keys["a"]) player.angulo -= 0.04;
+        if (keys["ArrowRight"] || keys["d"]) player.angulo += 0.04;
+        player.angulo += turnSpeed;
 
-        const groundLevel = canvas.height - 120;
-        if (player.y > groundLevel) {
-            player.y = groundLevel;
-            player.vy = 0;
-            player.isJumping = false;
-        }
+        let fwd = moveForward;
+        if (keys["ArrowUp"] || keys["w"]) fwd = 1;
+        if (keys["ArrowDown"] || keys["s"]) fwd = -1;
 
-        if (player.x < 30) player.x = 30;
-        if (player.x > canvas.width - 30) player.x = canvas.width - 30;
+        if (fwd !== 0) {
+            let nx = player.x + Math.cos(player.angulo) * player.velocidade * fwd;
+            let nz = player.z + Math.sin(player.angulo) * player.velocidade * fwd;
 
-        // Atualiza balas
-        for (let i = balas.length - 1; i >= 0; i--) {
-            balas[i].x += balas[i].vx;
-            if (balas[i].x < 0 || balas[i].x > canvas.width) {
-                balas.splice(i, 1);
-                continue;
-            }
-
-            // Verifica colisão da bala com zombies
-            for (let j = zombies.length - 1; j >= 0; j--) {
-                let z = zombies[j];
-                let dist = Math.hypot(balas[i].x - z.x, balas[i].y - z.y);
-                if (dist < 30) {
-                    z.hp -= balas[i].dano;
-                    balas.splice(i, 1);
-                    if (z.hp <= 0) {
-                        player.dinheiro += 50; // Ganha dinheiro ao matar zombie
-                        document.getElementById("playerMoney").textContent = player.dinheiro;
-                        // Renasce o zombie noutro sítio
-                        z.x = Math.random() < 0.5 ? 50 : canvas.width - 50;
-                        z.hp = 3 + Math.floor(Math.random() * 3);
-                    }
-                    break;
-                }
+            if (mapa[Math.floor(nz)][Math.floor(nx)] === 0) {
+                player.x = nx;
+                player.z = nz;
             }
         }
 
-        // Movimento dos Zombies em direção ao jogador mais perto
-        zombies.forEach(z => {
-            if (z.x < player.x) z.x += z.speed;
-            if (z.x > player.x) z.x -= z.speed;
-        });
+        if (player.pulando) {
+            player.alturaPulo += player.vy;
+            player.vy -= 0.01;
+            if (player.alturaPulo <= 0) {
+                player.alturaPulo = 0;
+                player.pulando = false;
+            }
+        }
 
-        // Sincroniza com Firebase
+        // Sincroniza posição no Firebase
         set(playerRef, {
             nome: nick,
-            x: Math.round(player.x),
-            y: Math.round(player.y)
+            x: player.x,
+            z: player.z,
+            angulo: player.angulo
         }).catch(() => {});
     }
 
-    function draw() {
+    function render3D() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Chão
+        // Céu e Chão
+        ctx.fillStyle = "#0d0614";
+        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
         ctx.fillStyle = "#1b102f";
-        ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
-        // Desenha Zombies
-        zombies.forEach(z => {
-            ctx.fillStyle = "#27ae60";
-            ctx.beginPath();
-            ctx.arc(z.x, z.y, z.size / 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#2ecc71";
-            ctx.lineWidth = 3;
-            ctx.stroke();
+        const FOV = Math.PI / 3;
+        const numRays = Math.floor(canvas.width / 2);
+        const meioW = canvas.width / 2;
+        const meioH = canvas.height / 2;
 
-            // Vida do Zombie
-            ctx.fillStyle = "red";
-            ctx.fillRect(z.x - 20, z.y - 30, 40, 6);
-            ctx.fillStyle = "green";
-            ctx.fillRect(z.x - 20, z.y - 30, (z.hp / 5) * 40, 6);
-        });
+        // 1. Raycasting do Cenário (Paredes)
+        for (let i = 0; i < numRays; i++) {
+            let cameraX = (2 * i / numRays) - 1;
+            let rayAngle = player.angulo + cameraX * (FOV / 2);
 
-        // Desenha Balas
-        ctx.fillStyle = "#f1c40f";
-        balas.forEach(b => {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-            ctx.fill();
-        });
+            let distanciaParede = 0;
+            let hitParede = false;
+            let cos = Math.cos(rayAngle);
+            let sin = Math.sin(rayAngle);
 
-        // Desenha OUTROS JOGADORES (Multiplayer)
-        for (let id in outrosJogadores) {
-            if (id === clientId) continue;
-            const p = outrosJogadores[id];
-            ctx.fillStyle = "#3b82f6";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, player.size / 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#93c5fd";
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            while (!hitParede && distanciaParede < 16) {
+                distanciaParede += 0.05;
+                let testX = Math.floor(player.x + cos * distanciaParede);
+                let testZ = Math.floor(player.z + sin * distanciaParede);
 
-            ctx.fillStyle = "white";
-            ctx.font = "bold 13px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(p.nome || "Aliado", p.x, p.y - 30);
+                if (testX < 0 || testX >= tamanhoMapa || testZ < 0 || testZ >= tamanhoMapa) {
+                    hitParede = true;
+                    distanciaParede = 16;
+                } else if (mapa[testZ][testX] === 1) {
+                    hitParede = true;
+                }
+            }
+
+            distanciaParede *= Math.cos(rayAngle - player.angulo);
+
+            let alturaLinha = Math.min(canvas.height, (canvas.height / distanciaParede));
+            let inicioY = meioH - alturaLinha / 2 + player.alturaPulo * 100;
+
+            let intensidade = Math.max(10, 255 - distanciaParede * 15);
+            ctx.fillStyle = `rgb(${intensidade}, ${intensidade/3}, ${intensidade})`;
+            ctx.fillRect(i * 2, inicioY, 2, alturaLinha);
         }
 
-        // Desenha o PRÓPRIO JOGADOR
-        ctx.fillStyle = "#7900ff";
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#b56cff";
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        // 2. Renderizar Outros Jogadores no 3D
+        for (let id in outrosJogadores) {
+            if (id === clientId) continue;
+            let p = outrosJogadores[id];
 
-        ctx.fillStyle = "white";
-        ctx.font = "bold 13px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(nick, player.x, player.y - 30);
+            // Calcula posição relativa ao jogador atual
+            let dx = p.x - player.x;
+            let dz = p.z - player.z;
+
+            let rotCam = player.angulo - Math.PI / 2;
+            let px = dx * Math.cos(-rotCam) - dz * Math.sin(-rotCam);
+            let pz = dx * Math.sin(-rotCam) + dz * Math.cos(-rotCam);
+
+            if (pz > 0.1) { // Se estiver à frente da câmara
+                let screenX = (canvas.width / 2) + (px / pz) * (canvas.width / 2);
+                let size = Math.min(300, canvas.height / pz);
+
+                // Desenha o avatar do outro jogador como um círculo/bloco 3D no mundo
+                ctx.fillStyle = "#3b82f6";
+                ctx.beginPath();
+                ctx.arc(screenX, meioH, size / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#93c5fd";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Nome flutuante
+                ctx.fillStyle = "white";
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(p.nome || "Outro Jogador", screenX, meioH - size / 4 - 10);
+            }
+        }
+
+        // Mira central
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.fillRect(canvas.width / 2 - 4, canvas.height / 2 - 4, 8, 8);
     }
 
     function loop() {
         update();
-        draw();
+        render3D();
         requestAnimationFrame(loop);
     }
 
