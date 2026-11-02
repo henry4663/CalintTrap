@@ -44,7 +44,10 @@ export function iniciarMultiplayer({
       z: Number(estado.z.toFixed(2)),
       rotY: Number((estado.rotY ?? 0).toFixed(2)),
       vida: Number((estado.vida ?? 100).toFixed(2)),
-      atualizadoEm: Date.now()
+      atualizadoEm: Date.now(),
+      nick: typeof localStorage !== 'undefined'
+        ? (localStorage.getItem('goblox_player_nick') || 'Jogador')
+        : 'Jogador'
     };
 
     set(playerRef, payload).catch(() => {});
@@ -65,7 +68,11 @@ export function iniciarMultiplayer({
       if (!jogador || typeof jogador.x !== 'number') continue;
 
       if (!outrosJogadores.has(id)) {
-        const mesh = criarPersonagem(getPlayerColor(id));
+        const nick = typeof jogador.nick === 'string' && jogador.nick.trim()
+          ? jogador.nick.trim()
+          : `Jogador ${id.slice(-4)}`;
+
+        const mesh = criarPersonagem(nick);
         scene.add(mesh);
         outrosJogadores.set(id, {
           mesh,
@@ -94,3 +101,4 @@ export function iniciarMultiplayer({
     outrosJogadores
   };
 }
+
