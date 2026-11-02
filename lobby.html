@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="./global.css" />
   <link rel="stylesheet" href="./lobby.css" />
   <style>
-    /* Estilo rápido para as moedas na topbar */
+    /* Mostradores de moedas na Topbar */
     .currency-container {
       display: flex;
       gap: 12px;
@@ -26,6 +26,16 @@
     }
     .currency-fbux { color: #facc15; }
     .currency-coins { color: #4ade80; }
+
+    /* Estilo do botão de atalho do catálogo */
+    .btn-catalogo {
+      background: #facc15;
+      color: #000;
+      font-weight: bold;
+    }
+    .btn-catalogo:hover {
+      background: #ffe066;
+    }
   </style>
 </head>
 <body>
@@ -46,6 +56,9 @@
       </div>
 
       <span id="boasVindas">Carregando...</span>
+      
+      <!-- Botão para abrir o Catálogo diretamente pela Topbar -->
+      <button id="btnCatalogo" class="btn btn-catalogo" onclick="window.location.href='catalogo.html'">🛒 Loja</button>
       <button id="btnPerfil" class="btn btn-light">Perfil</button>
       <button id="btnSair" class="btn btn-dark">Sair</button>
     </div>
@@ -62,6 +75,13 @@
       </div>
 
       <div class="game-list">
+        <!-- Card do Catálogo de Skins e Acessórios -->
+        <button class="game-card" data-page="catalogo.html" style="border-color: #facc15;">
+          <span class="tag" style="background: #facc15; color: #000;">Loja</span>
+          <strong>Catálogo de Skins</strong>
+          <small>Compre coroas, chupetas e estilos de cabelo com FBUX e Moedas.</small>
+        </button>
+
         <button class="game-card" data-page="jogo-parkour.html">
           <span class="tag">Parkour</span>
           <strong>Parkour</strong>
