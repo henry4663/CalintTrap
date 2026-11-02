@@ -21,52 +21,58 @@ export function criarPersonagem(nomePersonalizado) {
     return mesh;
   }
 
+  // --- ESTRUTURA DO CORPO (Pivôs corrigidos na base para alinhar com o chão) ---
+  
   // TRONCO
-  criarParte(grupoPersonagem, 0, 1.55, 0, 0.9, 1.1, 0.48, materialRoupa);
+  criarParte(grupoPersonagem, 0, 1.05, 0, 0.85, 1.0, 0.45, materialRoupa);
 
-  // CABEÇA
-  criarParte(grupoPersonagem, 0, 2.48, 0, 0.75, 0.75, 0.75, materialPele);
+  // CABEÇA (Alinhada logo acima do tronco)
+  criarParte(grupoPersonagem, 0, 1.85, 0, 0.7, 0.7, 0.7, materialPele);
 
   // CABELO
-  criarParte(grupoPersonagem, 0, 2.91, 0, 0.79, 0.18, 0.79, materialCabelo);
+  criarParte(grupoPersonagem, 0, 2.22, 0, 0.74, 0.16, 0.74, materialCabelo);
 
   // OLHOS
-  criarParte(grupoPersonagem, -0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
-  criarParte(grupoPersonagem, 0.17, 2.53, -0.38, 0.09, 0.09, 0.04, materialCabelo);
+  criarParte(grupoPersonagem, -0.16, 1.88, -0.36, 0.08, 0.08, 0.04, materialCabelo);
+  criarParte(grupoPersonagem, 0.16, 1.88, -0.36, 0.08, 0.08, 0.04, materialCabelo);
 
-  // BRAÇOS (Pivotados nos ombros para animação)
-  const bracoE = new THREE.Group();
-  bracoE.position.set(-0.58, 2.35, 0);
-  criarParte(bracoE, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
-  grupoPersonagem.add(bracoE);
+  // BRAÇOS (Pivotados corretamente nos ombros para evitar braços para cima)
+  const ombroE = new THREE.Group();
+  ombroE.position.set(-0.52, 1.45, 0);
+  criarParte(ombroE, 0, -0.35, 0, 0.28, 0.75, 0.32, materialRoupa);
+  grupoPersonagem.add(ombroE);
 
-  const bracoD = new THREE.Group();
-  bracoD.position.set(0.58, 2.35, 0);
-  criarParte(bracoD, 0, -0.38, 0, 0.3, 0.85, 0.35, materialRoupa);
-  grupoPersonagem.add(bracoD);
+  const ombroD = new THREE.Group();
+  ombroD.position.set(0.52, 1.45, 0);
+  criarParte(ombroD, 0, -0.35, 0, 0.28, 0.75, 0.32, materialRoupa);
+  grupoPersonagem.add(ombroD);
 
-  // PERNAS (Pivotadas nos quadris para animação)
+  // PERNAS (Pivotadas nos quadris)
   const pernaE = new THREE.Group();
-  pernaE.position.set(-0.25, 1.45, 0);
-  criarParte(pernaE, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+  pernaE.position.set(-0.22, 0.55, 0);
+  criarParte(pernaE, 0, -0.28, 0, 0.32, 0.75, 0.36, materialCalca);
   grupoPersonagem.add(pernaE);
 
   const pernaD = new THREE.Group();
-  pernaD.position.set(0.25, 1.45, 0);
-  criarParte(pernaD, 0, -0.43, 0, 0.35, 0.95, 0.4, materialCalca);
+  pernaD.position.set(0.22, 0.55, 0);
+  criarParte(pernaD, 0, -0.28, 0, 0.32, 0.75, 0.36, materialCalca);
   grupoPersonagem.add(pernaD);
 
-  // --- SISTEMA DE NICKNAME (Canvas Text Sprite) ---
+  // --- SISTEMA DE NICKNAME (Posicionado certinho logo acima da cabeça) ---
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = 512;
   canvas.height = 128;
 
-  context.fillStyle = 'rgba(0, 0, 0, 0.6)';
-  context.roundRect(56, 16, 400, 96, 24);
+  context.fillStyle = 'rgba(0, 0, 0, 0.65)';
+  if (context.roundRect) {
+    context.roundRect(56, 16, 400, 96, 24);
+  } else {
+    context.fillRect(56, 16, 400, 96);
+  }
   context.fill();
 
-  context.font = 'bold 44px Arial';
+  context.font = 'bold 42px Arial';
   context.fillStyle = '#ffffff';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
@@ -76,25 +82,24 @@ export function criarPersonagem(nomePersonalizado) {
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
   
-  sprite.position.set(0, 3.5, 0);
-  sprite.scale.set(2.0, 0.5, 1.0);
+  // Altura perfeita logo acima do cabelo (Y = 2.7) para não invadir as plataformas
+  sprite.position.set(0, 2.7, 0);
+  sprite.scale.set(1.8, 0.45, 1.0);
   grupoPersonagem.add(sprite);
 
-  // --- FUNÇÃO DE ANIMAÇÃO DE CAMINHADA ---
-  // Podes chamar esta função dentro do teu loop de animação do jogo passando (tempo, a andar ou parado)
+  // --- ANIMAÇÃO DE CAMINHADA ---
   grupoPersonagem.atualizarAnimacao = function(tempo, aAndar) {
     if (aAndar) {
-      const velocidadeAnim = tempo * 12;
-      bracoE.rotation.x = Math.sin(velocidadeAnim) * 0.6;
-      bracoD.rotation.x = -Math.sin(velocidadeAnim) * 0.6;
-      pernaE.rotation.x = -Math.sin(velocidadeAnim) * 0.6;
-      pernaD.rotation.x = Math.sin(velocidadeAnim) * 0.6;
+      const vel = tempo * 14;
+      ombroE.rotation.x = Math.sin(vel) * 0.7;
+      ombroD.rotation.x = -Math.sin(vel) * 0.7;
+      pernaE.rotation.x = -Math.sin(vel) * 0.7;
+      pernaD.rotation.x = Math.sin(vel) * 0.7;
     } else {
-      // Posição de descanso (Idle suave)
-      bracoE.rotation.x = THREE.MathUtils.lerp(bracoE.rotation.x, 0, 0.1);
-      bracoD.rotation.x = THREE.MathUtils.lerp(bracoD.rotation.x, 0, 0.1);
-      pernaE.rotation.x = THREE.MathUtils.lerp(pernaE.rotation.x, 0, 0.1);
-      pernaD.rotation.x = THREE.MathUtils.lerp(pernaD.rotation.x, 0, 0.1);
+      ombroE.rotation.x = THREE.MathUtils.lerp(ombroE.rotation.x, 0, 0.15);
+      ombroD.rotation.x = THREE.MathUtils.lerp(ombroD.rotation.x, 0, 0.15);
+      pernaE.rotation.x = THREE.MathUtils.lerp(pernaE.rotation.x, 0, 0.15);
+      pernaD.rotation.x = THREE.MathUtils.lerp(pernaD.rotation.x, 0, 0.15);
     }
   };
 
