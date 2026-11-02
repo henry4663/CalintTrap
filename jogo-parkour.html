@@ -119,7 +119,7 @@
 <body>
 
 <div id="status">A carregar motor 3D...</div>
-<div id="mensagem">VICTORY! 🎉<br><span style="font-size: 1.1rem; color: #facc15;">+20 FBUX | +1000 Moedas</span></div>
+<div id="mensagem">VICTORY! 🎉<br><span style="font-size: 1.1rem; color: #facc15;">+20 FBUX | +40 Moedas</span></div>
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
 <!-- CONTROLES MOBILE (JOYSTICK + PULO) -->
@@ -408,7 +408,7 @@ if (isMobile) {
     let moedasAtuais = parseInt(localStorage.getItem(keyMoedas) || 0);
 
     let novosFbux = fbuxAtuais + 20;
-    let novasMoedas = moedasAtuais + 1000;
+    let novasMoedas = moedasAtuais + 40;
 
     localStorage.setItem(keyFbux, novosFbux);
     localStorage.setItem(keyMoedas, novasMoedas);
@@ -484,7 +484,7 @@ if (isMobile) {
       venceu = true;
       darRecompensaVitoria();
       document.getElementById("mensagem").style.display = "block";
-      status.textContent = "Você venceu! +20 FBUX | +1000 Moedas";
+      status.textContent = "Você venceu! +20 FBUX | +40 Moedas";
     }
 
     if (jogador.position.y < -12) {
@@ -539,3 +539,6 @@ if (isMobile) {
 </script>
 </body>
 </html>
+
+
+procura o ganho de moedas e modificar para me dar 10000 moedas quando ganhar
