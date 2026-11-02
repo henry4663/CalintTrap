@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>goblox - Plataforma de Jogos</title>
+  <title>Goblox - Plataforma de Jogos</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -63,12 +63,12 @@
         </div>
 
         <!-- Perfil -->
-        <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition">
+        <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition" onclick="fazerLogout()">
           <div class="relative">
             <img class="w-9 h-9 rounded-full bg-red-100 border-2 border-red-500 object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=PlayerOne" alt="Avatar">
             <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
-          <span class="font-bold text-sm hidden sm:inline-block">PlayerOne</span>
+          <span id="nomeUsuarioDisplay" class="font-bold text-sm hidden sm:inline-block">PlayerOne</span>
         </div>
       </div>
 
@@ -101,6 +101,10 @@
           <i data-lucide="users" class="w-5 h-5"></i>
           <span>Amigos</span>
         </a>
+        <a href="adm.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-red-600 hover:bg-red-50 transition">
+          <i data-lucide="shield" class="w-5 h-5"></i>
+          <span>Painel ADM</span>
+        </a>
       </nav>
     </aside>
 
@@ -128,7 +132,7 @@
 
         <!-- Grid de Jogos -->
         <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <!-- Os cards de jogos serão inseridos via JavaScript -->
+          <!-- Jogos inseridos via JS -->
         </div>
       </section>
 
@@ -185,7 +189,7 @@
           </button>
         </div>
 
-        <!-- Tela de Carregando (Oculta por padrão) -->
+        <!-- Tela de Carregando -->
         <div id="loading-container" class="hidden">
           <div class="w-full bg-gray-200 rounded-full h-4 mb-2 overflow-hidden">
             <div id="progress-bar" class="bg-green-500 h-full w-0 transition-all duration-300"></div>
@@ -198,11 +202,27 @@
   </div>
 
   <!-- JAVASCRIPT -->
-  <script>
+  <script type="module">
+    import { getCurrentNick, logout } from "./authLocal.js";
+
+    // Verifica se o utilizador está logado ao carregar a página
+    const nickAtual = getCurrentNick();
+    if (!nickAtual) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("nomeUsuarioDisplay").textContent = nickAtual;
+    }
+
+    window.fazerLogout = function() {
+      if (confirm("Deseja sair da sua conta?")) {
+        logout();
+      }
+    };
+
     // Inicializar Ícones Lucide
     lucide.createIcons();
 
-    // Lista de Jogos (Dados Fictícios)
+    // Lista de Jogos (Incluindo o Zombie Escape)
     const games = [
       { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
       { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800' },
@@ -221,7 +241,6 @@
     const gamesGrid = document.getElementById('games-grid');
     const searchInput = document.getElementById('search-input');
 
-    // Função para Renderizar a Grid de Jogos
     function renderGames(filterText = '') {
       gamesGrid.innerHTML = '';
       
@@ -266,7 +285,6 @@
       lucide.createIcons();
     }
 
-    // Modal Control
     const modal = document.getElementById('game-modal');
     const closeModalBtn = document.getElementById('close-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -287,7 +305,6 @@
       modalBanner.className = `h-48 w-full flex items-center justify-center text-white font-black text-2xl bg-gradient-to-br ${game.color}`;
       modalBanner.innerText = game.title;
 
-      // Reset dos botões
       playContainer.classList.remove('hidden');
       loadingContainer.classList.add('hidden');
       progressBar.style.width = '0%';
@@ -297,8 +314,16 @@
 
     closeModalBtn.onclick = () => modal.classList.add('hidden');
 
-    // Simulação do Botão JOGAR
+    // Botão JOGAR (Redireciona Zombie Escape para o zombieAtaque.html)
     playBtn.onclick = () => {
+      const nomeJogoAtual = modalTitle.innerText.trim();
+
+      if (nomeJogoAtual === 'Zombie Escape') {
+        modal.classList.add('hidden');
+        window.location.href = 'zombieAtaque.html';
+        return;
+      }
+
       playContainer.classList.add('hidden');
       loadingContainer.classList.remove('hidden');
 
@@ -316,18 +341,15 @@
       }, 400);
     };
 
-    // Evento de Busca
     searchInput.addEventListener('input', (e) => {
       renderGames(e.target.value);
     });
 
-    // Toggle Menu Mobile
     document.getElementById('mobile-menu-btn').onclick = () => {
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('hidden');
     };
 
-    // Inicialização da lista
     renderGames();
   </script>
 </body>
