@@ -3,18 +3,23 @@ import { db } from "./firebase.js";
 import { ref, set, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 export function iniciarClienteGoblox(onPlayersUpdate) {
-  // 1. Pega o nick único do jogador logado nesta sessão
   const nickLocal = getCurrentNick() || localStorage.getItem("goblox_player_nick") || "Jogador_" + Math.floor(Math.random() * 1000);
   localStorage.setItem("goblox_player_nick", nickLocal);
 
-  // 2. Gera um ID único para esta aba/conexão do jogador
-  const clientId = "client_" + Math.random().toString(36).substring(2, 11);
+  // --- VERIFICAÇÃO AUTOMÁTICA DE BANIMENTO ---
+  const banRef = ref(db, `bans/${nickLocal}`);
+  onValue(banRef, (snapshot) => {
+    if (snapshot.exists()) {
+      // Jogador foi banido! Redireciona para a tela de ban
+      window.location.href = "screenban.html";
+    }
+  });
+  // ------------------------------------------
 
-  // 3. Referência no Firebase para este cliente específico
+  const clientId = "client_" + Math.random().toString(36).substring(2, 11);
   const meuPlayerRef = ref(db, `forest_players/${clientId}`);
   onDisconnect(meuPlayerRef).remove();
 
-  // 4. Pega os itens/skins equipados no localStorage deste jogador
   function getMeusItensEquipados() {
     try {
       return JSON.parse(localStorage.getItem(`goblox_equipados_${nickLocal}`)) || [];
@@ -23,19 +28,19 @@ export function iniciarClienteGoblox(onPlayersUpdate) {
     }
   }
 
-  // 5. Função para enviar a posição, nick e skin atual para o Firebase
-  function sincronizarPosicao(x, y, z) {
+  function sincronizarPosicao(x, y, z, rotY, movendo) {
     set(meuPlayerRef, {
       id: clientId,
       nome: nickLocal,
       x: Number(x.toFixed(2)),
       y: Number(y.toFixed(2)),
       z: Number(z.toFixed(2)),
+      rotY: Number(rotY.toFixed(2)),
+      movendo: !!movendo,
       itens: getMeusItensEquipados()
     }).catch(() => {});
   }
 
-  // 6. Ouve todos os jogadores conectados no servidor Firebase
   const allPlayersRef = ref(db, "forest_players");
   onValue(allPlayersRef, (snapshot) => {
     const data = snapshot.val() || {};
