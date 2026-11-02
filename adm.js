@@ -1,5 +1,5 @@
 import { db } from "./firebase.js";
-import { ref, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getCurrentNick } from "./authLocal.js";
 import { getWallet, saveWallet } from "./economia.js";
 
@@ -21,7 +21,7 @@ function normalizeNick(nick) {
   return String(nick || "").trim();
 }
 
-// --- RESTRIÇÃO DE ACESSO EXCLUSIVA PARA henryDEV777! ---
+// Restrição de acesso
 const nickAtual = getCurrentNick() || localStorage.getItem("goblox_player_nick");
 
 if (nickAtual !== "henryDEV777!" && nickAtual !== "henryDEV777") {
@@ -29,7 +29,7 @@ if (nickAtual !== "henryDEV777!" && nickAtual !== "henryDEV777") {
   window.location.href = "lobby.html";
 }
 
-// --- DETECTAR JOGADORES EM TEMPO REAL (SERVIDORES MULTIPLAYER) ---
+// Detectar jogadores online
 const serverRef = ref(db, "forest_players");
 
 onValue(serverRef, (snapshot) => {
@@ -46,7 +46,7 @@ onValue(serverRef, (snapshot) => {
   tbody.innerHTML = chaves.map(id => {
     const p = data[id];
     const nome = p.nome || "Jogador Anônimo";
-    const itens = (p.itens && p.itens.length > 0) ? p.itens.join(', ') : "Sem acessórios";
+    const itens = (p.itens && p.itens.length > 0) ? p.itens.join(", ") : "Sem acessórios";
     const posX = p.x !== undefined ? p.x : 0;
     const posY = p.y !== undefined ? p.y : 0;
     const posZ = p.z !== undefined ? p.z : 0;
@@ -63,10 +63,10 @@ onValue(serverRef, (snapshot) => {
         </td>
       </tr>
     `;
-  }).join('');
+  }).join("");
 });
 
-// --- FUNÇÃO 1: EXPULSAR JOGADOR (KICK) ---
+// Função 1: expulsar jogador
 window.expulsarJogador = function(clientId, nickJogador) {
   if (confirm(`Deseja realmente expulsar o jogador "${nickJogador}" do jogo?`)) {
     const playerRef = ref(db, `forest_players/${clientId}`);
@@ -76,7 +76,7 @@ window.expulsarJogador = function(clientId, nickJogador) {
   }
 };
 
-// --- FUNÇÃO 2: REMOVER PLAYERS FANTASMAS (BUGADOS) ---
+// Função 2: remover fantasmas
 window.removerPlayersFantasmas = function() {
   if (confirm("Tem certeza que deseja remover todos os players da sala atual?")) {
     remove(ref(db, "forest_players"))
@@ -85,7 +85,7 @@ window.removerPlayersFantasmas = function() {
   }
 };
 
-// --- FUNÇÃO 3: DAR FBUX ---
+// Função 3: dar FBUX com novo sistema
 window.adicionarFbux = function() {
   const nick = normalizeNick(document.getElementById("fbuxPlayerNick").value);
   const qtd = Number(document.getElementById("fbuxAmount").value);
@@ -113,7 +113,7 @@ window.adicionarFbux = function() {
   document.getElementById("fbuxAmount").value = "";
 };
 
-// --- FUNÇÃO 4: DAR MOEDAS ---
+// Função 4: dar moedas com novo sistema
 window.adicionarMoedas = function() {
   const nick = normalizeNick(document.getElementById("coinsPlayerNick").value);
   const qtd = Number(document.getElementById("coinsAmount").value);
