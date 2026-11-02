@@ -119,7 +119,7 @@
 <body>
 
 <div id="status">A carregar motor 3D...</div>
-<div id="mensagem">VICTORY! 🎉<br><span style="font-size: 1.1rem; color: #facc15;">+20 FBUX | +40 Moedas</span></div>
+<div id="mensagem">VICTORY! 🎉<br><span style="font-size: 1.1rem; color: #facc15;">+20 FBUX | +1000 Moedas</span></div>
 <a href="lobby.html" id="btnVoltar">⎋ Sair</a>
 
 <!-- CONTROLES MOBILE (JOYSTICK + PULO) -->
@@ -148,9 +148,9 @@ if (isMobile) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87caff);
-  scene.fog = new THREE.Fog(0x87caff, 50, 150);
+  scene.fog = new THREE.Fog(0x87caff, 35, 110);
 
-  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 250);
+  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 200);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -184,10 +184,7 @@ if (isMobile) {
     amarelo: material(0xffcb45),
     vermelho: material(0xff5369),
     branco: material(0xffffff),
-    chao: material(0x29394e),
-    laranja: material(0xff9f43),
-    rosa: material(0xff6b81),
-    lava: material(0xff3838, 0.2)
+    chao: material(0x29394e)
   };
 
   function criarBloco(x, y, z, sx, sy, sz, mat) {
@@ -199,85 +196,46 @@ if (isMobile) {
     return objeto;
   }
 
-  // Chão de segurança (lava embaixo)
-  criarBloco(0, -2, -70, 250, 1, 350, cores.chao);
+  criarBloco(0, -2, -25, 200, 1, 200, cores.chao);
 
   const plataformas = [];
-  const obstaculosMoveis = [];
-  const killBricks = [];
 
   function plataforma(x, y, z, largura, profundidade, mat) {
     criarBloco(x, y, z, largura, 0.7, profundidade, mat);
 
     plataformas.push({
-      minX: x - largura/2 - 0.6,
-      maxX: x + largura/2 + 0.6,
-      minZ: z - profundidade/2 - 0.6,
-      maxZ: z + profundidade/2 + 0.6,
+      minX: x - largura/2 - 0.5,
+      maxX: x + largura/2 + 0.5,
+      minZ: z - profundidade/2 - 0.5,
+      maxZ: z + profundidade/2 + 0.5,
       y: y + 0.35
     });
 
     criarBloco(x, y - 0.36, z, largura + 0.15, 0.12, profundidade + 0.15, cores.branco);
   }
 
-  function killBrick(x, y, z, largura, altura, profundidade) {
-    const kb = criarBloco(x, y, z, largura, altura, profundidade, cores.lava);
-    killBricks.push({
-      minX: x - largura/2 - 0.4,
-      maxX: x + largura/2 + 0.4,
-      minY: y - altura/2 - 0.4,
-      maxY: y + altura/2 + 0.4,
-      minZ: z - profundidade/2 - 0.4,
-      maxZ: z + profundidade/2 + 0.4
-    });
-    return kb;
-  }
+  plataforma(0, 0, 0, 10, 10, cores.verde);
+  plataforma(0, 1, -10, 5, 5, cores.roxo);
+  plataforma(5, 2, -17, 4, 4, cores.azul);
+  plataforma(0, 3, -24, 4, 4, cores.amarelo);
+  plataforma(-5, 4, -31, 4, 4, cores.verde);
+  plataforma(-5, 5, -39, 6, 6, cores.roxo);
+  plataforma(2, 6, -47, 4, 4, cores.azul);
+  plataforma(8, 7, -55, 6, 6, cores.amarelo);
 
-  // --- OBBY ORGANIZADO, AMPLO E LONGO ---
-  // Início
-  plataforma(0, 0, 0, 12, 12, cores.verde);
-  
-  // Seção 1: Salto suave e largo (Fácil)
-  plataforma(0, 1, -12, 7, 7, cores.roxo);
-  plataforma(0, 2, -22, 7, 7, cores.azul);
-  plataforma(0, 3, -32, 7, 7, cores.amarelo);
+  criarBloco(-5, 5.4, -39, 1.7, 0.15, 1.7, cores.verde);
+  criarBloco(8, 7.42, -55, 2, 0.12, 2, cores.verde);
+  criarBloco(8, 9, -55, 0.25, 3, 0.25, cores.vermelho);
+  criarBloco(9, 10.2, -55, 2, 0.8, 0.15, cores.amarelo);
 
-  // Checkpoint 1
-  criarBloco(0, 3.4, -32, 2, 0.12, 2, cores.verde);
-
-  // Seção 2: Desvio do Killbrick 1
-  plataforma(0, 4, -43, 7, 7, cores.laranja);
-  killBrick(0, 4.5, -49, 5, 1.5, 0.8); // Obstáculo fácil de desviar ou saltar por cima
-  plataforma(0, 5, -55, 7, 7, cores.rosa);
-
-  // Checkpoint 2
-  criarBloco(0, 5.4, -55, 2, 0.12, 2, cores.verde);
-
-  // Seção 3: Spinner Roblux (Barra giratória devagar e acessível)
-  plataforma(0, 6, -66, 8, 8, cores.verde);
-  const spinnerMesh = criarBloco(0, 7, -66, 8, 0.4, 1, cores.vermelho);
-  obstaculosMoveis.push({ mesh: spinnerMesh, tipo: 'girar', velocidade: 1.8 });
-  plataforma(0, 8, -76, 7, 7, cores.roxo);
-
-  // Checkpoint 3
-  criarBloco(0, 8.4, -76, 2, 0.12, 2, cores.verde);
-
-  // Seção 4: Reta final ampla até a vitória
-  plataforma(0, 9, -86, 6, 6, cores.azul);
-  plataforma(0, 10, -96, 6, 6, cores.amarelo);
-  plataforma(0, 11, -106, 9, 9, cores.verde); // Plataforma final de vitória
-
-  // Bandeira de Vitória
-  criarBloco(0, 12.5, -106, 0.25, 3, 0.25, cores.vermelho);
-  criarBloco(1, 13.7, -106, 2, 0.8, 0.15, cores.amarelo);
-
-  // CLIENTE MULTIPLAYER
+  // INICIA O CLIENTE ISOLADO (Lê nick e skins do localStorage do jogador atual)
   const remotePlayers = new Map();
   let meuClientId = null;
 
   const cliente = iniciarClienteGoblox((clientId, data) => {
     meuClientId = clientId;
 
+    // Remove jogadores que saíram
     for (let id of remotePlayers.keys()) {
       if (!data[id]) {
         scene.remove(remotePlayers.get(id));
@@ -285,11 +243,13 @@ if (isMobile) {
       }
     }
 
+    // Atualiza ou adiciona os jogadores remotos na cena
     for (let id in data) {
       if (id === clientId) continue;
       let p = data[id];
 
       if (!remotePlayers.has(id)) {
+        // Cria o personagem remoto aplicando o nome e as skins equipadas dele
         const meshOutro = criarPersonagem(p.nome, p.itens || []);
         scene.add(meshOutro);
         remotePlayers.set(id, meshOutro);
@@ -307,6 +267,7 @@ if (isMobile) {
     setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
   });
 
+  // Cria o personagem local com a skin do próprio jogador
   const jogador = criarPersonagem(cliente.nickLocal);
   scene.add(jogador);
   jogador.position.set(0, 0.36, 0);
@@ -346,6 +307,7 @@ if (isMobile) {
     pular();
   });
 
+  // CONTROLE DO JOYSTICK VIRTUAL E ROTAÇÃO DA CÂMERA (MULTITOQUE)
   const joystickBase = document.getElementById('joystickBase');
   const joystickStick = document.getElementById('joystickStick');
   let joystickTouchId = null;
@@ -363,9 +325,11 @@ if (isMobile) {
         continue;
       }
 
+      // Lado esquerdo = Joystick
       if (joystickTouchId === null && touch.clientX < window.innerWidth / 2) {
         joystickTouchId = touch.identifier;
       } 
+      // Lado direito = Rotação de câmera
       else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
         cameraTouchId = touch.identifier;
         lastTouchX = touch.clientX;
@@ -417,6 +381,7 @@ if (isMobile) {
     }
   });
 
+  // Para PC (arrastar com o rato)
   let arrastando = false;
   let ultimaX = 0;
   renderer.domElement.addEventListener("pointerdown", e => {
@@ -443,23 +408,17 @@ if (isMobile) {
     let moedasAtuais = parseInt(localStorage.getItem(keyMoedas) || 0);
 
     let novosFbux = fbuxAtuais + 20;
-    let novasMoedas = moedasAtuais + 40;
+    let novasMoedas = moedasAtuais + 1000;
 
     localStorage.setItem(keyFbux, novosFbux);
     localStorage.setItem(keyMoedas, novasMoedas);
 
+    // Sincroniza com o Firebase se aplicável
     update(ref(db, `users/${nick}`), { fbux: novosFbux, moedas: novasMoedas }).catch(() => {});
   }
 
   function atualizar(dt) {
     if (venceu) return;
-
-    // Atualiza o spinner giratório
-    for (let obs of obstaculosMoveis) {
-      if (obs.tipo === 'girar') {
-        obs.mesh.rotation.y += obs.velocidade * dt;
-      }
-    }
 
     const frente = (teclas.KeyW || teclas.ArrowUp ? 1 : 0) - (teclas.KeyS || teclas.ArrowDown ? 1 : 0);
     const lado = (teclas.KeyD || teclas.ArrowRight ? 1 : 0) - (teclas.KeyA || teclas.ArrowLeft ? 1 : 0);
@@ -477,6 +436,7 @@ if (isMobile) {
       estaMovendo = true;
     }
 
+    // Movimento via Joystick Mobile
     if (joystickTouchId !== null) {
       const dirFrente = new THREE.Vector3(-Math.sin(anguloCamera), 0, -Math.cos(anguloCamera)).normalize();
       const dirLado = new THREE.Vector3(Math.cos(anguloCamera), 0, -Math.sin(anguloCamera)).normalize();
@@ -509,44 +469,22 @@ if (isMobile) {
       }
     }
 
-    // Colisão com kill bricks
-    for (const kb of killBricks) {
-      if (
-        jogador.position.x >= kb.minX && jogador.position.x <= kb.maxX &&
-        jogador.position.y >= kb.minY && jogador.position.y <= kb.maxY &&
-        jogador.position.z >= kb.minZ && jogador.position.z <= kb.maxZ
-      ) {
-        jogador.position.copy(checkpoint);
-        velocidadeY = 0;
-        noChao = false;
-        status.textContent = "Ouch! Voltou para o último checkpoint.";
-      }
-    }
-
+    // Animação de caminhada do personagem
     if (jogador.atualizarAnimacao) {
       jogador.atualizarAnimacao(performance.now() * 0.001, estaMovendo);
     }
 
-    // CHECKPOINTS ATUALIZADOS
-    if (jogador.position.z < -30 && jogador.position.z > -34 && noChao) {
-      checkpoint.set(0, 3.36, -32);
-      status.textContent = "Checkpoint 1 ativado!";
-    }
-    if (jogador.position.z < -53 && jogador.position.z > -57 && noChao) {
-      checkpoint.set(0, 5.36, -55);
-      status.textContent = "Checkpoint 2 ativado!";
-    }
-    if (jogador.position.z < -74 && jogador.position.z > -78 && noChao) {
-      checkpoint.set(0, 8.36, -76);
-      status.textContent = "Checkpoint 3 ativado!";
+    if (jogador.position.z < -36 && jogador.position.z > -42 && jogador.position.x < -2 && jogador.position.x > -8 && noChao) {
+      checkpoint.set(jogador.position.x, jogador.position.y, jogador.position.z);
+      status.textContent = "Checkpoint ativado!";
     }
 
-    // CONDIÇÃO DE VITÓRIA
-    if (jogador.position.z < -104) {
+    // CONDIÇÃO DE VITÓRIA (ATRIBUIR RECOMPENSA)
+    if (jogador.position.z < -57 && jogador.position.x > 5) {
       venceu = true;
       darRecompensaVitoria();
       document.getElementById("mensagem").style.display = "block";
-      status.textContent = "Você venceu! +20 FBUX | +40 Moedas";
+      status.textContent = "Você venceu! +20 FBUX | +1000 Moedas";
     }
 
     if (jogador.position.y < -12) {
@@ -555,7 +493,7 @@ if (isMobile) {
       noChao = false;
     }
 
-    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -25, 25);
+    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -20, 20);
   }
 
   function atualizarCamera(dt) {
@@ -595,7 +533,7 @@ if (isMobile) {
     renderer.setSize(innerWidth, innerHeight);
   });
 
-  status.textContent = "Divirta-se no obby ampliado!";
+  status.textContent = "Chegue até a bandeira final!";
   animar(0);
 })();
 </script>
