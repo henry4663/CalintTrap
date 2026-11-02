@@ -92,7 +92,7 @@
   <button id="restartBtn">JOGAR NOVAMENTE</button>
 </div>
 
-<!-- Three.js via CDN clássico (sem importmap — mais confiável) -->
+<!-- Three.js via CDN -->
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 
 <script>
@@ -114,6 +114,13 @@
   renderer.shadowMap.enabled = true;
   document.body.appendChild(renderer.domElement);
   
+  // Ajuste de janela
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
   // ============ LUZES ============
   scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   
@@ -314,7 +321,7 @@
     coin.rotation.x = Math.PI/2;
     coin.position.set(LANES[lane], 1.0, z);
     coin.castShadow = true;
-    coin.userData.baseY = 1.0;
+    coin.userData = { baseY: 1.0 };
     scene.add(coin);
     coins.push(coin);
   }
@@ -341,25 +348,26 @@
     visualJumpY: 0
   };
   
-  const keys = { left: false, right: false };
   let jumpPressed = false;
   
   // ============ CONTROLES ============
   function onKeyDown(e) {
+    if (!G.running) return;
     const k = e.key.toLowerCase();
-    if (k === 'arrowleft' || k === 'a') { keys.left = true; e.preventDefault(); }
-    else if (k === 'arrowright' || k === 'd') { keys.right = true; e.preventDefault(); }
+    if ((k === 'arrowleft' || k === 'a') && G.targetLane > 0) { 
+      G.targetLane--; 
+      e.preventDefault(); 
+    }
+    else if ((k === 'arrowright' || k === 'd') && G.targetLane < 2) { 
+      G.targetLane++; 
+      e.preventDefault(); 
+    }
     else if (k === 'arrowup' || k === 'w' || k === ' ' || k === 'spacebar') { 
-      jumpPressed = true; e.preventDefault();
+      jumpPressed = true; 
+      e.preventDefault();
     }
   }
-  function onKeyUp(e) {
-    const k = e.key.toLowerCase();
-    if (k === 'arrowleft' || k === 'a') keys.left = false;
-    else if (k === 'arrowright' || k === 'd') keys.right = false;
-  }
   window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
   
   // Toque (mobile)
   let tStartX = 0, tStartY = 0;
@@ -368,6 +376,7 @@
     tStartY = e.touches[0].clientY;
   }, { passive: true });
   window.addEventListener('touchend', (e) => {
+    if (!G.running) return;
     const dx = e.changedTouches[0].clientX - tStartX;
     const dy = e.changedTouches[0].clientY - tStartY;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
@@ -418,13 +427,14 @@
     G.visualJumpY = 0;
     G.spawnTimer = 0;
     G.animPhase = 0;
+    G.lastTime = performance.now();
     
     document.getElementById('score').textContent = '0';
     document.getElementById('dist').textContent = '0';
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('gameOver').style.display = 'none';
     
-    // Spawn inicial (bem longe para dar tempo)
+    // Spawn inicial
     for (let i = 0; i < 3; i++) {
       spawnRow(-i * 25 - 30);
     }
@@ -436,6 +446,9 @@
     document.getElementById('finalScore').textContent = Math.floor(G.distance) + 'm';
     document.getElementById('finalCoins').textContent = '🪙 ' + G.coins + ' moedas';
   }
+
+  document.getElementById('startBtn').addEventListener('click', reset);
+  document.getElementById('restartBtn').addEventListener('click', reset);
   
   // ============ LOOP PRINCIPAL ============
   function animate() {
@@ -454,9 +467,6 @@
       document.getElementById('score').textContent = G.coins;
       
       // Movimento lateral
-      if (keys.left && G.targetLane > 0) G.targetLane--;
-      if (keys.right && G.targetLane < 2) G.targetLane++;
-      
       G.currentLane += (G.targetLane - G.currentLane) * 0.18 * dt;
       player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
       
@@ -480,7 +490,7 @@
       // Interpolação suave da altura visual
       G.visualJumpY += (G.jumpY - G.visualJumpY) * 0.35 * dt;
       
-      // Aplicar posição (base + pulo)
+      // Aplicar posição
       player.position.y = 0.5 + G.visualJumpY;
       
       // Squash & stretch
@@ -516,7 +526,6 @@
         armPivotL.rotation.z = 0;
         armPivotR.rotation.z = 0;
         
-        // Head bob
         const bob = Math.abs(Math.sin(cycle)) * 0.05;
         player.position.y = 0.5 + G.visualJumpY + bob;
         
@@ -555,7 +564,7 @@
           continue;
         }
         
-        // Colisão
+        // Colisão com Obstáculos
         const dx = Math.abs(player.position.x - obs.position.x);
         const dz = Math.abs(player.position.z - obs.position.z);
         const w = obs.userData.width;
@@ -565,9 +574,8 @@
           const pBottom = player.position.y - 0.5;
           
           if (obs.userData.type === 'low' && pBottom > h - 0.15) {
-            // passou por cima
+            // Passou por cima
           } else if (obs.userData.type === 'tall') {
-            // torre alta: só morre se não estiver pulando bem alto
             if (pBottom < h - 0.8) { gameOver(); return; }
           } else {
             gameOver(); return;
@@ -588,5 +596,24 @@
           continue;
         }
         
+        // Colisão com Moedas
         const dx = Math.abs(player.position.x - coin.position.x);
-        const dz = Math.abs(player.position.z - coin
+        const dz = Math.abs(player.position.z - coin.position.z);
+        const dy = Math.abs(player.position.y - coin.position.y);
+        
+        if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
+          G.coins++;
+          scene.remove(coin);
+          coins.splice(i, 1);
+        }
+      }
+    }
+    
+    renderer.render(scene, camera);
+  }
+  
+  animate();
+})();
+</script>
+</body>
+</html>
