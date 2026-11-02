@@ -1,2 +1,2 @@
 # CalintTrap
-0.01
+0.8
