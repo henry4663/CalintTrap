@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 
+function limparNick(nick) {
+  return String(nick || '').trim().replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 20) || 'Jogador';
+}
+
 export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const grupoPersonagem = new THREE.Group();
 
@@ -11,13 +15,16 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
     ? nomePersonalizado.trim()
     : nomeFallback;
 
+  const itensSeguros = Array.isArray(itensEquipados) ? itensEquipados : [];
+
   // Se não passar os itens diretamente (ex: jogador local), lê do localStorage
-  if (!itensEquipados) {
-    const keyEquipados = `goblox_equipados_${nomePlayer}`;
+  if (!Array.isArray(itensEquipados)) {
+    const keyEquipados = `goblox_equipados_${limparNick(nomePlayer)}`;
     try {
-      itensEquipados = JSON.parse(localStorage.getItem(keyEquipados)) || [];
+      const dados = JSON.parse(localStorage.getItem(keyEquipados) || '[]');
+      itensSeguros.splice(0, itensSeguros.length, ...(Array.isArray(dados) ? dados : []));
     } catch (e) {
-      itensEquipados = [];
+      itensSeguros.splice(0, itensSeguros.length);
     }
   }
 
@@ -27,7 +34,7 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const materialPele = new THREE.MeshStandardMaterial({ color: 0xffc18b, roughness: 0.75 });
 
   // Cabelo Amarelo ou Escuro Padrão
-  const temCabeloAmarelo = itensEquipados.includes('cabelo_amarelo');
+  const temCabeloAmarelo = itensSeguros.includes('cabelo_amarelo');
   const materialCabelo = new THREE.MeshStandardMaterial({
     color: temCabeloAmarelo ? 0xffea00 : 0x29202a,
     roughness: 0.75
@@ -43,9 +50,9 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   }
 
   // --- CORPO DO BONECO ---
-  criarParte(grupoPersonagem, 0, 1.05, 0, 0.85, 1.0, 0.45, materialRoupa); // Tronco
-  criarParte(grupoPersonagem, 0, 1.85, 0, 0.7, 0.7, 0.7, materialPele); // Cabeça
-  criarParte(grupoPersonagem, 0, 2.22, 0, 0.74, 0.16, 0.74, materialCabelo); // Cabelo
+  criarParte(grupoPersonagem, 0, 1.05, 0, 0.85, 1.0, 0.45, materialRoupa);
+  criarParte(grupoPersonagem, 0, 1.85, 0, 0.7, 0.7, 0.7, materialPele);
+  criarParte(grupoPersonagem, 0, 2.22, 0, 0.74, 0.16, 0.74, materialCabelo);
 
   const matOlhos = new THREE.MeshStandardMaterial({ color: 0x111111 });
   criarParte(grupoPersonagem, -0.16, 1.88, -0.36, 0.08, 0.08, 0.04, matOlhos);
@@ -74,9 +81,7 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   grupoPersonagem.add(pernaD);
 
   // --- ACESSÓRIOS EQUIPADOS ---
-
-  // Coroa Real
-  if (itensEquipados.includes('coroa')) {
+  if (itensSeguros.includes('coroa')) {
     const matOuro = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
     const coroaGrupo = new THREE.Group();
     coroaGrupo.position.set(0, 2.32, 0);
@@ -93,8 +98,7 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
     grupoPersonagem.add(coroaGrupo);
   }
 
-  // Chupeta Lendária
-  if (itensEquipados.includes('chupeta')) {
+  if (itensSeguros.includes('chupeta')) {
     const matChupeta = new THREE.MeshStandardMaterial({ color: 0xff4081, roughness: 0.4 });
     const matBico = new THREE.MeshStandardMaterial({ color: 0xffeb3b, roughness: 0.3 });
 
@@ -135,12 +139,11 @@ export function criarPersonagem(nomePersonalizado, itensEquipados = null) {
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
 
-  const alturaNick = itensEquipados.includes('coroa') ? 2.95 : 2.7;
+  const alturaNick = itensSeguros.includes('coroa') ? 2.95 : 2.7;
   sprite.position.set(0, alturaNick, 0);
   sprite.scale.set(1.8, 0.45, 1.0);
   grupoPersonagem.add(sprite);
 
-  // Animação de Caminhada
   grupoPersonagem.atualizarAnimacao = function(tempo, aAndar) {
     if (aAndar) {
       const vel = tempo * 14;
