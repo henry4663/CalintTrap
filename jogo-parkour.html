@@ -130,9 +130,8 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { db as database } from './firebase.js';
-import { ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { criarPersonagem } from './personagem.js';
+import { iniciarClienteGoblox } from './client.js';
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
@@ -227,56 +226,49 @@ if (isMobile) {
   criarBloco(8, 9, -55, 0.25, 3, 0.25, cores.vermelho);
   criarBloco(9, 10.2, -55, 2, 0.8, 0.15, cores.amarelo);
 
-  const meuId = 'player_parkour_' + Math.random().toString(36).substr(2, 9);
-  const jogadorRef = ref(database, 'parkour_jogadores/' + meuId);
-  const todosJogadoresRef = ref(database, 'parkour_jogadores');
-  const outrosJogadores = {};
+  // INICIA O CLIENTE ISOLADO (Lê nick e skins do localStorage do jogador atual)
+  const remotePlayers = new Map();
+  let meuClientId = null;
 
-  function sairDoJogoLimpo() {
-    remove(jogadorRef).catch(() => {});
-  }
+  const cliente = iniciarClienteGoblox((clientId, data) => {
+    meuClientId = clientId;
 
-  onDisconnect(jogadorRef).remove();
-  window.addEventListener('beforeunload', sairDoJogoLimpo);
-  window.addEventListener('pagehide', sairDoJogoLimpo);
+    // Remove jogadores que saíram
+    for (let id of remotePlayers.keys()) {
+      if (!data[id]) {
+        scene.remove(remotePlayers.get(id));
+        remotePlayers.delete(id);
+      }
+    }
+
+    // Atualiza ou adiciona os jogadores remotos na cena
+    for (let id in data) {
+      if (id === clientId) continue;
+      let p = data[id];
+
+      if (!remotePlayers.has(id)) {
+        // Cria o personagem remoto aplicando o nome e as skins equipadas dele
+        const meshOutro = criarPersonagem(p.nome, p.itens || []);
+        scene.add(meshOutro);
+        remotePlayers.set(id, meshOutro);
+      }
+
+      if (p && typeof p.x === 'number') {
+        remotePlayers.get(id).position.set(p.x, p.y, p.z);
+      }
+    }
+  });
 
   document.getElementById('btnVoltar').addEventListener('click', (e) => {
     e.preventDefault();
-    sairDoJogoLimpo();
+    cliente.removerDoServidor();
     setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
   });
 
-  const jogador = criarPersonagem();
+  // Cria o personagem local com a skin do próprio jogador
+  const jogador = criarPersonagem(cliente.nickLocal);
   scene.add(jogador);
   jogador.position.set(0, 0.36, 0);
-
-  set(jogadorRef, { x: 0, y: 0.36, z: 0 });
-
-  onValue(todosJogadoresRef, (snapshot) => {
-    const data = snapshot.val() || {};
-
-    for (let id in outrosJogadores) {
-      if (!data[id]) {
-        scene.remove(outrosJogadores[id].mesh);
-        delete outrosJogadores[id];
-      }
-    }
-
-    for (let id in data) {
-      if (id === meuId) continue;
-      let pos = data[id];
-
-      if (!outrosJogadores[id]) {
-        const meshOutro = criarPersonagem();
-        scene.add(meshOutro);
-        outrosJogadores[id] = { id: id, mesh: meshOutro };
-      }
-
-      if (pos && typeof pos.x === 'number') {
-        outrosJogadores[id].mesh.position.set(pos.x, pos.y, pos.z);
-      }
-    }
-  });
 
   let velocidadeY = 0;
   let noChao = false;
@@ -412,6 +404,7 @@ if (isMobile) {
     const lado = (teclas.KeyD || teclas.ArrowRight ? 1 : 0) - (teclas.KeyA || teclas.ArrowLeft ? 1 : 0);
 
     const direcao = new THREE.Vector3(lado, 0, -frente);
+    let estaMovendo = false;
 
     if (direcao.lengthSq() > 0) {
       direcao.normalize();
@@ -420,6 +413,7 @@ if (isMobile) {
       jogador.position.x += direcao.x * velocidade * dt;
       jogador.position.z += direcao.z * velocidade * dt;
       jogador.rotation.y = Math.atan2(direcao.x, direcao.z) + Math.PI;
+      estaMovendo = true;
     }
 
     // Movimento via Joystick Mobile
@@ -433,6 +427,7 @@ if (isMobile) {
       if (joyX !== 0 || joyY !== 0) {
         const moveDir = new THREE.Vector3(dirFrente.x * (-joyY) + dirLado.x * joyX, 0, dirFrente.z * (-joyY) + dirLado.z * joyX).normalize();
         jogador.rotation.y = Math.atan2(moveDir.x, moveDir.z) + Math.PI;
+        estaMovendo = true;
       }
     }
 
@@ -452,6 +447,11 @@ if (isMobile) {
         velocidadeY = 0;
         noChao = true;
       }
+    }
+
+    // Animação de caminhada do personagem
+    if (jogador.atualizarAnimacao) {
+      jogador.atualizarAnimacao(performance.now() * 0.001, estaMovendo);
     }
 
     if (jogador.position.z < -36 && jogador.position.z > -42 && jogador.position.x < -2 && jogador.position.x > -8 && noChao) {
@@ -498,11 +498,7 @@ if (isMobile) {
     atualizarCamera(dt);
 
     if (tempo - ultimoEnvio > 50) {
-      set(jogadorRef, {
-        x: Number(jogador.position.x.toFixed(2)),
-        y: Number(jogador.position.y.toFixed(2)),
-        z: Number(jogador.position.z.toFixed(2))
-      }).catch(() => {});
+      cliente.sincronizarPosicao(jogador.position.x, jogador.position.y, jogador.position.z);
       ultimoEnvio = tempo;
     }
 
