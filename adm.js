@@ -1,6 +1,7 @@
 import { db } from "./firebase.js";
 import { ref, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getCurrentNick } from "./authLocal.js";
+import { getWallet, saveWallet } from "./economia.js";
 
 const toast = document.getElementById("toast");
 const tbody = document.getElementById("listaJogadoresOnline");
@@ -11,7 +12,13 @@ function mostrarToast(msg, tipo = "info") {
   toast.textContent = msg;
   toast.className = `toast show ${tipo}`;
   clearTimeout(mostrarToast.timer);
-  mostrarToast.timer = setTimeout(() => { toast.className = "toast"; }, 2500);
+  mostrarToast.timer = setTimeout(() => {
+    toast.className = "toast";
+  }, 2500);
+}
+
+function normalizeNick(nick) {
+  return String(nick || "").trim();
 }
 
 // --- RESTRIÇÃO DE ACESSO EXCLUSIVA PARA henryDEV777! ---
@@ -23,7 +30,6 @@ if (nickAtual !== "henryDEV777!" && nickAtual !== "henryDEV777") {
 }
 
 // --- DETECTAR JOGADORES EM TEMPO REAL (SERVIDORES MULTIPLAYER) ---
-// Escuta tanto a sala do Parkour quanto o servidor de players geral
 const serverRef = ref(db, "forest_players");
 
 onValue(serverRef, (snapshot) => {
@@ -81,22 +87,27 @@ window.removerPlayersFantasmas = function() {
 
 // --- FUNÇÃO 3: DAR FBUX ---
 window.adicionarFbux = function() {
-  const nick = document.getElementById("fbuxPlayerNick").value.trim();
-  const qtd = parseInt(document.getElementById("fbuxAmount").value);
+  const nick = normalizeNick(document.getElementById("fbuxPlayerNick").value);
+  const qtd = Number(document.getElementById("fbuxAmount").value);
 
-  if (!nick || isNaN(qtd) || qtd <= 0) {
+  if (!nick || !Number.isFinite(qtd) || qtd <= 0) {
     mostrarToast("Preencha o Nick e uma quantidade válida de FBUX!", "warning");
     return;
   }
 
-  const keyFbux = `goblox_fbux_${nick}`;
-  let atual = parseInt(localStorage.getItem(keyFbux) || 0);
-  let novoTotal = atual + qtd;
-  
-  localStorage.setItem(keyFbux, novoTotal);
+  const walletAtual = getWallet(nick, { fbux: 0, moedas: 0 });
+  const novoTotal = Math.max(0, Math.floor(walletAtual.fbux + qtd));
+  const novoWallet = {
+    fbux: novoTotal,
+    moedas: walletAtual.moedas
+  };
 
-  // Tenta salvar também no Firebase se o usuário existir
-  update(ref(db, `users/${nick}`), { fbux: novoTotal }).catch(() => {});
+  saveWallet(nick, novoWallet);
+
+  update(ref(db, `users/${nick}`), {
+    fbux: novoTotal,
+    moedas: novoWallet.moedas
+  }).catch(() => {});
 
   mostrarToast(`Adicionado ${qtd} FBUX para ${nick}! Total: ${novoTotal}`, "success");
   document.getElementById("fbuxAmount").value = "";
@@ -104,22 +115,27 @@ window.adicionarFbux = function() {
 
 // --- FUNÇÃO 4: DAR MOEDAS ---
 window.adicionarMoedas = function() {
-  const nick = document.getElementById("coinsPlayerNick").value.trim();
-  const qtd = parseInt(document.getElementById("coinsAmount").value);
+  const nick = normalizeNick(document.getElementById("coinsPlayerNick").value);
+  const qtd = Number(document.getElementById("coinsAmount").value);
 
-  if (!nick || isNaN(qtd) || qtd <= 0) {
+  if (!nick || !Number.isFinite(qtd) || qtd <= 0) {
     mostrarToast("Preencha o Nick e uma quantidade válida de Moedas!", "warning");
     return;
   }
 
-  const keyMoedas = `goblox_moedas_${nick}`;
-  let atual = parseInt(localStorage.getItem(keyMoedas) || 0);
-  let novoTotal = atual + qtd;
-  
-  localStorage.setItem(keyMoedas, novoTotal);
+  const walletAtual = getWallet(nick, { fbux: 0, moedas: 0 });
+  const novoTotal = Math.max(0, Math.floor(walletAtual.moedas + qtd));
+  const novoWallet = {
+    fbux: walletAtual.fbux,
+    moedas: novoTotal
+  };
 
-  // Tenta salvar também no Firebase se o usuário existir
-  update(ref(db, `users/${nick}`), { moedas: novoTotal }).catch(() => {});
+  saveWallet(nick, novoWallet);
+
+  update(ref(db, `users/${nick}`), {
+    fbux: novoWallet.fbux,
+    moedas: novoTotal
+  }).catch(() => {});
 
   mostrarToast(`Adicionado ${qtd} Moedas para ${nick}! Total: ${novoTotal}`, "success");
   document.getElementById("coinsAmount").value = "";
