@@ -3,106 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GOBLOX — Painel Administrativo</title>
+  <title>GOBLOX — Control Center ADM</title>
   <link rel="stylesheet" href="./global.css" />
   <link rel="stylesheet" href="./lobby.css" />
   <style>
-    .adm-container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 24px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    body {
+      background: #090d16;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', Roboto, sans-serif;
     }
+    
+    .adm-wrapper {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .adm-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      margin-bottom: 24px;
+    }
+
     .adm-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 16px;
       margin-bottom: 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 15px;
     }
-    .adm-header h1 {
-      color: #ef4444;
+
+    .adm-title {
       font-size: 1.8rem;
+      font-weight: 800;
+      color: #ff4757;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .tabela-jogadores {
+
+    /* GRID DE AÇÕES RÁPIDAS (FBUX & MOEDAS) */
+    .grid-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .action-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .action-box h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-field {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .btn-adm {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-give-fbux { background: #facc15; color: #000; }
+    .btn-give-fbux:hover { background: #ffe066; }
+
+    .btn-give-coins { background: #4ade80; color: #000; }
+    .btn-give-coins:hover { background: #7dff83; }
+
+    .btn-purge { background: #ef4444; color: #fff; width: 100%; margin-top: 10px;}
+    .btn-purge:hover { background: #dc2626; }
+
+    /* TABELA DE JOGADORES ONLINE */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .adm-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
-    }
-    .tabela-jogadores th, .tabela-jogadores td {
-      padding: 12px;
       text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .adm-table th {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 12px;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .adm-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.95rem;
     }
-    .tabela-jogadores th {
-      color: #94a3b8;
-      background: rgba(0,0,0,0.3);
+
+    .adm-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
     }
-    .tabela-jogadores tr:hover {
-      background: rgba(255,255,255,0.03);
+
+    .badge-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
     }
+    .status-online { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+
     .btn-kick {
       background: #ef4444;
       color: #fff;
       border: none;
       padding: 6px 12px;
       border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: bold;
       cursor: pointer;
-      font-weight: bold;
-      transition: background 0.2s;
     }
-    .btn-kick:hover {
-      background: #dc2626;
-    }
-    .badge-online {
-      background: #22c55e;
-      color: #000;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: bold;
-    }
+    .btn-kick:hover { background: #b91c1c; }
   </style>
 </head>
 <body>
   <div class="bg"></div>
 
-  <div class="container">
-    <div class="adm-container">
+  <div class="adm-wrapper">
+    <div class="adm-card">
       <div class="adm-header">
-        <div>
-          <h1>⚙️ Painel ADM</h1>
-          <p style="color: #94a3b8; font-size: 0.9rem;">Controlo e moderação de servidores do Goblox</p>
-        </div>
-        <button class="btn btn-light" onclick="window.location.href='lobby.html'">Voltar ao Lobby</button>
+        <div class="adm-title">🛡️ Painel do Administrador</div>
+        <button class="btn btn-light" onclick="window.location.href='lobby.html'">🏠 Voltar ao Lobby</button>
       </div>
 
-      <section>
-        <h3 style="color: #fff; margin-bottom: 10px;">Jogadores Online na Arena (Parkour / Servidor)</h3>
-        <div style="overflow-x: auto;">
-          <table class="tabela-jogadores">
-            <thead>
-              <tr>
-                <th>Estado</th>
-                <th>Nome / Nick</th>
-                <th>ID da Sessão</th>
-                <th>Posição (X, Y, Z)</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="listaJogadoresOnline">
-              <tr>
-                <td colspan="5" style="text-align: center; color: #888;">A carregar dados do servidor...</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- PAINEL DE GESTÃO DE MOEDAS E LIMPEZA -->
+      <div class="grid-actions">
+        <!-- DAR FBUX -->
+        <div class="action-box">
+          <h3>💎 Enviar FBUX</h3>
+          <div class="input-group">
+            <input type="text" id="fbuxPlayerNick" class="input-field" placeholder="Nick do Jogador" />
+            <input type="number" id="fbuxAmount" class="input-field" placeholder="Quantidade (ex: 500)" />
+            <button class="btn-adm btn-give-fbux" onclick="adicionarFbux()">Dar FBUX</button>
+          </div>
         </div>
-      </section>
+
+        <!-- DAR MOEDAS -->
+        <div class="action-box">
+          <h3>🪙 Enviar Moedas</h3>
+          <div class="input-group">
+            <input type="text" id="coinsPlayerNick" class="input-field" placeholder="Nick do Jogador" />
+            <input type="number" id="coinsAmount" class="input-field" placeholder="Quantidade (ex: 100)" />
+            <button class="btn-adm btn-give-coins" onclick="adicionarMoedas()">Dar Moedas</button>
+          </div>
+        </div>
+
+        <!-- MANUTENÇÃO / FANTASMAS -->
+        <div class="action-box">
+          <h3>👻 Limpeza de Servidor</h3>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">
+            Remove todos os players desconectados ou bugados que ficaram presos no mapa.
+          </p>
+          <button class="btn-adm btn-purge" onclick="removerPlayersFantasmas()">🧹 Limpar Jogadores Bugados</button>
+        </div>
+      </div>
+
+      <!-- TABELA DE JOGADORES CONECTADOS EM TEMPO REAL -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="color: #fff;">👥 Jogadores Conectados no Servidor (<span id="totalOnline">0</span>)</h3>
+      </div>
+
+      <div class="table-container">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Jogador (Nick)</th>
+              <th>Skins Equipadas</th>
+              <th>ID Conexão</th>
+              <th>Posição (X, Y, Z)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="listaJogadoresOnline">
+            <tr>
+              <td colspan="6" style="text-align: center; color: #888;">Procurando jogadores conectados...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 
