@@ -3,124 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>goblox - Plataforma com Firebase</title>
-  <!-- Tailwind CSS via CDN -->
+  <meta name="theme-color" content="#1e1b4b">
+  <title>goblox — jogos multiplayer</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body {
-      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #064e3b 100%);
-    }
+    body { background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #064e3b 100%); }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans text-gray-800">
-
-  <!-- ================= TELA DE AUTENTICAÇÃO (FIREBASE AUTH) ================= -->
-  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
-    <div class="absolute inset-0 opacity-10 pointer-events-none flex flex-wrap justify-between p-12">
-      <i data-lucide="gamepad-2" class="w-24 h-24 text-white transform -rotate-12"></i>
-      <i data-lucide="square" class="w-16 h-16 text-white transform rotate-45"></i>
+<body class="min-h-screen font-sans text-gray-800">
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="absolute inset-0 opacity-10 pointer-events-none flex flex-wrap justify-between p-12" aria-hidden="true">
+      <i data-lucide="gamepad-2" class="w-24 h-24 text-white"></i>
+      <i data-lucide="square" class="w-16 h-16 text-white"></i>
       <i data-lucide="circle" class="w-20 h-20 text-white"></i>
     </div>
+    <div class="w-full max-w-sm bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-8 relative z-10 text-center">
+      <h1 class="text-5xl font-black text-red-600 tracking-tight lowercase mb-6">goblox</h1>
+      <p id="firebase-config-warning" class="hidden text-left text-sm text-amber-100 bg-amber-900/40 border border-amber-700 rounded-xl p-3 mb-4">Configure as credenciais do Firebase no arquivo antes de usar login e multiplayer.</p>
+      <p id="auth-message" role="status" aria-live="polite" class="hidden text-left text-sm rounded-xl p-3 mb-4"></p>
 
-    <div class="w-full max-w-sm bg-slate-900/90 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-8 relative z-10 text-center">
-      <div class="mb-6 mt-2">
-        <h1 class="text-5xl font-black text-red-600 tracking-tight lowercase">
-          goblox
-        </h1>
-      </div>
-
-      <!-- Formulário de Login -->
-      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-        <h2 class="text-white font-bold text-lg mb-2">Entrar na sua conta</h2>
-        <input type="email" id="login-email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
-        <input type="password" id="login-password" required placeholder="Palavra-passe" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
-        <button type="submit" class="w-full mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg">Login</button>
-        <button type="button" onclick="toggleForms()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4"></i> Criar Nova Conta
-        </button>
+      <form id="login-form" class="space-y-4">
+        <h2 class="text-white font-bold text-lg">Entrar na sua conta</h2>
+        <input type="email" id="login-email" autocomplete="email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500">
+        <input type="password" id="login-password" autocomplete="current-password" required placeholder="Palavra-passe" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500">
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition disabled:opacity-60">Entrar</button>
+        <button type="button" id="show-signup" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600">Criar nova conta</button>
       </form>
 
-      <!-- Formulário de Criar Conta -->
-      <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-4 hidden">
-        <h2 class="text-white font-bold text-lg mb-2">Criar nova conta</h2>
-        <input type="text" id="signup-username" required placeholder="Nome de Utilizador" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
-        <input type="email" id="signup-email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
-        <input type="password" id="signup-password" required placeholder="Palavra-passe (mín. 6 carateres)" class="w-full px-5 py-3.5 bg-slate-800/80 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition text-base">
-        <button type="submit" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition active:scale-95 text-lg">Registar e Entrar</button>
-        <button type="button" onclick="toggleForms()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95 text-base flex items-center justify-center gap-2">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i> Já tenho conta
-        </button>
+      <form id="signup-form" class="space-y-4 hidden">
+        <h2 class="text-white font-bold text-lg">Criar nova conta</h2>
+        <input type="text" id="signup-username" autocomplete="nickname" minlength="2" maxlength="24" required placeholder="Nome de utilizador" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <input type="email" id="signup-email" autocomplete="email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <input type="password" id="signup-password" autocomplete="new-password" minlength="6" required placeholder="Palavra-passe (mín. 6 caracteres)" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-xl transition disabled:opacity-60">Registar e entrar</button>
+        <button type="button" id="show-login" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600">Já tenho conta</button>
       </form>
     </div>
   </div>
 
-
-  <!-- ================= TELA PRINCIPAL (PLATAFORMA DE JOGOS) ================= -->
-  <div id="main-app" class="hidden flex-col min-h-screen bg-gray-100 text-gray-800">
+  <div id="main-app" class="hidden min-h-screen bg-gray-100 text-gray-800">
     <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <span class="text-3xl font-black tracking-tight text-red-600 uppercase">goblox</span>
-        </div>
-        <div class="flex-1 max-w-xl relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
-          </div>
-          <input type="text" id="search-input" placeholder="Buscar jogos..." class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition">
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-300">
-            <i data-lucide="coins" class="w-4 h-4 text-yellow-600"></i>
-            <span>1.250</span>
-          </div>
-          <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
-            <span id="display-username" class="font-bold text-sm px-2">Player</span>
-            <button onclick="handleLogout()" title="Sair" class="text-red-500 hover:text-red-700 p-1">
-              <i data-lucide="log-out" class="w-4 h-4"></i>
-            </button>
-          </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        <span class="text-3xl font-black tracking-tight text-red-600 uppercase">goblox</span>
+        <label class="flex-1 max-w-xl relative">
+          <span class="sr-only">Buscar jogos</span>
+          <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"></i>
+          <input type="search" id="search-input" placeholder="Buscar jogos..." class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+        </label>
+        <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+          <span id="display-username" class="font-bold text-sm px-2">Player</span>
+          <button id="logout-button" type="button" title="Sair" class="text-red-500 hover:text-red-700 p-1" aria-label="Sair"><i data-lucide="log-out" class="w-4 h-4"></i></button>
         </div>
       </div>
     </header>
 
-    <div class="flex-1 flex max-w-7xl w-full mx-auto">
-      <aside class="w-64 bg-white border-r border-gray-200 p-4 hidden md:block flex-shrink-0">
-        <nav class="space-y-1">
-          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-red-600 bg-red-50"><i data-lucide="home" class="w-5 h-5"></i> Início</a>
-          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="gamepad-2" class="w-5 h-5"></i> Jogos</a>
-          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="shopping-bag" class="w-5 h-5"></i> Loja</a>
-          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100"><i data-lucide="users" class="w-5 h-5"></i> Amigos</a>
-        </nav>
-      </aside>
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div class="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 sm:p-8 text-white mb-6 shadow-md">
+        <h1 id="welcome-banner-title" class="text-3xl sm:text-4xl font-extrabold mb-2">Bem-vindo ao goblox!</h1>
+        <p class="text-red-100 max-w-xl">Crie uma sala, compartilhe o código e dispute ao vivo com outras pessoas.</p>
+      </div>
 
-      <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-        <div class="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 sm:p-8 text-white mb-8 shadow-md">
-          <h1 id="welcome-banner-title" class="text-3xl sm:text-4xl font-extrabold mb-2">Bem-vindo ao goblox!</h1>
-          <p class="text-red-100 max-w-xl mb-4">Explore milhares de mundos criados pela comunidade no Firebase.</p>
+      <p id="app-message" role="status" aria-live="polite" class="hidden mb-5 rounded-xl p-3 text-sm"></p>
+
+      <section id="multiplayer-section" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-red-600"></i> Multiplayer ao vivo</h2>
+            <p class="text-sm text-gray-500 mt-1">Desafio de cliques: chegue a 20 pontos antes dos outros jogadores.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button id="create-room-button" type="button" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-xl">Criar sala</button>
+            <form id="join-room-form" class="flex gap-2">
+              <label class="sr-only" for="room-code-input">Código da sala</label>
+              <input id="room-code-input" type="text" maxlength="6" placeholder="CÓDIGO" class="w-28 uppercase text-center tracking-widest border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+              <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2 rounded-xl">Entrar</button>
+            </form>
+          </div>
         </div>
 
-        <section>
-          <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <i data-lucide="sparkles" class="w-5 h-5 text-red-600"></i> Jogos em Destaque
-          </h2>
-          <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
-        </section>
-      </main>
-    </div>
+        <div id="active-room" class="hidden border-2 border-red-200 bg-red-50 rounded-2xl p-4 sm:p-5 mb-5">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div>
+              <p class="text-xs uppercase tracking-wide text-gray-500 font-bold">Código da sala</p>
+              <p class="flex items-center gap-2"><strong id="active-room-code" class="text-2xl tracking-[0.2em] text-red-700"></strong><button id="copy-room-code" type="button" class="text-xs bg-white border border-red-200 rounded-lg px-2 py-1 hover:bg-red-100">Copiar</button></p>
+              <p id="room-status" class="text-sm text-gray-600 mt-1" aria-live="polite">Conectando...</p>
+            </div>
+            <button id="leave-room-button" type="button" class="text-sm border border-gray-300 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg">Sair da sala</button>
+          </div>
+          <div class="grid md:grid-cols-2 gap-5 mt-5">
+            <div>
+              <h3 class="font-bold mb-2">Jogadores e pontos</h3>
+              <ol id="players-list" class="space-y-2"></ol>
+              <button id="score-button" type="button" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">+1 ponto</button>
+              <p class="text-xs text-gray-500 mt-2">O placar atualiza em tempo real para todos na sala.</p>
+            </div>
+            <div>
+              <h3 class="font-bold mb-2">Chat da sala</h3>
+              <div id="chat-messages" class="h-44 overflow-y-auto bg-white border border-gray-200 rounded-xl p-3 space-y-2" aria-live="polite"></div>
+              <form id="chat-form" class="flex gap-2 mt-2">
+                <label class="sr-only" for="chat-input">Mensagem</label>
+                <input id="chat-input" type="text" maxlength="300" autocomplete="off" placeholder="Escreva uma mensagem..." class="min-w-0 flex-1 border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 rounded-xl">Enviar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="font-bold text-gray-900 mb-3">Salas abertas <span class="text-xs text-gray-400 font-normal">(atualização ao vivo)</span></h3>
+        <div id="rooms-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <p class="text-sm text-gray-500">Carregando salas...</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-red-600"></i> Jogos em destaque</h2>
+        <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+      </section>
+    </main>
   </div>
 
-
-  <!-- ================= SCRIPTS DO FIREBASE ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+      onSnapshot, query, where, orderBy, limit, runTransaction, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // SUBSTITUA COM AS CONFIGURAÇÕES DO SEU PROJETO FIREBASE
+    // Cole aqui a configuração do seu app Web no Firebase Console (Project settings > Your apps).
     const firebaseConfig = {
       apiKey: "SUA_API_KEY",
       authDomain: "SEU_PROJETO.firebaseapp.com",
@@ -130,119 +143,363 @@
       appId: "SEU_APP_ID"
     };
 
-    // Inicializar Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    lucide.createIcons();
-
+    const configured = Object.values(firebaseConfig).every(value => value && !value.startsWith("SUA_") && !value.startsWith("SEU_"));
+    const auth = getAuth(initializeApp(firebaseConfig));
+    const db = getFirestore();
     const games = [
-      { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
-      { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800' },
-      { id: 3, title: 'Pet Paradise', creator: 'goblox', players: '25.9k', rating: '97%', color: 'from-cyan-400 to-blue-500' },
-      { id: 4, title: 'City Builder Tycoon', creator: 'goblox', players: '5.3k', rating: '91%', color: 'from-amber-500 to-orange-600' }
+      { id: 1, title: "Speed Run Arena", creator: "goblox", color: "from-sky-500 to-blue-600" },
+      { id: 2, title: "Zombie Escape", creator: "goblox", color: "from-emerald-600 to-teal-800" },
+      { id: 3, title: "Pet Paradise", creator: "goblox", color: "from-cyan-400 to-blue-500" },
+      { id: 4, title: "City Builder Tycoon", creator: "goblox", color: "from-amber-500 to-orange-600" }
     ];
+    const $ = id => document.getElementById(id);
+    let currentUser = null;
+    let currentUsername = "Player";
+    let currentRoomId = null;
+    let currentRoomCode = null;
+    let roomUnsubscribers = [];
+    let roomsUnsubscribe = null;
 
-    // Monitorizar estado de autenticação em tempo real
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Buscar nome de utilizador guardado no Firestore
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        let username = user.email.split('@')[0];
-        
-        if (docSnap.exists()) {
-          username = docSnap.data().username;
-        }
-        
-        enterPlatform(username);
-      } else {
-        showAuthScreen();
+    if (!configured) $("firebase-config-warning").classList.remove("hidden");
+    if (window.lucide) window.lucide.createIcons();
+
+    function setMessage(element, message, kind = "error") {
+      element.textContent = message;
+      element.className = `mb-4 rounded-xl p-3 text-sm ${kind === "error" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`;
+      element.classList.remove("hidden");
+    }
+    function clearMessage(element) { element.textContent = ""; element.classList.add("hidden"); }
+    function readableError(error) {
+      const messages = {
+        "auth/email-already-in-use": "Este e-mail já está registado.",
+        "auth/invalid-email": "O endereço de e-mail não é válido.",
+        "auth/weak-password": "A palavra-passe deve ter pelo menos 6 caracteres.",
+        "auth/invalid-credential": "E-mail ou palavra-passe incorretos.",
+        "auth/user-not-found": "Não existe uma conta com este e-mail.",
+        "auth/wrong-password": "Palavra-passe incorreta.",
+        "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
+        "permission-denied": "Acesso negado. Verifique as regras do Firestore.",
+        "unavailable": "Sem ligação ao Firebase. Verifique a sua internet e tente novamente."
+      };
+      return messages[error?.code] || error?.message || "Ocorreu um erro inesperado.";
+    }
+    function setFormBusy(form, busy) {
+      form.querySelectorAll("button[type='submit']").forEach(button => {
+        button.disabled = busy;
+        if (busy) button.dataset.previousText = button.textContent;
+        button.textContent = busy ? "Aguarde..." : (button.dataset.previousText || button.textContent);
+      });
+    }
+    function cleanupRoomListeners() {
+      roomUnsubscribers.forEach(unsubscribe => unsubscribe());
+      roomUnsubscribers = [];
+    }
+    function closeRoomView() {
+      cleanupRoomListeners();
+      currentRoomId = null;
+      currentRoomCode = null;
+      $("active-room").classList.add("hidden");
+      $("players-list").replaceChildren();
+      $("chat-messages").replaceChildren();
+    }
+    function showAuthScreen() {
+      if (roomsUnsubscribe) { roomsUnsubscribe(); roomsUnsubscribe = null; }
+      closeRoomView();
+      $("main-app").classList.add("hidden");
+      $("auth-screen").classList.remove("hidden");
+    }
+    function enterPlatform(username) {
+      currentUsername = username || currentUser?.email?.split("@")[0] || "Player";
+      $("auth-screen").classList.add("hidden");
+      $("main-app").classList.remove("hidden");
+      $("display-username").textContent = currentUsername;
+      $("welcome-banner-title").textContent = `Bem-vindo de volta, ${currentUsername}!`;
+      renderGames();
+      watchOpenRooms();
+    }
+
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      if (!user) { showAuthScreen(); return; }
+      try {
+        const profile = await getDoc(doc(db, "users", user.uid));
+        enterPlatform(profile.exists() ? profile.data().username : user.email?.split("@")[0]);
+      } catch (error) {
+        // Um erro ao ler o perfil não deve impedir o utilizador de entrar na plataforma.
+        enterPlatform(user.email?.split("@")[0]);
+        setMessage($("app-message"), `Perfil não carregado: ${readableError(error)}`);
       }
     });
 
-    window.toggleForms = function() {
-      document.getElementById('login-form').classList.toggle('hidden');
-      document.getElementById('signup-form').classList.toggle('hidden');
-    }
+    $("show-signup").addEventListener("click", () => {
+      clearMessage($("auth-message"));
+      $("login-form").classList.add("hidden");
+      $("signup-form").classList.remove("hidden");
+    });
+    $("show-login").addEventListener("click", () => {
+      clearMessage($("auth-message"));
+      $("signup-form").classList.add("hidden");
+      $("login-form").classList.remove("hidden");
+    });
 
-    // Criar Conta com Firebase Auth + Firestore
-    window.handleSignup = async function(e) {
-      e.preventDefault();
-      const username = document.getElementById('signup-username').value;
-      const email = document.getElementById('signup-email').value;
-      const pass = document.getElementById('signup-password').value;
-
+    $("signup-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      clearMessage($("auth-message"));
+      if (!configured) { setMessage($("auth-message"), "Preencha a configuração Firebase no código antes de criar a conta."); return; }
+      const form = event.currentTarget;
+      const username = $("signup-username").value.trim();
+      const email = $("signup-email").value.trim();
+      const password = $("signup-password").value;
+      if (username.length < 2) { setMessage($("auth-message"), "O nome deve ter pelo menos 2 caracteres."); return; }
+      setFormBusy(form, true);
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        const user = userCredential.user;
-
-        // Guardar dados extras na base de dados Firestore
-        await setDoc(doc(db, "users", user.uid), {
-          username: username,
-          email: email,
-          createdAt: new Date()
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", credential.user.uid), {
+          username: username.slice(0, 24), email, createdAt: serverTimestamp()
         });
-
-        alert(`Conta criada com sucesso! Bem-vindo, ${username}.`);
       } catch (error) {
-        alert("Erro ao criar conta: " + error.message);
-      }
-    }
+        setMessage($("auth-message"), `Não foi possível criar a conta: ${readableError(error)}`);
+      } finally { setFormBusy(form, false); }
+    });
 
-    // Login com Firebase Auth
-    window.handleLogin = async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-password').value;
-
+    $("login-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      clearMessage($("auth-message"));
+      if (!configured) { setMessage($("auth-message"), "Preencha a configuração Firebase no código antes de entrar."); return; }
+      const form = event.currentTarget;
+      setFormBusy(form, true);
       try {
-        await signInWithEmailAndPassword(auth, email, pass);
+        await signInWithEmailAndPassword(auth, $("login-email").value.trim(), $("login-password").value);
       } catch (error) {
-        alert("Erro ao entrar: " + error.message);
+        setMessage($("auth-message"), `Não foi possível entrar: ${readableError(error)}`);
+      } finally { setFormBusy(form, false); }
+    });
+
+    $("logout-button").addEventListener("click", async () => {
+      try { await signOut(auth); }
+      catch (error) { setMessage($("app-message"), `Não foi possível sair: ${readableError(error)}`); }
+    });
+
+    function renderGames(filter = "") {
+      const grid = $("games-grid");
+      grid.replaceChildren();
+      const matchingGames = games.filter(game => game.title.toLowerCase().includes(filter.trim().toLowerCase()));
+      if (!matchingGames.length) {
+        const empty = document.createElement("p"); empty.className = "text-gray-500"; empty.textContent = "Nenhum jogo encontrado."; grid.append(empty); return;
       }
-    }
-
-    // Terminar Sessão
-    window.handleLogout = async function() {
-      await signOut(auth);
-    }
-
-    function enterPlatform(username) {
-      document.getElementById('auth-screen').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('hidden');
-      document.getElementById('display-username').innerText = username;
-      document.getElementById('welcome-banner-title').innerText = `Bem-vindo de volta, ${username}!`;
-      renderGames();
-    }
-
-    function showAuthScreen() {
-      document.getElementById('main-app').classList.add('hidden');
-      document.getElementById('auth-screen').classList.remove('hidden');
-    }
-
-    function renderGames(filter = '') {
-      const grid = document.getElementById('games-grid');
-      grid.innerHTML = '';
-      
-      games.filter(g => g.title.toLowerCase().includes(filter.toLowerCase())).forEach(game => {
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-xl overflow-hidden shadow border border-gray-200 hover:shadow-lg transition cursor-pointer';
-        card.innerHTML = `
-          <div class="h-36 bg-gradient-to-br ${game.color} p-4 flex items-end text-white font-black text-lg">${game.title}</div>
-          <div class="p-3">
-            <h3 class="font-bold text-gray-800">${game.title}</h3>
-            <p class="text-xs text-gray-400">Por ${game.creator}</p>
-          </div>
-        `;
-        grid.appendChild(card);
+      matchingGames.forEach(game => {
+        const card = document.createElement("article");
+        card.className = "bg-white rounded-xl overflow-hidden shadow border border-gray-200 hover:shadow-lg transition";
+        const banner = document.createElement("div");
+        banner.className = `h-36 bg-gradient-to-br ${game.color} p-4 flex items-end text-white font-black text-lg`;
+        banner.textContent = game.title;
+        const body = document.createElement("div"); body.className = "p-3";
+        const title = document.createElement("h3"); title.className = "font-bold text-gray-800"; title.textContent = game.title;
+        const creator = document.createElement("p"); creator.className = "text-xs text-gray-400 mt-1"; creator.textContent = `Por ${game.creator}`;
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "mt-3 w-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 rounded-lg";
+        button.textContent = "Criar sala multiplayer";
+        button.addEventListener("click", () => createRoom(game));
+        body.append(title, creator, button); card.append(banner, body); grid.append(card);
       });
-      lucide.createIcons();
+    }
+    $("search-input").addEventListener("input", event => renderGames(event.target.value));
+
+    function makeRoomCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    }
+    async function createRoom(game = { id: 0, title: "Desafio de cliques" }) {
+      if (!currentUser) return;
+      clearMessage($("app-message"));
+      try {
+        const roomRef = doc(collection(db, "rooms"));
+        const code = makeRoomCode();
+        const memberRef = doc(db, "rooms", roomRef.id, "members", currentUser.uid);
+        await runTransaction(db, async transaction => {
+          transaction.set(roomRef, {
+            code, gameId: game.id, gameTitle: game.title, hostUid: currentUser.uid,
+            hostName: currentUsername, status: "playing", winnerUid: null,
+            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+          });
+          transaction.set(memberRef, { uid: currentUser.uid, username: currentUsername, score: 0, joinedAt: serverTimestamp() });
+        });
+        listenToRoom(roomRef.id, code);
+      } catch (error) { setMessage($("app-message"), `Não foi possível criar a sala: ${readableError(error)}`); }
+    }
+    $("create-room-button").addEventListener("click", () => createRoom());
+
+    $("join-room-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const code = $("room-code-input").value.trim().toUpperCase();
+      if (code.length !== 6) { setMessage($("app-message"), "Digite um código de sala com 6 caracteres."); return; }
+      clearMessage($("app-message"));
+      try {
+        const matches = await getDocs(query(collection(db, "rooms"), where("code", "==", code), where("status", "==", "playing"), limit(1)));
+        if (matches.empty) { setMessage($("app-message"), "Sala não encontrada ou partida já encerrada."); return; }
+        const room = matches.docs[0];
+        const roomRef = room.ref;
+        const memberRef = doc(db, "rooms", room.id, "members", currentUser.uid);
+        await runTransaction(db, async transaction => {
+          const roomSnapshot = await transaction.get(roomRef);
+          if (!roomSnapshot.exists() || roomSnapshot.data().status !== "playing") throw new Error("A sala já foi encerrada.");
+          const memberSnapshot = await transaction.get(memberRef);
+          if (!memberSnapshot.exists()) transaction.set(memberRef, {
+            uid: currentUser.uid, username: currentUsername, score: 0, joinedAt: serverTimestamp()
+          });
+        });
+        $("room-code-input").value = "";
+        listenToRoom(room.id, code);
+      } catch (error) { setMessage($("app-message"), `Não foi possível entrar na sala: ${readableError(error)}`); }
+    });
+
+    function watchOpenRooms() {
+      if (roomsUnsubscribe) roomsUnsubscribe();
+      const roomsQuery = query(collection(db, "rooms"), where("status", "==", "playing"), limit(30));
+      roomsUnsubscribe = onSnapshot(roomsQuery, snapshot => {
+        const container = $("rooms-list");
+        container.replaceChildren();
+        if (snapshot.empty) {
+          const empty = document.createElement("p"); empty.className = "text-sm text-gray-500"; empty.textContent = "Ainda não há salas. Crie uma para começar!"; container.append(empty); return;
+        }
+        snapshot.docs.forEach(roomDoc => {
+          const room = roomDoc.data();
+          const card = document.createElement("div"); card.className = "border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3";
+          const info = document.createElement("div");
+          const name = document.createElement("p"); name.className = "font-bold text-sm"; name.textContent = room.gameTitle || "Desafio multiplayer";
+          const detail = document.createElement("p"); detail.className = "text-xs text-gray-500 mt-1"; detail.textContent = `Sala ${room.code || "------"} · ${room.hostName || "Jogador"}`;
+          info.append(name, detail);
+          const joinButton = document.createElement("button"); joinButton.type = "button"; joinButton.className = "shrink-0 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg";
+          joinButton.textContent = "Entrar"; joinButton.addEventListener("click", () => joinRoomById(roomDoc.id, room.code));
+          card.append(info, joinButton); container.append(card);
+        });
+      }, error => {
+        $("rooms-list").replaceChildren();
+        setMessage($("app-message"), `Não foi possível carregar as salas: ${readableError(error)}`);
+      });
+    }
+    async function joinRoomById(roomId, code) {
+      try {
+        const roomRef = doc(db, "rooms", roomId);
+        const memberRef = doc(db, "rooms", roomId, "members", currentUser.uid);
+        await runTransaction(db, async transaction => {
+          const roomSnapshot = await transaction.get(roomRef);
+          if (!roomSnapshot.exists() || roomSnapshot.data().status !== "playing") throw new Error("A sala já foi encerrada.");
+          const memberSnapshot = await transaction.get(memberRef);
+          if (!memberSnapshot.exists()) transaction.set(memberRef, {
+            uid: currentUser.uid, username: currentUsername, score: 0, joinedAt: serverTimestamp()
+          });
+        });
+        listenToRoom(roomId, code);
+      } catch (error) { setMessage($("app-message"), `Não foi possível entrar na sala: ${readableError(error)}`); }
     }
 
-    document.getElementById('search-input').addEventListener('input', (e) => {
-      renderGames(e.target.value);
+    function listenToRoom(roomId, code) {
+      closeRoomView();
+      currentRoomId = roomId;
+      currentRoomCode = code;
+      $("active-room").classList.remove("hidden");
+      $("active-room-code").textContent = code || "------";
+      $("room-status").textContent = "Conectando à sala...";
+      const roomRef = doc(db, "rooms", roomId);
+      const membersRef = collection(db, "rooms", roomId, "members");
+      const messagesQuery = query(collection(db, "rooms", roomId, "messages"), orderBy("createdAt", "desc"), limit(50));
+      roomUnsubscribers.push(onSnapshot(roomRef, snapshot => {
+        if (!snapshot.exists() || snapshot.data().status === "closed") {
+          setMessage($("app-message"), "Esta sala foi encerrada pelo anfitrião.", "success");
+          closeRoomView(); return;
+        }
+        const room = snapshot.data();
+        const finished = room.status === "finished";
+        $("room-status").textContent = finished ? `Partida encerrada! Vencedor: ${room.winnerName || "Jogador"}.` : `Partida ao vivo · ${room.gameTitle || "Desafio de cliques"} · primeiro a 20 pontos vence.`;
+        $("score-button").disabled = finished;
+      }, error => setMessage($("app-message"), `Erro na sala: ${readableError(error)}`)));
+      roomUnsubscribers.push(onSnapshot(membersRef, snapshot => {
+        const members = snapshot.docs.map(member => member.data()).sort((a, b) => (b.score || 0) - (a.score || 0));
+        const list = $("players-list"); list.replaceChildren();
+        members.forEach((member, index) => {
+          const item = document.createElement("li"); item.className = "flex justify-between items-center bg-white rounded-lg border border-gray-200 px-3 py-2 text-sm";
+          const name = document.createElement("span"); name.textContent = `${index + 1}. ${member.username || "Jogador"}${member.uid === currentUser.uid ? " (você)" : ""}`;
+          const score = document.createElement("strong"); score.className = "text-red-700"; score.textContent = `${member.score || 0} pts`;
+          item.append(name, score); list.append(item);
+        });
+      }, error => setMessage($("app-message"), `Erro ao carregar jogadores: ${readableError(error)}`)));
+      roomUnsubscribers.push(onSnapshot(messagesQuery, snapshot => {
+        const container = $("chat-messages"); container.replaceChildren();
+        snapshot.docs.reverse().forEach(messageDoc => {
+          const message = messageDoc.data();
+          const row = document.createElement("p"); row.className = "text-sm break-words";
+          const sender = document.createElement("strong"); sender.className = "text-slate-800"; sender.textContent = `${message.username || "Jogador"}: `;
+          const text = document.createElement("span"); text.textContent = message.text || "";
+          row.append(sender, text); container.append(row);
+        });
+        container.scrollTop = container.scrollHeight;
+      }, error => setMessage($("app-message"), `Erro no chat: ${readableError(error)}`)));
+    }
+
+    $("score-button").addEventListener("click", async () => {
+      if (!currentRoomId || !currentUser) return;
+      const roomRef = doc(db, "rooms", currentRoomId);
+      const memberRef = doc(db, "rooms", currentRoomId, "members", currentUser.uid);
+      $("score-button").disabled = true;
+      try {
+        await runTransaction(db, async transaction => {
+          const roomSnapshot = await transaction.get(roomRef);
+          const memberSnapshot = await transaction.get(memberRef);
+          if (!roomSnapshot.exists() || roomSnapshot.data().status !== "playing") throw new Error("A partida já terminou.");
+          if (!memberSnapshot.exists()) throw new Error("Você não faz parte desta sala.");
+          const nextScore = (Number(memberSnapshot.data().score) || 0) + 1;
+          transaction.update(memberRef, { score: nextScore });
+          if (nextScore >= 20) transaction.update(roomRef, {
+            status: "finished", winnerUid: currentUser.uid, winnerName: currentUsername, updatedAt: serverTimestamp()
+          });
+        });
+      } catch (error) { setMessage($("app-message"), `Não foi possível atualizar o placar: ${readableError(error)}`); }
+      finally { if (currentRoomId) $("score-button").disabled = false; }
+    });
+
+    $("chat-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const text = $("chat-input").value.trim();
+      if (!text || !currentRoomId || !currentUser) return;
+      const roomId = currentRoomId;
+      $("chat-input").value = "";
+      try {
+        await addDoc(collection(db, "rooms", roomId, "messages"), {
+          uid: currentUser.uid, username: currentUsername, text: text.slice(0, 300), createdAt: serverTimestamp()
+        });
+      } catch (error) {
+        $("chat-input").value = text;
+        setMessage($("app-message"), `Não foi possível enviar a mensagem: ${readableError(error)}`);
+      }
+    });
+
+    $("leave-room-button").addEventListener("click", async () => {
+      if (!currentRoomId || !currentUser) return;
+      const roomId = currentRoomId;
+      try {
+        await runTransaction(db, async transaction => {
+          const roomRef = doc(db, "rooms", roomId);
+          const memberRef = doc(db, "rooms", roomId, "members", currentUser.uid);
+          const roomSnapshot = await transaction.get(roomRef);
+          const memberSnapshot = await transaction.get(memberRef);
+          if (memberSnapshot.exists()) transaction.delete(memberRef);
+          if (roomSnapshot.exists() && roomSnapshot.data().hostUid === currentUser.uid && roomSnapshot.data().status === "playing") {
+            transaction.update(roomRef, { status: "closed", updatedAt: serverTimestamp() });
+          }
+        });
+        closeRoomView();
+      } catch (error) { setMessage($("app-message"), `Não foi possível sair da sala: ${readableError(error)}`); }
+    });
+
+    $("copy-room-code").addEventListener("click", async () => {
+      if (!currentRoomCode) return;
+      try {
+        await navigator.clipboard.writeText(currentRoomCode);
+        setMessage($("app-message"), "Código copiado. Compartilhe com quem vai jogar!", "success");
+      } catch {
+        setMessage($("app-message"), `Compartilhe este código: ${currentRoomCode}`, "success");
+      }
     });
   </script>
 </body>
