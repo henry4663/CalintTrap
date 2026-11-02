@@ -1,4 +1,4 @@
-javascript
+
 // ============================================
 // GOBLOX - PAINEL ADMINISTRATIVO
 // ADM.JS
