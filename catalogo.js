@@ -1,4 +1,6 @@
 import { getCurrentNick, logout } from "./authLocal.js";
+import { db } from "./firebase.js";
+import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const boasVindas = document.getElementById("boasVindas");
 const btnSair = document.getElementById("btnSair");
@@ -28,7 +30,7 @@ function carregarDados() {
   let fbux = localStorage.getItem(keyFbux);
   let moedas = localStorage.getItem(keyMoedas);
 
-  if (fbux === null) { fbux = 500; localStorage.setItem(keyFbux, fbux); } // Começa com bom saldo para teste
+  if (fbux === null) { fbux = 500; localStorage.setItem(keyFbux, fbux); }
   if (moedas === null) { moedas = 200; localStorage.setItem(keyMoedas, moedas); }
 
   valFbux.textContent = fbux;
@@ -86,11 +88,11 @@ window.comprarItem = function(idItem, preco, tipoMoeda) {
   if (!equipados.includes(idItem)) equipados.push(idItem);
   localStorage.setItem(`goblox_equipados_${nick}`, JSON.stringify(equipados));
 
-  mostrarToast("Item comprado e equipado com sucesso!", "success");
+  mostrarToast("Item comprado e equipado!", "success");
   atualizarInterfaceLojaEInventario(nick);
 };
 
-// EQUIPAR / DESEQUIPAR
+// EQUIPAR / DESEQUIPAR & SINCRONIZAR COM O FIREBASE
 window.alternarEquipamento = function(idItem) {
   const nick = getNick();
   const keyEquipados = `goblox_equipados_${nick}`;
@@ -116,28 +118,24 @@ function atualizarInterfaceLojaEInventario(nick) {
   let inventario = JSON.parse(localStorage.getItem(keyInventario) || "[]");
   let equipados = JSON.parse(localStorage.getItem(keyEquipados) || "[]");
 
-  // Atualiza botões da Loja
   ['coroa', 'chupeta', 'cabelo_amarelo'].forEach(id => {
     const btn = document.getElementById(`btn_buy_${id}`);
-    if (btn) {
-      if (inventario.includes(id)) {
-        btn.textContent = "Comprado";
-        btn.className = "btn-action btn-owned";
-        btn.disabled = true;
-      }
+    if (btn && inventario.includes(id)) {
+      btn.textContent = "Comprado";
+      btn.className = "btn-action btn-owned";
+      btn.disabled = true;
     }
   });
 
-  // Atualiza lista do Inventário
   const container = document.getElementById("listaInventario");
   if (!container) return;
 
   if (inventario.length === 0) {
-    container.innerHTML = '<span style="color: #888;">Nenhum item comprado ainda. Vá à Loja adquirir acessórios!</span>';
+    container.innerHTML = '<span style="color: #888;">Nenhum item comprado ainda.</span>';
     return;
   }
 
-  const icones = { coroa: '👑', chupeta: 'não exite icone:(', cabelo_amarelo: '👱' };
+  const icones = { coroa: '👑', chupeta: '', cabelo_amarelo: '👱' };
   
   container.innerHTML = inventario.map(item => {
     const estaEquipado = equipados.includes(item);
