@@ -36,7 +36,7 @@
     </div>
 
     <!-- Formulário de Login -->
-    <form onsubmit="handleLogin(event)" class="space-y-5">
+    <form onsubmit="handleLogin(event)" class="space-y-4">
       
       <!-- Campo Username -->
       <div class="relative">
@@ -68,6 +68,16 @@
         Login
       </button>
 
+      <!-- Botão Criar Conta -->
+      <button 
+        type="button" 
+        onclick="handleCreateAccount()"
+        class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl border border-slate-600 transition duration-200 active:scale-95 text-base flex items-center justify-center gap-2"
+      >
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+        Criar Nova Conta
+      </button>
+
     </form>
 
     <!-- Rodapé do Card -->
@@ -86,6 +96,11 @@
       event.preventDefault();
       const user = document.getElementById('username').value;
       alert(`Bem-vindo de volta ao goblox, ${user}!`);
+    }
+
+    // Ação ao clicar em Criar Conta
+    function handleCreateAccount() {
+      alert('Redirecionando para o registo de nova conta no goblox...');
     }
   </script>
 </body>
