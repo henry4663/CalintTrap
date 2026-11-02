@@ -24,7 +24,6 @@ body {
 }
 
 /* FUNDO */
-
 .background {
     position: fixed;
     inset: 0;
@@ -52,34 +51,15 @@ body {
 .shape:nth-child(3) { bottom: -100px; left: 15%; }
 .shape:nth-child(4) { bottom: 10%; right: 15%; }
 
-/* CONFIGURAÇÕES */
-
-.settings {
-    position: absolute;
-    top: 25px;
-    right: 30px;
-    font-size: 30px;
-    cursor: pointer;
-    transition: .3s;
-}
-
-.settings:hover {
-    color: #b56cff;
-    transform: rotate(45deg);
-}
-
 /* CONTAINER */
-
 .container {
     width: 90%;
     max-width: 550px;
     padding: 30px;
     text-align: center;
-    animation: aparecer 1s ease;
 }
 
 /* LOGO */
-
 .logo {
     display: flex;
     align-items: center;
@@ -115,7 +95,6 @@ body {
 }
 
 /* CAMPOS */
-
 .input-box {
     position: relative;
     margin-bottom: 18px;
@@ -139,10 +118,6 @@ body {
     box-shadow: 0 0 18px #7900ff55;
 }
 
-.input-box input::placeholder {
-    color: #9690ac;
-}
-
 .input-icon {
     position: absolute;
     left: 20px;
@@ -162,7 +137,6 @@ body {
 }
 
 /* BOTÃO ENTRAR */
-
 .login-button {
     width: 100%;
     height: 75px;
@@ -182,73 +156,18 @@ body {
     box-shadow: 0 0 25px #a855ff88;
 }
 
-/* DIVISOR */
-
-.divider {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin: 28px 0;
-    color: #aaa0c9;
-}
-
-.divider::before,
-.divider::after {
-    content: "";
-    height: 2px;
-    flex: 1;
-    background: #625276;
-}
-
-/* GOOGLE */
-
-.google-button {
-    width: 100%;
-    height: 70px;
-    border: 2px solid #c58aff;
-    border-radius: 20px;
-    background: transparent;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    transition: .3s;
-}
-
-.google-button:hover {
-    background: #5100a022;
-    box-shadow: 0 0 20px #8b00ff55;
-}
-
-.google {
-    font-weight: bold;
-    font-size: 28px;
-    margin-right: 20px;
-    background: conic-gradient(
-        #4285F4 0deg 90deg,
-        #34A853 90deg 180deg,
-        #FBBC05 180deg 240deg,
-        #EA4335 240deg 360deg
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
-/* LINKS */
-
 .links {
     margin-top: 30px;
     display: flex;
     justify-content: center;
     gap: 25px;
-    flex-wrap: wrap;
 }
 
 .links a {
     color: #c5a4ff;
     text-decoration: none;
     font-size: 17px;
-    transition: .3s;
+    cursor: pointer;
 }
 
 .links a:hover {
@@ -256,43 +175,11 @@ body {
     text-decoration: underline;
 }
 
-.create {
-    margin-top: 35px;
-    color: #aaa0c9;
-    font-size: 17px;
-}
-
-.create a {
-    color: #a83cff;
-    font-weight: bold;
-    text-decoration: none;
-    margin-left: 8px;
-}
-
-/* ANIMAÇÃO */
-
-@keyframes aparecer {
-    from {
-        opacity: 0;
-        transform: translateY(25px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* CELULAR */
-
 @media(max-width: 600px) {
     .container { padding: 15px; }
-    .logo-icon { width: 60px; height: 60px; font-size: 30px; }
     .logo h1 { font-size: 49px; }
-    .subtitle { font-size: 16px; margin-bottom: 35px; }
     .input-box input { height: 62px; font-size: 16px; }
     .login-button { height: 65px; font-size: 23px; }
-    .google-button { font-size: 16px; height: 62px; }
-    .settings { top: 15px; right: 20px; }
 }
 </style>
 </head>
@@ -306,8 +193,6 @@ body {
     <div class="shape"></div>
 </div>
 
-<div class="settings">⚙</div>
-
 <div class="container">
 
     <div class="logo">
@@ -315,101 +200,120 @@ body {
         <h1>Goblox</h1>
     </div>
 
-    <p class="subtitle">
-        Jogue. Crie. Conecte-se.
-    </p>
+    <p class="subtitle">Jogue. Crie. Conecte-se.</p>
 
     <form id="loginForm">
-
         <div class="input-box">
             <span class="input-icon">♟</span>
-            <input
-                type="text"
-                id="username"
-                placeholder="Usuário ou Nickname"
-                autocomplete="off"
-                required
-            >
+            <input type="text" id="username" placeholder="Usuário ou Nickname" autocomplete="off" required>
         </div>
 
         <div class="input-box">
             <span class="input-icon">🔒</span>
-            <input
-                type="password"
-                id="password"
-                placeholder="Senha"
-                required
-            >
-            <span class="eye" id="btnEye">
-                ◉
-            </span>
+            <input type="password" id="password" placeholder="Senha" required>
+            <span class="eye" id="btnEye">◉</span>
         </div>
 
-        <button class="login-button" type="submit">
-            Entrar
-        </button>
-
+        <button class="login-button" type="submit">Entrar / Criar</button>
     </form>
 
-    <div class="divider">
-        ou
-    </div>
-
-    <button class="google-button" id="btnGoogle">
-        <span class="google">G</span>
-        Continuar com Google
-    </button>
-
     <div class="links">
-        <a href="#" id="linkEsqueceu">
-            Esqueceu a senha?
-        </a>
-
-        <a href="#" class="btnCriarContaLink">
-            Criar conta
-        </a>
+        <a id="btnCriarDireto">Criar nova conta</a>
     </div>
-
-    <p class="create">
-        Não tem uma conta?
-        <a href="#" class="btnCriarContaLink">
-            Criar conta
-        </a>
-    </p>
 
 </div>
 
-<!-- CARREGA O SCRIPT DE AUTENTICAÇÃO SEPARADO -->
 <script type="module">
-  import { togglePassword, realizarLogin, criarConta } from "./authLocal.js";
+  import { db } from "./firebase.js";
+  import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // Mostrar / Ocultar Senha
-  document.getElementById("btnEye").addEventListener("click", togglePassword);
+  document.getElementById("btnEye").addEventListener("click", () => {
+    const p = document.getElementById("password");
+    p.type = p.type === "password" ? "text" : "password";
+  });
 
-  // Form de Login
-  document.getElementById("loginForm").addEventListener("submit", (e) => {
+  // Função para ir pro lobby
+  function entrarNoLobby(nick) {
+    localStorage.setItem("goblox_player_nick", nick);
+    localStorage.setItem("goblox_logged_user", nick);
+    window.location.href = "lobby.html";
+  }
+
+  // Ação do Formulário (Entrar ou Criar automaticamente se não existir)
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const user = document.getElementById("username").value.trim();
     const pass = document.getElementById("password").value.trim();
-    realizarLogin(user, pass);
+
+    if (!user || !pass) {
+      alert("Preencha o usuário e a senha!");
+      return;
+    }
+
+    try {
+      const userRef = ref(db, `users/${user}`);
+      const snap = await get(userRef);
+
+      if (!snap.exists()) {
+        // Se a conta não existe, cria na hora
+        await set(userRef, {
+          senha: pass,
+          fbux: 500,
+          moedas: 200,
+          criadoEm: Date.now()
+        });
+        alert("Conta criada com sucesso!");
+        entrarNoLobby(user);
+        return;
+      }
+
+      // Se existe, valida a senha
+      const dados = snap.val();
+      if (dados.senha !== pass) {
+        alert("Senha incorreta!");
+        return;
+      }
+
+      entrarNoLobby(user);
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao conectar com o Firebase. Verifique o console (F12).");
+    }
   });
 
-  // Botões de Criar Conta
-  document.querySelectorAll(".btnCriarContaLink").forEach(element => {
-    element.addEventListener("click", (e) => {
-      e.preventDefault();
-      const user = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
-      criarConta(user, pass);
-    });
-  });
+  // Botão rápido de criar conta
+  document.getElementById("btnCriarDireto").addEventListener("click", async () => {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
 
-  // Google & Esqueceu a Senha
-  document.getElementById("btnGoogle").addEventListener("click", () => alert("Integração com Google em desenvolvimento."));
-  document.getElementById("linkEsqueceu").addEventListener("click", (e) => {
-    e.preventDefault();
-    const user = prompt("Digite seu nome de usuário para recuperação:");
-    if (user) alert("Solicitação registrada para o usuário: " + user);
+    if (!user || !pass) {
+      alert("Digite um usuário e senha nos campos acima para criar a conta!");
+      return;
+    }
+
+    try {
+      const userRef = ref(db, `users/${user}`);
+      const snap = await get(userRef);
+
+      if (snap.exists()) {
+        alert("Este usuário já existe! Podes apenas clicar em Entrar.");
+        return;
+      }
+
+      await set(userRef, {
+        senha: pass,
+        fbux: 500,
+        moedas: 200,
+        criadoEm: Date.now()
+      });
+
+      alert("Conta criada com sucesso!");
+      entrarNoLobby(user);
+    } catch (err) {
+      alert("Erro ao criar conta.");
+    }
   });
 </script>
 
