@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -48,25 +47,10 @@ body {
     box-shadow: 0 0 50px #7200ff;
 }
 
-.shape:nth-child(1) {
-    top: -80px;
-    left: -50px;
-}
-
-.shape:nth-child(2) {
-    right: -80px;
-    top: 20%;
-}
-
-.shape:nth-child(3) {
-    bottom: -100px;
-    left: 15%;
-}
-
-.shape:nth-child(4) {
-    bottom: 10%;
-    right: 15%;
-}
+.shape:nth-child(1) { top: -80px; left: -50px; }
+.shape:nth-child(2) { right: -80px; top: 20%; }
+.shape:nth-child(3) { bottom: -100px; left: 15%; }
+.shape:nth-child(4) { bottom: 10%; right: 15%; }
 
 /* CONFIGURAÇÕES */
 
@@ -245,6 +229,7 @@ body {
         #FBBC05 180deg 240deg,
         #EA4335 240deg 360deg
     );
+    -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
@@ -291,7 +276,6 @@ body {
         opacity: 0;
         transform: translateY(25px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -301,44 +285,14 @@ body {
 /* CELULAR */
 
 @media(max-width: 600px) {
-    .container {
-        padding: 15px;
-    }
-
-    .logo-icon {
-        width: 60px;
-        height: 60px;
-        font-size: 30px;
-    }
-
-    .logo h1 {
-        font-size: 49px;
-    }
-
-    .subtitle {
-        font-size: 16px;
-        margin-bottom: 35px;
-    }
-
-    .input-box input {
-        height: 62px;
-        font-size: 16px;
-    }
-
-    .login-button {
-        height: 65px;
-        font-size: 23px;
-    }
-
-    .google-button {
-        font-size: 16px;
-        height: 62px;
-    }
-
-    .settings {
-        top: 15px;
-        right: 20px;
-    }
+    .container { padding: 15px; }
+    .logo-icon { width: 60px; height: 60px; font-size: 30px; }
+    .logo h1 { font-size: 49px; }
+    .subtitle { font-size: 16px; margin-bottom: 35px; }
+    .input-box input { height: 62px; font-size: 16px; }
+    .login-button { height: 65px; font-size: 23px; }
+    .google-button { font-size: 16px; height: 62px; }
+    .settings { top: 15px; right: 20px; }
 }
 </style>
 </head>
@@ -372,7 +326,8 @@ body {
             <input
                 type="text"
                 id="username"
-                placeholder="Usuário ou e-mail"
+                placeholder="Usuário ou Nickname"
+                autocomplete="off"
                 required
             >
         </div>
@@ -385,7 +340,7 @@ body {
                 placeholder="Senha"
                 required
             >
-            <span class="eye" onclick="togglePassword()">
+            <span class="eye" id="btnEye">
                 ◉
             </span>
         </div>
@@ -400,84 +355,62 @@ body {
         ou
     </div>
 
-    <button class="google-button" onclick="googleLogin()">
+    <button class="google-button" id="btnGoogle">
         <span class="google">G</span>
         Continuar com Google
     </button>
 
     <div class="links">
-        <a href="#" onclick="forgotPassword()">
+        <a href="#" id="linkEsqueceu">
             Esqueceu a senha?
         </a>
 
-        <a href="#" onclick="createAccount()">
+        <a href="#" class="btnCriarContaLink">
             Criar conta
         </a>
     </div>
 
     <p class="create">
         Não tem uma conta?
-        <a href="#" onclick="createAccount()">
+        <a href="#" class="btnCriarContaLink">
             Criar conta
         </a>
     </p>
 
 </div>
 
-<script>
+<!-- CARREGA O SCRIPT DE AUTENTICAÇÃO SEPARADO -->
+<script type="module">
+  import { togglePassword, realizarLogin, criarConta } from "./authLocal.js";
 
-/* MOSTRAR SENHA */
+  // Mostrar / Ocultar Senha
+  document.getElementById("btnEye").addEventListener("click", togglePassword);
 
-function togglePassword() {
-    const password = document.getElementById("password");
+  // Form de Login
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
+    realizarLogin(user, pass);
+  });
 
-    if (password.type === "password") {
-        password.type = "text";
-    } else {
-        password.type = "password";
-    }
-}
+  // Botões de Criar Conta
+  document.querySelectorAll(".btnCriarContaLink").forEach(element => {
+    element.addEventListener("click", (e) => {
+      e.preventDefault();
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      criarConta(user, pass);
+    });
+  });
 
-/* LOGIN */
-
-document.getElementById("loginForm")
-.addEventListener("submit", function(event) {
-
-    event.preventDefault();
-
-    const username =
-        document.getElementById("username").value;
-
-    const password =
-        document.getElementById("password").value;
-
-    if (!username || !password) {
-        alert("Preencha todos os campos!");
-        return;
-    }
-
-    alert("Interface Goblox: conecte seu sistema de login.");
-
-});
-
-/* GOOGLE */
-
-function googleLogin() {
-    alert("Integração com Google ainda não configurada.");
-}
-
-/* RECUPERAÇÃO */
-
-function forgotPassword() {
-    alert("Recuperação de senha Goblox.");
-}
-
-/* CRIAR CONTA */
-
-function createAccount() {
-    alert("Página de criação de conta Goblox.");
-}
-
+  // Google & Esqueceu a Senha
+  document.getElementById("btnGoogle").addEventListener("click", () => alert("Integração com Google em desenvolvimento."));
+  document.getElementById("linkEsqueceu").addEventListener("click", (e) => {
+    e.preventDefault();
+    const user = prompt("Digite seu nome de usuário para recuperação:");
+    if (user) alert("Solicitação registrada para o usuário: " + user);
+  });
 </script>
 
 </body>
