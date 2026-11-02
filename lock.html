@@ -1,222 +1,254 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e1b4b">
-  <title>goblox — login e multiplayer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body{background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 50%,#064e3b 100%)}::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:4px}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Local</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    padding: 32px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  }
+  h1 { text-align: center; margin-bottom: 24px; color: #333; }
+  h1 span { font-size: 14px; color: #888; display: block; font-weight: normal; }
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  input:focus { border-color: #667eea; }
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #667eea;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background: #5568d3; }
+  button.secondary { background: #eee; color: #333; margin-top: 8px; }
+  button.secondary:hover { background: #ddd; }
+  .msg {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 20px;
+  }
+  .msg.ok { color: #28a745; }
+  .msg.err { color: #dc3545; }
+  .hidden { display: none; }
+  .welcome {
+    text-align: center;
+    color: #333;
+  }
+  .welcome h2 { margin-bottom: 8px; }
+  .welcome p { color: #666; margin-bottom: 20px; }
+</style>
 </head>
-<body class="min-h-screen font-sans text-gray-800">
-  <section id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <div class="w-full max-w-sm bg-slate-900/95 rounded-3xl border border-slate-700 shadow-2xl p-8 text-center">
-      <h1 class="text-5xl font-black text-red-600 lowercase mb-6">goblox</h1>
-      <p id="auth-message" role="status" class="hidden text-left rounded-xl p-3 mb-4 text-sm"></p>
-      <form id="login-form" class="space-y-4">
-        <h2 class="text-white font-bold text-lg">Entrar na sua conta</h2>
-        <input id="login-email" type="email" autocomplete="email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white">
-        <input id="login-password" type="password" autocomplete="current-password" required placeholder="Palavra-passe" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white">
-        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl">Entrar</button>
-        <button id="show-signup" type="button" class="w-full bg-slate-800 text-white py-3 rounded-xl border border-slate-600">Criar nova conta</button>
-      </form>
-      <form id="signup-form" class="space-y-4 hidden">
-        <h2 class="text-white font-bold text-lg">Criar conta</h2>
-        <input id="signup-username" type="text" autocomplete="nickname" minlength="2" maxlength="24" required placeholder="Nome de utilizador" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white">
-        <input id="signup-email" type="email" autocomplete="email" required placeholder="E-mail" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white">
-        <input id="signup-password" type="password" autocomplete="new-password" minlength="6" required placeholder="Palavra-passe (mín. 6 caracteres)" class="w-full px-5 py-3.5 bg-slate-800 border border-slate-600 rounded-xl text-white">
-        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl">Registar e entrar</button>
-        <button id="show-login" type="button" class="w-full bg-slate-800 text-white py-3 rounded-xl border border-slate-600">Já tenho conta</button>
-      </form>
-    </div>
-  </section>
+<body>
 
-  <div id="main-app" class="hidden min-h-screen bg-gray-100">
-    <header class="bg-white border-b sticky top-0 z-30 shadow-sm"><div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-      <span class="text-3xl font-black text-red-600">GOBLOX</span>
-      <input id="search-input" type="search" placeholder="Buscar jogos..." class="flex-1 max-w-xl px-4 py-2 bg-gray-100 border rounded-full">
-      <div class="flex items-center gap-2"><span id="display-username" class="font-bold"></span><button id="logout-button" type="button" class="text-red-600 p-2" title="Sair">Sair</button></div>
-    </div></header>
-    <main class="max-w-7xl mx-auto p-4 sm:p-8">
-      <div class="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 text-white mb-6"><h1 id="welcome-banner-title" class="text-3xl font-extrabold">Bem-vindo ao goblox!</h1><p class="mt-2">Crie uma sala e jogue ao vivo com outras pessoas.</p></div>
-      <p id="app-message" role="status" class="hidden rounded-xl p-3 mb-4 text-sm"></p>
-      <section class="bg-white rounded-2xl border shadow-sm p-5 mb-8">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5"><div><h2 class="text-xl font-bold">Multiplayer ao vivo</h2><p class="text-sm text-gray-500">Desafio de cliques: primeiro a 20 pontos vence. O placar e o chat sincronizam ao vivo.</p></div>
-          <div class="flex flex-wrap gap-2"><button id="create-room-button" type="button" class="bg-red-600 text-white font-bold px-4 py-2.5 rounded-xl">Criar sala</button><form id="join-room-form" class="flex gap-2"><input id="room-code-input" maxlength="6" placeholder="CÓDIGO" aria-label="Código da sala" class="w-28 uppercase text-center tracking-widest border rounded-xl px-3 py-2"><button class="bg-slate-800 text-white px-4 py-2 rounded-xl">Entrar</button></form></div>
-        </div>
-        <div id="active-room" class="hidden bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-5">
-          <div class="flex justify-between gap-3"><div><p class="text-xs uppercase text-gray-500 font-bold">Código da sala</p><p><strong id="active-room-code" class="text-2xl tracking-widest text-red-700"></strong> <button id="copy-room-code" type="button" class="text-xs bg-white border rounded px-2 py-1">Copiar</button></p><p id="room-status" class="text-sm mt-1" aria-live="polite"></p></div><button id="leave-room-button" type="button" class="text-sm border bg-white px-3 py-2 rounded-lg">Sair da sala</button></div>
-          <div class="grid md:grid-cols-2 gap-5 mt-5"><div><h3 class="font-bold mb-2">Jogadores e pontos</h3><ol id="players-list" class="space-y-2"></ol><button id="score-button" type="button" class="mt-4 w-full bg-green-600 text-white font-extrabold text-lg py-3 rounded-xl disabled:opacity-50">+1 ponto</button></div><div><h3 class="font-bold mb-2">Chat</h3><div id="chat-messages" class="h-44 overflow-y-auto bg-white border rounded-xl p-3 space-y-2" aria-live="polite"></div><form id="chat-form" class="flex gap-2 mt-2"><input id="chat-input" maxlength="300" autocomplete="off" placeholder="Escreva uma mensagem..." class="min-w-0 flex-1 border rounded-xl px-3 py-2"><button class="bg-slate-800 text-white px-4 rounded-xl">Enviar</button></form></div></div>
-        </div>
-        <h3 class="font-bold mb-3">Salas abertas</h3><div id="rooms-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"><p class="text-sm text-gray-500">Carregando salas...</p></div>
-      </section>
-      <section><h2 class="text-xl font-bold mb-4">Jogos em destaque</h2><div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div></section>
-    </main>
+<div class="card">
+
+  <!-- Tela de Login -->
+  <div id="telaLogin">
+    <h1>Entrar <span>Salvamento local no navegador</span></h1>
+    <input type="text" id="loginUser" placeholder="Usuário" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password">
+    <button onclick="fazerLogin()">Entrar</button>
+    <button class="secondary" onclick="trocarTela('cadastro')">Criar conta</button>
+    <div class="msg" id="msgLogin"></div>
   </div>
 
-  <script type="module">
-    // Usa a configuração REAL já existente em firebase.js (Firebase Auth + Realtime Database).
-    // Não crie outra instância nem use Firestore: o projeto configurado usa Realtime Database.
-    import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "./firebase.js";
-    import { ref, get, set, update, push, onValue, onChildAdded, onDisconnect, runTransaction, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  <!-- Tela de Cadastro -->
+  <div id="telaCadastro" class="hidden">
+    <h1>Cadastrar <span>Os dados ficam no seu navegador</span></h1>
+    <input type="text" id="cadUser" placeholder="Escolha um usuário">
+    <input type="password" id="cadPass" placeholder="Escolha uma senha (mín. 4)">
+    <input type="password" id="cadPass2" placeholder="Confirme a senha">
+    <button onclick="cadastrar()">Cadastrar</button>
+    <button class="secondary" onclick="trocarTela('login')">Já tenho conta</button>
+    <div class="msg" id="msgCad"></div>
+  </div>
 
-    const $ = id => document.getElementById(id);
-    const games = [
-      { id: "speed-run", title: "Speed Run Arena", color: "from-sky-500 to-blue-600" },
-      { id: "zombie-escape", title: "Zombie Escape", color: "from-emerald-600 to-teal-800" },
-      { id: "pet-paradise", title: "Pet Paradise", color: "from-cyan-400 to-blue-500" },
-      { id: "city-builder", title: "City Builder Tycoon", color: "from-amber-500 to-orange-600" }
-    ];
-    let user = null, username = "Player", roomId = null, roomCode = null;
-    let stopRooms = null, stopRoom = null, stopMembers = null, stopMessages = null;
-    const roomRef = id => ref(db, `gobloxRooms/${id}`);
-    const memberRef = (id, uid) => ref(db, `gobloxRooms/${id}/members/${uid}`);
-    const show = (element, text, success = false) => { element.textContent = text; element.className = `rounded-xl p-3 text-sm ${success ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`; };
-    const authError = error => ({
-      "auth/email-already-in-use": "Este e-mail já está registado.", "auth/invalid-email": "E-mail inválido.",
-      "auth/weak-password": "A palavra-passe deve ter pelo menos 6 caracteres.", "auth/invalid-credential": "E-mail ou palavra-passe incorretos.",
-      "auth/too-many-requests": "Muitas tentativas. Aguarde e tente novamente.", "PERMISSION_DENIED": "O Firebase recusou o acesso. Verifique as regras do Realtime Database."
-    }[error?.code] || error?.message || "Erro inesperado.");
-    function stopRoomListeners() { [stopRoom, stopMembers, stopMessages].forEach(stop => stop?.()); stopRoom = stopMembers = stopMessages = null; }
-    function closeRoom() { stopRoomListeners(); roomId = roomCode = null; $("active-room").classList.add("hidden"); $("players-list").replaceChildren(); $("chat-messages").replaceChildren(); }
-    function enterApp(name) {
-      username = name || user?.displayName || user?.email?.split("@")[0] || "Player";
-      $("auth-screen").classList.add("hidden"); $("main-app").classList.remove("hidden");
-      $("display-username").textContent = username; $("welcome-banner-title").textContent = `Bem-vindo, ${username}!`;
-      renderGames(); watchRooms();
-    }
-    onAuthStateChanged(auth, async current => {
-      user = current;
-      if (!current) { stopRooms?.(); stopRooms = null; closeRoom(); $("main-app").classList.add("hidden"); $("auth-screen").classList.remove("hidden"); return; }
-      try {
-        const profile = await get(ref(db, `users/${current.uid}`));
-        const savedName = profile.exists() ? profile.val()?.username : "";
-        enterApp(savedName || current.displayName || current.email?.split("@")[0]);
-      } catch (error) { enterApp(current.displayName || current.email?.split("@")[0]); show($("app-message"), `Perfil carregado com aviso: ${authError(error)}`); }
-    });
-    $("show-signup").onclick = () => { $("login-form").classList.add("hidden"); $("signup-form").classList.remove("hidden"); $("auth-message").classList.add("hidden"); };
-    $("show-login").onclick = () => { $("signup-form").classList.add("hidden"); $("login-form").classList.remove("hidden"); $("auth-message").classList.add("hidden"); };
-    $("login-form").addEventListener("submit", async e => {
-      e.preventDefault(); const button = e.submitter; button.disabled = true; button.textContent = "Entrando...";
-      try { await signInWithEmailAndPassword($("login-email").value.trim(), $("login-password").value); e.currentTarget.reset(); }
-      catch (error) { show($("auth-message"), `Não foi possível entrar: ${authError(error)}`); }
-      finally { button.disabled = false; button.textContent = "Entrar"; }
-    });
-    $("signup-form").addEventListener("submit", async e => {
-      e.preventDefault(); const button = e.submitter; const name = $("signup-username").value.trim();
-      if (name.length < 2) { show($("auth-message"), "O nome precisa ter pelo menos 2 caracteres."); return; }
-      button.disabled = true; button.textContent = "Criando conta...";
-      try {
-        const credential = await createUserWithEmailAndPassword($("signup-email").value.trim(), $("signup-password").value);
-        await updateProfile(credential.user, { displayName: name.slice(0, 24) });
-        await set(ref(db, `users/${credential.user.uid}`), { username: name.slice(0, 24), email: credential.user.email, createdAt: serverTimestamp() });
-        e.currentTarget.reset();
-      } catch (error) { show($("auth-message"), `Não foi possível criar conta: ${authError(error)}`); }
-      finally { button.disabled = false; button.textContent = "Registar e entrar"; }
-    });
-    $("logout-button").onclick = async () => { try { await signOut(); } catch (error) { show($("app-message"), authError(error)); } };
+  <!-- Tela de Boas-vindas (logado) -->
+  <div id="telaLogado" class="hidden">
+    <div class="welcome">
+      <h2>👋 Olá, <span id="nomeUsuario"></span>!</h2>
+      <p>Você está logado localmente.</p>
+      <button onclick="logout()">Sair</button>
+    </div>
+  </div>
 
-    function renderGames(filter = "") {
-      const grid = $("games-grid"); grid.replaceChildren();
-      const filtered = games.filter(game => game.title.toLowerCase().includes(filter.trim().toLowerCase()));
-      if (!filtered.length) { const p = document.createElement("p"); p.textContent = "Nenhum jogo encontrado."; grid.append(p); return; }
-      filtered.forEach(game => {
-        const card = document.createElement("article"); card.className = "bg-white rounded-xl overflow-hidden shadow border";
-        const cover = document.createElement("div"); cover.className = `h-36 bg-gradient-to-br ${game.color} p-4 flex items-end text-white font-black text-lg`; cover.textContent = game.title;
-        const content = document.createElement("div"); content.className = "p-3";
-        const title = document.createElement("h3"); title.className = "font-bold"; title.textContent = game.title;
-        const button = document.createElement("button"); button.type = "button"; button.className = "mt-3 w-full bg-red-600 text-white font-bold py-2 rounded-lg"; button.textContent = "Criar sala"; button.onclick = () => createRoom(game);
-        content.append(title, button); card.append(cover, content); grid.append(card);
-      });
-    }
-    $("search-input").addEventListener("input", e => renderGames(e.target.value));
+</div>
 
-    function newCode() { const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join(""); }
-    async function createRoom(game = { id: "click-challenge", title: "Desafio de cliques" }) {
-      if (!user) return; const room = push(ref(db, "gobloxRooms")); const code = newCode();
-      try {
-        await set(room, { code, gameId: game.id, gameTitle: game.title, hostUid: user.uid, hostName: username, status: "playing", createdAt: serverTimestamp() });
-        await set(memberRef(room.key, user.uid), { uid: user.uid, username, score: 0, joinedAt: serverTimestamp() });
-        await update(ref(db, `gobloxRoomCodes/${code}`), { roomId: room.key });
-        listenRoom(room.key, code);
-      } catch (error) { show($("app-message"), `Erro ao criar sala: ${authError(error)}`); }
-    }
-    $("create-room-button").onclick = () => createRoom();
-    async function joinRoom(id, code) {
-      try {
-        const snapshot = await get(roomRef(id));
-        if (!snapshot.exists() || snapshot.val().status !== "playing") throw new Error("Sala encerrada ou não encontrada.");
-        const member = memberRef(id, user.uid); const existing = await get(member);
-        if (!existing.exists()) await set(member, { uid: user.uid, username, score: 0, joinedAt: serverTimestamp() });
-        $("room-code-input").value = ""; listenRoom(id, code);
-      } catch (error) { show($("app-message"), `Não foi possível entrar: ${authError(error)}`); }
-    }
-    $("join-room-form").addEventListener("submit", async e => {
-      e.preventDefault(); const code = $("room-code-input").value.trim().toUpperCase();
-      if (code.length !== 6) { show($("app-message"), "Digite o código de 6 caracteres."); return; }
-      try { const index = await get(ref(db, `gobloxRoomCodes/${code}`)); if (!index.exists()) throw new Error("Código de sala não encontrado."); await joinRoom(index.val().roomId, code); }
-      catch (error) { show($("app-message"), `Erro ao entrar na sala: ${authError(error)}`); }
-    });
-    function watchRooms() {
-      stopRooms?.(); const recent = query(ref(db, "gobloxRooms"), orderByChild("createdAt"), limitToLast(30));
-      stopRooms = onValue(recent, snapshot => {
-        const list = $("rooms-list"); list.replaceChildren(); const rooms = [];
-        snapshot.forEach(child => { if (child.val()?.status === "playing") rooms.push({ id: child.key, ...child.val() }); });
-        rooms.reverse();
-        if (!rooms.length) { const p = document.createElement("p"); p.className = "text-sm text-gray-500"; p.textContent = "Ainda não há salas. Crie uma para começar!"; list.append(p); return; }
-        rooms.forEach(room => {
-          const card = document.createElement("div"); card.className = "border rounded-xl p-3 flex items-center justify-between gap-3";
-          const info = document.createElement("div"); const game = document.createElement("p"); game.className = "font-bold text-sm"; game.textContent = room.gameTitle || "Partida";
-          const details = document.createElement("p"); details.className = "text-xs text-gray-500"; details.textContent = `Sala ${room.code} · ${room.hostName || "Jogador"}`; info.append(game, details);
-          const join = document.createElement("button"); join.type = "button"; join.className = "bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg"; join.textContent = "Entrar"; join.onclick = () => joinRoom(room.id, room.code);
-          card.append(info, join); list.append(card);
-        });
-      }, error => show($("app-message"), `Erro ao carregar salas: ${authError(error)}`));
-    }
-    function listenRoom(id, code) {
-      closeRoom(); roomId = id; roomCode = code; $("active-room").classList.remove("hidden"); $("active-room-code").textContent = code;
-      const rRef = roomRef(id);
-      stopRoom = onValue(rRef, snapshot => {
-        if (!snapshot.exists() || ["closed", "finished"].includes(snapshot.val()?.status)) {
-          const data = snapshot.val(); $("room-status").textContent = data?.status === "finished" ? `Partida encerrada! Vencedor: ${data.winnerName || "Jogador"}.` : "Sala encerrada.";
-          $("score-button").disabled = true; return;
-        }
-        const data = snapshot.val(); $("room-status").textContent = `Ao vivo · ${data.gameTitle} · primeiro a 20 pontos vence.`; $("score-button").disabled = false;
-      }, error => show($("app-message"), `Erro na sala: ${authError(error)}`));
-      stopMembers = onValue(ref(db, `gobloxRooms/${id}/members`), snapshot => {
-        const members = []; snapshot.forEach(child => members.push(child.val())); members.sort((a,b) => (b.score||0)-(a.score||0));
-        const list = $("players-list"); list.replaceChildren();
-        members.forEach((member, i) => { const li = document.createElement("li"); li.className = "flex justify-between bg-white rounded-lg border px-3 py-2 text-sm"; const name = document.createElement("span"); name.textContent = `${i+1}. ${member.username || "Jogador"}${member.uid === user.uid ? " (você)" : ""}`; const score = document.createElement("strong"); score.className = "text-red-700"; score.textContent = `${member.score||0} pts`; li.append(name, score); list.append(li); });
-      }, error => show($("app-message"), `Erro ao carregar jogadores: ${authError(error)}`));
-      const messages = query(ref(db, `gobloxRooms/${id}/messages`), orderByChild("createdAt"), limitToLast(50));
-      stopMessages = onChildAdded(messages, snapshot => {
-        const data = snapshot.val(); const row = document.createElement("p"); row.className = "text-sm break-words"; const sender = document.createElement("strong"); sender.textContent = `${data.username || "Jogador"}: `; const text = document.createElement("span"); text.textContent = data.text || ""; row.append(sender, text); $("chat-messages").append(row); $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
-      }, error => show($("app-message"), `Erro no chat: ${authError(error)}`));
-      onDisconnect(memberRef(id, user.uid)).remove().catch(() => {});
-    }
-    $("score-button").onclick = async () => {
-      if (!roomId || !user) return; const id = roomId; const button = $("score-button"); button.disabled = true;
-      try {
-        const scoreResult = await runTransaction(ref(db, `gobloxRooms/${id}/members/${user.uid}/score`), score => (Number(score)||0) + 1);
-        if (scoreResult.committed && Number(scoreResult.snapshot.val()) >= 20) await update(roomRef(id), { status: "finished", winnerUid: user.uid, winnerName: username, finishedAt: serverTimestamp() });
-      } catch (error) { show($("app-message"), `Erro no placar: ${authError(error)}`); }
-      finally { if (roomId === id) button.disabled = false; }
-    };
-    $("chat-form").addEventListener("submit", async e => {
-      e.preventDefault(); const text = $("chat-input").value.trim(); if (!text || !roomId) return;
-      try { await push(ref(db, `gobloxRooms/${roomId}/messages`), { uid: user.uid, username, text: text.slice(0,300), createdAt: serverTimestamp() }); $("chat-input").value = ""; }
-      catch (error) { show($("app-message"), `Erro no chat: ${authError(error)}`); }
-    });
-    $("leave-room-button").onclick = async () => {
-      if (!roomId || !user) return; const id = roomId;
-      try {
-        const data = await get(roomRef(id));
-        if (data.exists() && data.val().hostUid === user.uid) await update(roomRef(id), { status: "closed", closedAt: serverTimestamp() });
-        await set(memberRef(id,user.uid), null); closeRoom();
-      } catch (error) { show($("app-message"), `Erro ao sair da sala: ${authError(error)}`); }
-    };
-    $("copy-room-code").onclick = async () => { try { await navigator.clipboard.writeText(roomCode); show($("app-message"), "Código copiado!", true); } catch { show($("app-message"), `Compartilhe o código ${roomCode}`, true); } };
-  </script>
+<script>
+// ============================================================
+// CHAVE ÚNICA NO localStorage
+// ============================================================
+const STORAGE_KEY = "usuarios_locais";
+const SESSION_KEY = "usuario_logado";
+
+// ------------------------------------------------------------
+// Utilitários
+// ------------------------------------------------------------
+function getUsuarios() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function setUsuarios(usuarios) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(usuarios));
+}
+
+// Gera um hash simples (NÃO é seguro para produção, só didático)
+function hashSenha(senha) {
+  let hash = 0;
+  for (let i = 0; i < senha.length; i++) {
+    hash = (hash << 5) - hash + senha.charCodeAt(i);
+    hash |= 0;
+  }
+  return "h" + Math.abs(hash).toString(16);
+}
+
+function mostrarMsg(id, texto, tipo) {
+  const el = document.getElementById(id);
+  el.textContent = texto;
+  el.className = "msg " + tipo;
+}
+
+function trocarTela(tela) {
+  document.getElementById("telaLogin").classList.add("hidden");
+  document.getElementById("telaCadastro").classList.add("hidden");
+  document.getElementById("telaLogado").classList.add("hidden");
+
+  if (tela === "login") document.getElementById("telaLogin").classList.remove("hidden");
+  else if (tela === "cadastro") document.getElementById("telaCadastro").classList.remove("hidden");
+  else if (tela === "logado") document.getElementById("telaLogado").classList.remove("hidden");
+}
+
+// ------------------------------------------------------------
+// Cadastro
+// ------------------------------------------------------------
+function cadastrar() {
+  const user = document.getElementById("cadUser").value.trim();
+  const pass = document.getElementById("cadPass").value;
+  const pass2 = document.getElementById("cadPass2").value;
+
+  if (!user || !pass) {
+    return mostrarMsg("msgCad", "Preencha todos os campos.", "err");
+  }
+  if (user.length < 3) {
+    return mostrarMsg("msgCad", "Usuário deve ter ao menos 3 caracteres.", "err");
+  }
+  if (pass.length < 4) {
+    return mostrarMsg("msgCad", "Senha deve ter ao menos 4 caracteres.", "err");
+  }
+  if (pass !== pass2) {
+    return mostrarMsg("msgCad", "As senhas não coincidem.", "err");
+  }
+
+  const usuarios = getUsuarios();
+  if (usuarios[user.toLowerCase()]) {
+    return mostrarMsg("msgCad", "Este usuário já existe.", "err");
+  }
+
+  usuarios[user.toLowerCase()] = {
+    nome: user,
+    senha: hashSenha(pass),
+    criadoEm: new Date().toISOString()
+  };
+  setUsuarios(usuarios);
+
+  mostrarMsg("msgCad", "✅ Conta criada! Faça login.", "ok");
+  document.getElementById("cadUser").value = "";
+  document.getElementById("cadPass").value = "";
+  document.getElementById("cadPass2").value = "";
+
+  setTimeout(() => trocarTela("login"), 900);
+}
+
+// ------------------------------------------------------------
+// Login
+// ------------------------------------------------------------
+function fazerLogin() {
+  const user = document.getElementById("loginUser").value.trim().toLowerCase();
+  const pass = document.getElementById("loginPass").value;
+
+  if (!user || !pass) {
+    return mostrarMsg("msgLogin", "Preencha usuário e senha.", "err");
+  }
+
+  const usuarios = getUsuarios();
+  const conta = usuarios[user];
+
+  if (!conta || conta.senha !== hashSenha(pass)) {
+    return mostrarMsg("msgLogin", "Usuário ou senha inválidos.", "err");
+  }
+
+  // Salva sessão
+  localStorage.setItem(SESSION_KEY, user);
+
+  abrirPainel(conta.nome);
+}
+
+// ------------------------------------------------------------
+// Logout
+// ------------------------------------------------------------
+function logout() {
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById("loginPass").value = "";
+  mostrarMsg("msgLogin", "", "");
+  trocarTela("login");
+}
+
+// ------------------------------------------------------------
+// Painel logado
+// ------------------------------------------------------------
+function abrirPainel(nome) {
+  document.getElementById("nomeUsuario").textContent = nome;
+  trocarTela("logado");
+}
+
+// ------------------------------------------------------------
+// Verifica sessão ao abrir a página
+// ------------------------------------------------------------
+(function iniciar() {
+  const logado = localStorage.getItem(SESSION_KEY);
+  const usuarios = getUsuarios();
+
+  if (logado && usuarios[logado]) {
+    abrirPainel(usuarios[logado].nome);
+  } else {
+    trocarTela("login");
+  }
+})();
+</script>
+
 </body>
 </html>
