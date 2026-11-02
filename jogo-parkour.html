@@ -148,7 +148,7 @@ if (isMobile) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87caff);
-  scene.fog = new THREE.Fog(0x87caff, 45, 130);
+  scene.fog = new THREE.Fog(0x87caff, 50, 150);
 
   const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 250);
 
@@ -187,7 +187,7 @@ if (isMobile) {
     chao: material(0x29394e),
     laranja: material(0xff9f43),
     rosa: material(0xff6b81),
-    lava: material(0xff3838, 0.2) // Estilo killbrick / lava
+    lava: material(0xff3838, 0.2)
   };
 
   function criarBloco(x, y, z, sx, sy, sz, mat) {
@@ -199,21 +199,21 @@ if (isMobile) {
     return objeto;
   }
 
-  // Chão debaixo do obby (com "lava" mortal simulada por baixo)
-  criarBloco(0, -2, -60, 200, 1, 300, cores.chao);
+  // Chão de segurança (lava embaixo)
+  criarBloco(0, -2, -70, 250, 1, 350, cores.chao);
 
   const plataformas = [];
   const obstaculosMoveis = [];
-  const killBricks = []; // Blocos mortais que reiniciam no checkpoint
+  const killBricks = [];
 
   function plataforma(x, y, z, largura, profundidade, mat) {
     criarBloco(x, y, z, largura, 0.7, profundidade, mat);
 
     plataformas.push({
-      minX: x - largura/2 - 0.5,
-      maxX: x + largura/2 + 0.5,
-      minZ: z - profundidade/2 - 0.5,
-      maxZ: z + profundidade/2 + 0.5,
+      minX: x - largura/2 - 0.6,
+      maxX: x + largura/2 + 0.6,
+      minZ: z - profundidade/2 - 0.6,
+      maxZ: z + profundidade/2 + 0.6,
       y: y + 0.35
     });
 
@@ -223,43 +223,53 @@ if (isMobile) {
   function killBrick(x, y, z, largura, altura, profundidade) {
     const kb = criarBloco(x, y, z, largura, altura, profundidade, cores.lava);
     killBricks.push({
-      minX: x - largura/2 - 0.3,
-      maxX: x + largura/2 + 0.3,
-      minY: y - altura/2 - 0.3,
-      maxY: y + altura/2 + 0.3,
-      minZ: z - profundidade/2 - 0.3,
-      maxZ: z + profundidade/2 + 0.3
+      minX: x - largura/2 - 0.4,
+      maxX: x + largura/2 + 0.4,
+      minY: y - altura/2 - 0.4,
+      maxY: y + altura/2 + 0.4,
+      minZ: z - profundidade/2 - 0.4,
+      maxZ: z + profundidade/2 + 0.4
     });
     return kb;
   }
 
-  // --- MAPA FACILITADO COM OBSTÁCULOS CLÁSSICOS DE ROBLOX ---
-  plataforma(0, 0, 0, 10, 10, cores.verde);
-  plataforma(0, 1, -10, 6, 6, cores.roxo); // Plataforma mais larga
-  plataforma(0, 2, -19, 5, 5, cores.azul);
-  plataforma(0, 3, -28, 5, 5, cores.amarelo);
+  // --- OBBY ORGANIZADO, AMPLO E LONGO ---
+  // Início
+  plataforma(0, 0, 0, 12, 12, cores.verde);
+  
+  // Seção 1: Salto suave e largo (Fácil)
+  plataforma(0, 1, -12, 7, 7, cores.roxo);
+  plataforma(0, 2, -22, 7, 7, cores.azul);
+  plataforma(0, 3, -32, 7, 7, cores.amarelo);
 
-  // Obstáculo clássico 1: Killbricks (Paredes/Blocos de fogo/lava que você desvia)
-  killBrick(0, 3.5, -34, 4, 1.5, 0.6);
-  plataforma(0, 4, -40, 6, 6, cores.verde);
+  // Checkpoint 1
+  criarBloco(0, 3.4, -32, 2, 0.12, 2, cores.verde);
 
-  // Obstáculo clássico 2: Spinner (Barra giratória obstáculo de Roblox)
-  const spinnerMesh = criarBloco(0, 5, -49, 7, 0.4, 1, cores.vermelho);
-  obstaculosMoveis.push({ mesh: spinnerMesh, tipo: 'girar', velocidade: 2.5 });
-  plataforma(0, 5, -57, 6, 6, cores.roxo);
+  // Seção 2: Desvio do Killbrick 1
+  plataforma(0, 4, -43, 7, 7, cores.laranja);
+  killBrick(0, 4.5, -49, 5, 1.5, 0.8); // Obstáculo fácil de desviar ou saltar por cima
+  plataforma(0, 5, -55, 7, 7, cores.rosa);
 
-  // Parte final mais acessível
-  plataforma(0, 6, -66, 5, 5, cores.laranja);
-  plataforma(0, 7, -75, 5, 5, cores.rosa);
-  plataforma(0, 8, -85, 7, 7, cores.verde); // Plataforma de vitória final
+  // Checkpoint 2
+  criarBloco(0, 5.4, -55, 2, 0.12, 2, cores.verde);
 
-  // Checkpoints
-  criarBloco(0, 4.4, -40, 2, 0.12, 2, cores.verde); // Checkpoint 1
-  criarBloco(0, 5.4, -57, 2, 0.12, 2, cores.verde); // Checkpoint 2
+  // Seção 3: Spinner Roblux (Barra giratória devagar e acessível)
+  plataforma(0, 6, -66, 8, 8, cores.verde);
+  const spinnerMesh = criarBloco(0, 7, -66, 8, 0.4, 1, cores.vermelho);
+  obstaculosMoveis.push({ mesh: spinnerMesh, tipo: 'girar', velocidade: 1.8 });
+  plataforma(0, 8, -76, 7, 7, cores.roxo);
 
-  // Bandeira final
-  criarBloco(0, 10, -85, 0.25, 3, 0.25, cores.vermelho);
-  criarBloco(1, 11.2, -85, 2, 0.8, 0.15, cores.amarelo);
+  // Checkpoint 3
+  criarBloco(0, 8.4, -76, 2, 0.12, 2, cores.verde);
+
+  // Seção 4: Reta final ampla até a vitória
+  plataforma(0, 9, -86, 6, 6, cores.azul);
+  plataforma(0, 10, -96, 6, 6, cores.amarelo);
+  plataforma(0, 11, -106, 9, 9, cores.verde); // Plataforma final de vitória
+
+  // Bandeira de Vitória
+  criarBloco(0, 12.5, -106, 0.25, 3, 0.25, cores.vermelho);
+  criarBloco(1, 13.7, -106, 2, 0.8, 0.15, cores.amarelo);
 
   // CLIENTE MULTIPLAYER
   const remotePlayers = new Map();
@@ -444,7 +454,7 @@ if (isMobile) {
   function atualizar(dt) {
     if (venceu) return;
 
-    // Atualiza obstáculos móveis (ex: spinner giratório)
+    // Atualiza o spinner giratório
     for (let obs of obstaculosMoveis) {
       if (obs.tipo === 'girar') {
         obs.mesh.rotation.y += obs.velocidade * dt;
@@ -499,7 +509,7 @@ if (isMobile) {
       }
     }
 
-    // Colisão com kill bricks / obstáculos mortais
+    // Colisão com kill bricks
     for (const kb of killBricks) {
       if (
         jogador.position.x >= kb.minX && jogador.position.x <= kb.maxX &&
@@ -509,7 +519,7 @@ if (isMobile) {
         jogador.position.copy(checkpoint);
         velocidadeY = 0;
         noChao = false;
-        status.textContent = "Ouch! Voltou para o checkpoint.";
+        status.textContent = "Ouch! Voltou para o último checkpoint.";
       }
     }
 
@@ -518,17 +528,21 @@ if (isMobile) {
     }
 
     // CHECKPOINTS ATUALIZADOS
-    if (jogador.position.z < -38 && jogador.position.z > -42 && noChao) {
-      checkpoint.set(0, 4.36, -40);
+    if (jogador.position.z < -30 && jogador.position.z > -34 && noChao) {
+      checkpoint.set(0, 3.36, -32);
       status.textContent = "Checkpoint 1 ativado!";
     }
-    if (jogador.position.z < -55 && jogador.position.z > -59 && noChao) {
-      checkpoint.set(0, 5.36, -57);
+    if (jogador.position.z < -53 && jogador.position.z > -57 && noChao) {
+      checkpoint.set(0, 5.36, -55);
       status.textContent = "Checkpoint 2 ativado!";
+    }
+    if (jogador.position.z < -74 && jogador.position.z > -78 && noChao) {
+      checkpoint.set(0, 8.36, -76);
+      status.textContent = "Checkpoint 3 ativado!";
     }
 
     // CONDIÇÃO DE VITÓRIA
-    if (jogador.position.z < -83) {
+    if (jogador.position.z < -104) {
       venceu = true;
       darRecompensaVitoria();
       document.getElementById("mensagem").style.display = "block";
@@ -541,7 +555,7 @@ if (isMobile) {
       noChao = false;
     }
 
-    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -20, 20);
+    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -25, 25);
   }
 
   function atualizarCamera(dt) {
@@ -581,7 +595,7 @@ if (isMobile) {
     renderer.setSize(innerWidth, innerHeight);
   });
 
-  status.textContent = "Desvie da barra giratória e chegue ao topo!";
+  status.textContent = "Divirta-se no obby ampliado!";
   animar(0);
 })();
 </script>
