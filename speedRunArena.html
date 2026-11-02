@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speedrun Arena 3D</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 12px 24px;
+      border-radius: 30px;
+      backdrop-filter: blur(8px);
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      pointer-events: none;
+    }
+    #timer {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: #fff;
+      background: rgba(20, 20, 30, 0.8);
+      padding: 12px 28px;
+      border-radius: 30px;
+      backdrop-filter: blur(8px);
+      font-size: 28px;
+      font-weight: bold;
+      border: 1px solid rgba(100, 200, 255, 0.6);
+      box-shadow: 0 0 25px rgba(0, 180, 255, 0.3);
+      z-index: 100;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+    }
+    #message {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 16px 32px;
+      border-radius: 50px;
+      backdrop-filter: blur(8px);
+      font-size: 20px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+      z-index: 100;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      text-align: center;
+    }
+    #controls {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 100;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #start-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 60px;
+      font-size: 32px;
+      font-weight: bold;
+      background: linear-gradient(45deg, #00c6ff, #0072ff);
+      color: white;
+      border: none;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(0, 180, 255, 0.6);
+      z-index: 200;
+      transition: all 0.2s;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    #start-btn:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+      box-shadow: 0 0 60px rgba(0, 200, 255, 0.9);
+    }
+    #start-btn:active {
+      transform: translate(-50%, -50%) scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">🏆 <span id="score">0</span> orbes</div>
+  <div id="timer">⏱️ <span id="time">0.00</span>s</div>
+  <div id="message">Pressione ESPAÇO para começar</div>
+  <div id="controls">WASD / Setas para mover</div>
+  <button id="start-btn">INICIAR SPEEDRUN</button>
+
+  <!-- Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // --- Cena, câmera, renderer ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a1a); // fundo escuro espacial
+    scene.fog = new THREE.Fog(0x0a0a1a, 30, 100);
+
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 12, 18);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // --- Luzes ---
+    // Ambiente suave
+    const ambientLight = new THREE.AmbientLight(0x404060);
+    scene.add(ambientLight);
+
+    // Luz direcional principal (simulando sol)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(10, 20, 5);
+    dirLight.castShadow = true;
+    dirLight.receiveShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    const d = 30;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 50;
+    scene.add(dirLight);
+
+    // Luzes coloridas para estilo
+    const pointLight1 = new THREE.PointLight(0x00ccff, 0.8, 40);
+    pointLight1.position.set(8, 6, 8);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0xff44aa, 0.6, 40);
+    pointLight2.position.set(-8, 5, -8);
+    scene.add(pointLight2);
+
+    // --- Arena (plataforma circular com borda) ---
+    const arenaRadius = 12;
+    const arenaHeight = 0.5;
+
+    // Base circular
+    const baseGeo = new THREE.CylinderGeometry(arenaRadius, arenaRadius, arenaHeight, 64);
+    const baseMat = new THREE.MeshStandardMaterial({ 
+      color: 0x2a2a4a, 
+      emissive: 0x111122,
+      roughness: 0.4,
+      metalness: 0.6
+    });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = -arenaHeight / 2;
+    base.receiveShadow = true;
+    base.castShadow = false;
+    scene.add(base);
+
+    // Borda brilhante
+    const ringGeo = new THREE.TorusGeometry(arenaRadius, 0.15, 32, 100);
+    const ringMat = new THREE.MeshStandardMaterial({ 
+      color: 0x00ccff, 
+      emissive: 0x004466,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.05;
+    scene.add(ring);
+
+    // Linhas decorativas no chão (círculos concêntricos)
+    for (let i = 1; i <= 3; i++) {
+      const r = arenaRadius * (i / 4);
+      const lineGeo = new THREE.TorusGeometry(r, 0.03, 16, 80);
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0x4466aa, emissive: 0x112233 });
+      const line = new THREE.Mesh(lineGeo, lineMat);
+      line.rotation.x = Math.PI / 2;
+      line.position.y = 0.02;
+      scene.add(line);
+    }
+
+    // --- Grid de fundo (para profundidade) ---
+    const gridHelper = new THREE.GridHelper(60, 40, 0x3366ff, 0x224488);
+    gridHelper.position.y = -1.5;
+    scene.add(gridHelper);
+
+    // --- Estrelas de fundo (partículas) ---
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 2000;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      const r = 80 + Math.random() * 200;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI * 2;
+      starPositions[i] = Math.sin(theta) * Math.cos(phi) * r;
+      starPositions[i+1] = Math.sin(theta) * Math.sin(phi) * r * 0.6;
+      starPositions[i+2] = Math.cos(theta) * r;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.25, transparent: true, opacity: 0.8 });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // --- Jogador (cubo brilhante) ---
+    const playerSize = 1.0;
+    const playerGeo = new THREE.BoxGeometry(playerSize, playerSize, playerSize);
+    const playerMat = new THREE.MeshStandardMaterial({ 
+      color: 0x00e5ff, 
+      emissive: 0x0066aa,
+      roughness: 0.2,
+      metalness: 0.9
+    });
+    const player = new THREE.Mesh(playerGeo, playerMat);
+    player.castShadow = true;
+    player.receiveShadow = true;
+    player.position.y = playerSize / 2;
+    scene.add(player);
+
+    // Aura do jogador (anel flutuante)
+    const auraGeo = new THREE.TorusGeometry(0.8, 0.05, 16, 32);
+    const auraMat = new THREE.MeshStandardMaterial({ color: 0x00ccff, emissive: 0x0066aa });
+    const aura = new THREE.Mesh(auraGeo, auraMat);
+    aura.rotation.x = Math.PI / 2;
+    aura.position.y = 0.1;
+    player.add(aura);
+
+    // Pequena luz no jogador
+    const playerLight = new THREE.PointLight(0x00aaff, 1, 8);
+    playerLight.position.set(0, 1, 0);
+    player.add(playerLight);
+
+    // --- Orbes colecionáveis ---
+    const orbes = [];
+    const orbCount = 12;
+    const orbGeo = new THREE.SphereGeometry(0.4, 16, 16);
+    const orbMat = new THREE.MeshStandardMaterial({ 
+      color: 0xffaa00, 
+      emissive: 0xaa4400,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+
+    function createOrbPosition() {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2 + Math.random() * (arenaRadius - 3);
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      return new THREE.Vector3(x, 0.8, z);
+    }
+
+    for (let i = 0; i < orbCount; i++) {
+      const orb = new THREE.Mesh(orbGeo, orbMat.clone());
+      orb.castShadow = true;
+      orb.receiveShadow = false;
+      
+      const pos = createOrbPosition();
+      // Verifica se não está muito perto de outro orbe
+      let tooClose = false;
+      for (let other of orbes) {
+        if (pos.distanceTo(other.position) < 1.5) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (tooClose) {
+        i--; // tenta novamente
+        continue;
+      }
+      
+      orb.position.copy(pos);
+      orb.userData.collected = false;
+      
+      // Anel de brilho ao redor
+      const glowGeo = new THREE.TorusGeometry(0.55, 0.03, 8, 20);
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600 });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      glow.rotation.x = Math.PI / 2;
+      glow.position.y = 0;
+      orb.add(glow);
+      
+      scene.add(orb);
+      orbes.push(orb);
+    }
+
+    // --- Obstáculos (blocos móveis) ---
+    const obstacles = [];
+    const obstacleCount = 8;
+    const obstacleGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+    const obstacleMat = new THREE.MeshStandardMaterial({ 
+      color: 0xff3366, 
+      emissive: 0x551122,
+      roughness: 0.3,
+      metalness: 0.5
+    });
+
+    for (let i = 0; i < obstacleCount; i++) {
+      const obs = new THREE.Mesh(obstacleGeo, obstacleMat.clone());
+      obs.castShadow = true;
+      obs.receiveShadow = true;
+      
+      const angle = (i / obstacleCount) * Math.PI * 2;
+      const radius = 5 + Math.random() * 4;
+      obs.position.x = Math.cos(angle) * radius;
+      obs.position.z = Math.sin(angle) * radius;
+      obs.position.y = 0.6;
+      
+      obs.userData = {
+        angle: angle,
+        radius: radius,
+        speed: 0.5 + Math.random() * 0.8,
+        heightOffset: Math.random() * Math.PI * 2,
+        baseY: 0.6
+      };
+      
+      scene.add(obs);
+      obstacles.push(obs);
+    }
+
+    // --- Partículas de efeito (para coleta) ---
+    const particles = [];
+    function createParticles(position, color) {
+      const particleCount = 20;
+      const particleGeo = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const velocities = [];
+      
+      for (let i = 0; i < particleCount; i++) {
+        positions[i*3] = position.x;
+        positions[i*3+1] = position.y;
+        positions[i*3+2] = position.z;
+        
+        const vel = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.3,
+          Math.random() * 0.3,
+          (Math.random() - 0.5) * 0.3
+        );
+        velocities.push(vel);
+      }
+      
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const particleMat = new THREE.PointsMaterial({ 
+        color: color, 
+        size: 0.15, 
+        transparent: true, 
+        opacity: 1,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const points = new THREE.Points(particleGeo, particleMat);
+      scene.add(points);
+      
+      particles.push({
+        mesh: points,
+        velocities: velocities,
+        life: 1.0,
+        positions: positions
+      });
+    }
+
+    // --- Estado do jogo ---
+    let gameActive = false;
+    let gameFinished = false;
+    let score = 0;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let finalTime = 0;
+    const keys = { w: false, a: false, s: false, d: false, up: false, down: false, left: false, right: false };
+    
+    // Movimento
+    const moveSpeed = 0.35;
+    const playerVelocity = new THREE.Vector3(0, 0, 0);
+    const acceleration = 0.03;
+    const friction = 0.85;
+    
+    // Limites da arena (com margem)
+    const boundary = arenaRadius - 0.8;
+
+    // --- Controles ---
+    window.addEventListener('keydown', (e) => {
+      switch(e.key.toLowerCase()) {
+        case 'w': case 'arrowup': keys.w = true; e.preventDefault(); break;
+        case 's': case 'arrowdown': keys.s = true; e.preventDefault(); break;
+        case 'a': case 'arrowleft': keys.a = true; e.preventDefault(); break;
+        case 'd': case 'arrowright': keys.d = true; e.preventDefault(); break;
+        case ' ': 
+          if (!gameActive && !gameFinished) startGame(); 
+          e.preventDefault(); 
+          break;
+      }
+    });
+    
+    window.addEventListener('keyup', (e) => {
+      switch(e.key.toLowerCase()) {
+        case 'w': case 'arrowup': keys.w = false; e.preventDefault(); break;
+        case 's': case 'arrowdown': keys.s = false; e.preventDefault(); break;
+        case 'a': case 'arrowleft': keys.a = false; e.preventDefault(); break;
+        case 'd': case 'arrowright': keys.d = false; e.preventDefault(); break;
+      }
+    });
+
+    // --- Funções do jogo ---
+    function startGame() {
+      if (gameActive || gameFinished) return;
+      
+      // Reset
+      gameActive = true;
+      gameFinished = false;
+      score = 0;
+      elapsedTime = 0;
+      startTime = performance.now();
+      
+      // Reset player
+      player.position.set(0, playerSize / 2, 0);
+      playerVelocity.set(0, 0, 0);
+      
+      // Reset orbes
+      orbes.forEach(orb => {
+        if (orb.userData.collected) {
+          orb.visible = true;
+          orb.userData.collected = false;
+          orb.scale.set(1, 1, 1);
+          scene.add(orb); // já está na cena, mas garante visibilidade
+        }
+        // Reposiciona
+        const pos = createOrbPosition();
+        orb.position.copy(pos);
+        orb.visible = true;
+        orb.userData.collected = false;
+      });
+      
+      // Reset obstáculos
+      obstacles.forEach(obs => {
+        obs.userData.angle = Math.random() * Math.PI * 2;
+        obs.userData.radius = 5 + Math.random() * 4;
+        obs.userData.speed = 0.5 + Math.random() * 0.8;
+      });
+      
+      // Reset UI
+      document.getElementById('score').textContent = '0';
+      document.getElementById('time').textContent = '0.00';
+      document.getElementById('message').textContent = 'Colete os orbes!';
+      document.getElementById('start-btn').style.display = 'none';
+      
+      // Remove partículas antigas
+      particles.forEach(p => scene.remove(p.mesh));
+      particles.length = 0;
+    }
+
+    function endGame() {
+      gameActive = false;
+      gameFinished = true;
+      finalTime = elapsedTime;
+      
+      document.getElementById('message').innerHTML = `🏁 FIM! Tempo: ${finalTime.toFixed(2)}s | Orbes: ${score}/${orbCount}`;
+      document.getElementById('start-btn').style.display = 'block';
+      document.getElementById('start-btn').textContent = 'JOGAR NOVAMENTE';
+    }
+
+    // --- Botão de início ---
+    document.getElementById('start-btn').addEventListener('click', startGame);
+
+    // --- Loop de animação ---
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const delta = Math.min(clock.getDelta(), 0.1);
+      
+      if (gameActive) {
+        // Atualiza tempo
+        elapsedTime = (performance.now() - startTime) / 1000;
+        document.getElementById('time').textContent = elapsedTime.toFixed(2);
+        
+        // Movimento do jogador (controle)
+        if (keys.w) playerVelocity.z -= acceleration;
+        if (keys.s) playerVelocity.z += acceleration;
+        if (keys.a) playerVelocity.x -= acceleration;
+        if (keys.d) playerVelocity.x += acceleration;
+        
+        // Aplica fricção
+        playerVelocity.x *= friction;
+        playerVelocity.z *= friction;
+        
+        // Limita velocidade máxima
+        const maxSpeed = moveSpeed * 3;
+        if (playerVelocity.length() > maxSpeed) {
+          playerVelocity.normalize().multiplyScalar(maxSpeed);
+        }
+        
+        // Atualiza posição
+        player.position.x += playerVelocity.x;
+        player.position.z += playerVelocity.z;
+        
+        // Limita à arena circular
+        const distanceFromCenter = Math.sqrt(player.position.x ** 2 + player.position.z ** 2);
+        if (distanceFromCenter > boundary) {
+          const angle = Math.atan2(player.position.z, player.position.x);
+          player.position.x = Math.cos(angle) * boundary;
+          player.position.z = Math.sin(angle) * boundary;
+          // Anula velocidade na direção radial
+          const normalX = Math.cos(angle);
+          const normalZ = Math.sin(angle);
+          const dot = playerVelocity.x * normalX + playerVelocity.z * normalZ;
+          if (dot > 0) {
+            playerVelocity.x -= normalX * dot;
+            playerVelocity.z -= normalZ * dot;
+          }
+        }
+        
+        // Rotação suave do jogador baseada na velocidade
+        const targetRotY = Math.atan2(playerVelocity.x, playerVelocity.z);
+        if (playerVelocity.length() > 0.05) {
+          player.rotation.y += (targetRotY - player.rotation.y) * 0.1;
+        }
+        
+        // Anima aura
+        aura.rotation.z += 0.02;
+        
+        // Verifica coleta de orbes
+        orbes.forEach(orb => {
+          if (!orb.userData.collected && orb.visible) {
+            const dist = player.position.distanceTo(orb.position);
+            if (dist < 1.2) {
+              // Coleta
+              orb.userData.collected = true;
+              orb.visible = false;
+              score++;
+              document.getElementById('score').textContent = score;
+              
+              // Efeito de partículas
+              createParticles(orb.position, 0xffaa00);
+              
+              // Verifica vitória
+              if (score >= orbCount) {
+                endGame();
+              }
+            }
+          }
+        });
+        
+        // Anima orbes (rotação e flutuação)
+        orbes.forEach((orb, index) => {
+          if (orb.visible && !orb.userData.collected) {
+            orb.rotation.y += 0.02;
+            orb.position.y = 0.8 + Math.sin(elapsedTime * 3 + index) * 0.15;
+          }
+        });
+        
+        // Atualiza obstáculos (movimento circular)
+        obstacles.forEach(obs => {
+          obs.userData.angle += obs.userData.speed * delta;
+          obs.position.x = Math.cos(obs.userData.angle) * obs.userData.radius;
+          obs.position.z = Math.sin(obs.userData.angle) * obs.userData.radius;
+          obs.position.y = obs.userData.baseY + Math.sin(elapsedTime * 2 + obs.userData.heightOffset) * 0.2;
+          obs.rotation.x += 0.01;
+          obs.rotation.y += 0.02;
+          
+          // Colisão com jogador (empurra)
+          const dist = player.position.distanceTo(obs.position);
+          if (dist < 1.3) {
+            // Empurra o jogador para longe
+            const dir = player.position.clone().sub(obs.position).normalize();
+            player.position.add(dir.multiplyScalar(0.4));
+            // Aplica impulso
+            playerVelocity.add(dir.multiplyScalar(0.15));
+            
+            // Partículas de impacto (leve)
+            if (Math.random() < 0.2) {
+              createParticles(player.position, 0xff3366);
+            }
+          }
+        });
+        
+        // Atualiza partículas
+        for (let i = particles.lengt
