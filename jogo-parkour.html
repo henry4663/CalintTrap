@@ -148,9 +148,9 @@ if (isMobile) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87caff);
-  scene.fog = new THREE.Fog(0x87caff, 35, 110);
+  scene.fog = new THREE.Fog(0x87caff, 45, 130);
 
-  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 250);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -184,7 +184,9 @@ if (isMobile) {
     amarelo: material(0xffcb45),
     vermelho: material(0xff5369),
     branco: material(0xffffff),
-    chao: material(0x29394e)
+    chao: material(0x29394e),
+    laranja: material(0xff9f43),
+    rosa: material(0xff6b81)
   };
 
   function criarBloco(x, y, z, sx, sy, sz, mat) {
@@ -196,7 +198,7 @@ if (isMobile) {
     return objeto;
   }
 
-  criarBloco(0, -2, -25, 200, 1, 200, cores.chao);
+  criarBloco(0, -2, -60, 200, 1, 300, cores.chao);
 
   const plataformas = [];
 
@@ -214,6 +216,7 @@ if (isMobile) {
     criarBloco(x, y - 0.36, z, largura + 0.15, 0.12, profundidade + 0.15, cores.branco);
   }
 
+  // --- PARTE 1: INICIAL (Original) ---
   plataforma(0, 0, 0, 10, 10, cores.verde);
   plataforma(0, 1, -10, 5, 5, cores.roxo);
   plataforma(5, 2, -17, 4, 4, cores.azul);
@@ -223,19 +226,36 @@ if (isMobile) {
   plataforma(2, 6, -47, 4, 4, cores.azul);
   plataforma(8, 7, -55, 6, 6, cores.amarelo);
 
-  criarBloco(-5, 5.4, -39, 1.7, 0.15, 1.7, cores.verde);
-  criarBloco(8, 7.42, -55, 2, 0.12, 2, cores.verde);
-  criarBloco(8, 9, -55, 0.25, 3, 0.25, cores.vermelho);
-  criarBloco(9, 10.2, -55, 2, 0.8, 0.15, cores.amarelo);
+  // --- PARTE 2: EXPANSÃO DO OBBY (Novas Fases) ---
+  plataforma(3, 8, -63, 3, 3, cores.laranja);
+  plataforma(-2, 9, -70, 3, 3, cores.rosa);
+  plataforma(-7, 10, -77, 4, 4, cores.verde);
+  
+  // Zig-zag de plataformas estreitas de precisão
+  plataforma(-3, 11, -85, 2, 2, cores.azul);
+  plataforma(3, 12, -92, 2, 2, cores.amarelo);
+  plataforma(-2, 13, -99, 2, 2, cores.roxo);
+  plataforma(4, 14, -106, 3, 3, cores.laranja);
+  
+  // Plataforma final com a bandeira de vitória
+  plataforma(4, 16, -116, 7, 7, cores.verde);
 
-  // INICIA O CLIENTE ISOLADO (Lê nick e skins do localStorage do jogador atual)
+  // Checkpoints e enfeites
+  criarBloco(-5, 5.4, -39, 1.7, 0.15, 1.7, cores.verde); // Checkpoint 1
+  criarBloco(8, 7.42, -55, 2, 0.12, 2, cores.verde);    // Checkpoint 2
+  criarBloco(-7, 10.42, -77, 2, 0.12, 2, cores.verde);   // Checkpoint 3
+  
+  // Bandeira final
+  criarBloco(4, 18, -116, 0.25, 3, 0.25, cores.vermelho);
+  criarBloco(5, 19.2, -116, 2, 0.8, 0.15, cores.amarelo);
+
+  // INICIA O CLIENTE ISOLADO
   const remotePlayers = new Map();
   let meuClientId = null;
 
   const cliente = iniciarClienteGoblox((clientId, data) => {
     meuClientId = clientId;
 
-    // Remove jogadores que saíram
     for (let id of remotePlayers.keys()) {
       if (!data[id]) {
         scene.remove(remotePlayers.get(id));
@@ -243,13 +263,11 @@ if (isMobile) {
       }
     }
 
-    // Atualiza ou adiciona os jogadores remotos na cena
     for (let id in data) {
       if (id === clientId) continue;
       let p = data[id];
 
       if (!remotePlayers.has(id)) {
-        // Cria o personagem remoto aplicando o nome e as skins equipadas dele
         const meshOutro = criarPersonagem(p.nome, p.itens || []);
         scene.add(meshOutro);
         remotePlayers.set(id, meshOutro);
@@ -267,7 +285,6 @@ if (isMobile) {
     setTimeout(() => { window.location.href = 'lobby.html'; }, 100);
   });
 
-  // Cria o personagem local com a skin do próprio jogador
   const jogador = criarPersonagem(cliente.nickLocal);
   scene.add(jogador);
   jogador.position.set(0, 0.36, 0);
@@ -307,7 +324,6 @@ if (isMobile) {
     pular();
   });
 
-  // CONTROLE DO JOYSTICK VIRTUAL E ROTAÇÃO DA CÂMERA (MULTITOQUE)
   const joystickBase = document.getElementById('joystickBase');
   const joystickStick = document.getElementById('joystickStick');
   let joystickTouchId = null;
@@ -325,11 +341,9 @@ if (isMobile) {
         continue;
       }
 
-      // Lado esquerdo = Joystick
       if (joystickTouchId === null && touch.clientX < window.innerWidth / 2) {
         joystickTouchId = touch.identifier;
       } 
-      // Lado direito = Rotação de câmera
       else if (cameraTouchId === null && touch.clientX >= window.innerWidth / 2) {
         cameraTouchId = touch.identifier;
         lastTouchX = touch.clientX;
@@ -381,7 +395,6 @@ if (isMobile) {
     }
   });
 
-  // Para PC (arrastar com o rato)
   let arrastando = false;
   let ultimaX = 0;
   renderer.domElement.addEventListener("pointerdown", e => {
@@ -413,7 +426,6 @@ if (isMobile) {
     localStorage.setItem(keyFbux, novosFbux);
     localStorage.setItem(keyMoedas, novasMoedas);
 
-    // Sincroniza com o Firebase se aplicável
     update(ref(db, `users/${nick}`), { fbux: novosFbux, moedas: novasMoedas }).catch(() => {});
   }
 
@@ -436,7 +448,6 @@ if (isMobile) {
       estaMovendo = true;
     }
 
-    // Movimento via Joystick Mobile
     if (joystickTouchId !== null) {
       const dirFrente = new THREE.Vector3(-Math.sin(anguloCamera), 0, -Math.cos(anguloCamera)).normalize();
       const dirLado = new THREE.Vector3(Math.cos(anguloCamera), 0, -Math.sin(anguloCamera)).normalize();
@@ -469,18 +480,26 @@ if (isMobile) {
       }
     }
 
-    // Animação de caminhada do personagem
     if (jogador.atualizarAnimacao) {
       jogador.atualizarAnimacao(performance.now() * 0.001, estaMovendo);
     }
 
+    // CHECKPOINTS
     if (jogador.position.z < -36 && jogador.position.z > -42 && jogador.position.x < -2 && jogador.position.x > -8 && noChao) {
       checkpoint.set(jogador.position.x, jogador.position.y, jogador.position.z);
-      status.textContent = "Checkpoint ativado!";
+      status.textContent = "Checkpoint 1 ativado!";
+    }
+    if (jogador.position.z < -52 && jogador.position.z > -58 && jogador.position.x > 5 && noChao) {
+      checkpoint.set(jogador.position.x, jogador.position.y, jogador.position.z);
+      status.textContent = "Checkpoint 2 ativado!";
+    }
+    if (jogador.position.z < -74 && jogador.position.z > -80 && jogador.position.x < -5 && noChao) {
+      checkpoint.set(jogador.position.x, jogador.position.y, jogador.position.z);
+      status.textContent = "Checkpoint 3 ativado!";
     }
 
-    // CONDIÇÃO DE VITÓRIA (ATRIBUIR RECOMPENSA)
-    if (jogador.position.z < -57 && jogador.position.x > 5) {
+    // CONDIÇÃO DE VITÓRIA ATUALIZADA (FIM DA NOVA FASE)
+    if (jogador.position.z < -113 && jogador.position.x > 0) {
       venceu = true;
       darRecompensaVitoria();
       document.getElementById("mensagem").style.display = "block";
@@ -493,7 +512,7 @@ if (isMobile) {
       noChao = false;
     }
 
-    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -20, 20);
+    jogador.position.x = THREE.MathUtils.clamp(jogador.position.x, -25, 25);
   }
 
   function atualizarCamera(dt) {
