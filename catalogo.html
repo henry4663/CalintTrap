@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOBLOX — Catálogo & Loja</title>
+  <link rel="stylesheet" href="./global.css" />
+  <link rel="stylesheet" href="./lobby.css" />
+  <style>
+    /* Estilos adicionais para o Catálogo e Tabs */
+    .currency-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .currency-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .currency-fbux { color: #facc15; }
+    .currency-coins { color: #4ade80; }
+
+    .tabs-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #a0aec0;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: #63df70;
+      color: #09200c;
+      border-color: #63df70;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Loja de Skins */
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .shop-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s ease;
+    }
+    .shop-card:hover {
+      transform: translateY(-3px);
+      border-color: #7dff83;
+    }
+    .item-icon {
+      font-size: 45px;
+      margin-bottom: 8px;
+    }
+    .shop-card h3 {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .shop-card p {
+      font-size: 0.8rem;
+      color: #b0b0b0;
+      margin-bottom: 12px;
+      flex-grow: 1;
+    }
+    .price {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .price-fbux { color: #facc15; }
+    .price-coins { color: #4ade80; }
+    .btn-buy {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #63df70;
+      color: #09200c;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-buy:hover {
+      background: #7dff83;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+
+  <header class="topbar">
+    <div class="logo">GOBLOX</div>
+
+    <div class="user-box">
+      <div class="currency-container">
+        <div class="currency-item currency-fbux">
+          💎 <span id="valFbux">0</span> FBUX
+        </div>
+        <div class="currency-item currency-coins">
+          🪙 <span id="valMoedas">0</span> Moedas
+        </div>
+      </div>
+
+      <span id="boasVindas">Carregando...</span>
+      <button id="btnVoltar" class="btn btn-light" onclick="window.location.href='lobby.html'">Lobby</button>
+      <button id="btnSair" class="btn btn-dark">Sair</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <!-- Sistema de Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="mudarTab(event, 'tabLoja')">🛒 Loja de Skins</button>
+        <button class="tab-btn" onclick="mudarTab(event, 'tabInventario')">🎒 Meu Inventário</button>
+      </div>
+
+      <!-- Conteúdo da Tab: Loja -->
+      <div id="tabLoja" class="tab-content active">
+        <h1>Catálogo & Loja</h1>
+        <p style="color: #a0aec0; margin-bottom: 20px;">Adquira acessórios exclusivos para personalizar o seu avatar.</p>
+
+        <div class="shop-grid">
+          <!-- Item 1: Coroa -->
+          <div class="shop-card">
+            <div class="item-icon">👑</div>
+            <h3>Coroa Real</h3>
+            <p>Mostre autoridade na arena.</p>
+            <div class="price price-fbux">💎 120 FBUX</div>
+            <button class="btn-buy" onclick="comprarItem('coroa', 120, 'fbux')">Comprar</button>
+          </div>
+
+          <!-- Item 2: Chupeta -->
+          <div class="shop-card">
+            <div class="item-icon">Não exite  foto:(</div>
+            <h3>Chupeta</h3>
+            <p>O acessório mais lendário do jogo.</p>
+            <div class="price price-fbux">💎 900 FBUX</div>
+            <button class="btn-buy" onclick="comprarItem('chupeta', 900, 'fbux')">Comprar</button>
+          </div>
+
+          <!-- Item 3: Cabelo Amarelo -->
+          <div class="shop-card">
+            <div class="item-icon">👱</div>
+            <h3>Cabelo Amarelo</h3>
+            <p>Novo estilo visual para o seu boneco.</p>
+            <div class="price price-coins">🪙 20 Moedas</div>
+            <button class="btn-buy" onclick="comprarItem('cabelo_amarelo', 20, 'moedas')">Comprar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conteúdo da Tab: Inventário -->
+      <div id="tabInventario" class="tab-content">
+        <h1>Seu Inventário</h1>
+        <p style="color: #a0aec0; margin-bottom: 20px;">Itens e acessórios que já comprou:</p>
+        <div id="listaInventario" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <span style="color: #888;">Nenhum item comprado ainda.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script type="module" src="./catalogo.js"></script>
+</body>
+</html>
