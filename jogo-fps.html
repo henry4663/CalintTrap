@@ -260,7 +260,6 @@ canvas {
   transition: opacity .2s;
 }
 @media (hover:hover) and (pointer:fine) {
-  #bottomLeft, #bottomRight { opacity: .45; }
   #bottomLeft, #bottomRight { display: none; }
 }
 @media (max-width: 600px) {
@@ -304,7 +303,7 @@ canvas {
 
 <div id="startScreen">
   <h1>GOBLOX</h1>
-  <p>FOREST ARENA<br>Mapa de floresta com árvores, pedras, trilhas e arbustos. Os blocos antigos foram removidos e as pedras decorativas não bloqueiam o jogador.</p>
+  <p>FOREST ARENA<br>Mapa de floresta com árvores, pedras, trilhas e arbustos. As pedras decorativas não bloqueiam o jogador.</p>
   <p>PC: WASD para andar, mouse para olhar, clique para atirar, espaço para pular, R para recarregar, 1/2/3 para trocar arma.</p>
   <p>Celular: use o controle esquerdo para andar e os botões da direita para pular, atirar e recarregar.</p>
   <button id="startButton">ENTRAR NO JOGO</button>
@@ -330,10 +329,6 @@ import {
   onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-/* ============================================================
-   1. CONFIGURAÇÕES GERAIS
-   ============================================================ */
-
 const CONFIG = {
   worldSize: 180,
   groundY: 0,
@@ -357,44 +352,10 @@ const CONFIG = {
 };
 
 const WEAPONS = {
-  rifle: {
-    label: "RIFLE",
-    magazine: 30,
-    reserve: 120,
-    damage: 25,
-    delay: 130,
-    reload: 1.45,
-    spread: 0.012,
-    pellets: 1,
-    range: 95
-  },
-  pistol: {
-    label: "PISTOLA",
-    magazine: 12,
-    reserve: 72,
-    damage: 34,
-    delay: 290,
-    reload: 1.1,
-    spread: 0.009,
-    pellets: 1,
-    range: 75
-  },
-  shotgun: {
-    label: "ESCOPETA",
-    magazine: 6,
-    reserve: 36,
-    damage: 13,
-    delay: 650,
-    reload: 1.7,
-    spread: 0.065,
-    pellets: 7,
-    range: 38
-  }
+  rifle: { label: "RIFLE", magazine: 30, reserve: 120, damage: 25, delay: 130, reload: 1.45, spread: 0.012, pellets: 1, range: 95 },
+  pistol: { label: "PISTOLA", magazine: 12, reserve: 72, damage: 34, delay: 290, reload: 1.1, spread: 0.009, pellets: 1, range: 75 },
+  shotgun: { label: "ESCOPETA", magazine: 6, reserve: 36, damage: 13, delay: 650, reload: 1.7, spread: 0.065, pellets: 7, range: 38 }
 };
-
-/* ============================================================
-   2. ELEMENTOS DA INTERFACE
-   ============================================================ */
 
 const gameRoot = document.getElementById("game");
 const healthLabel = document.getElementById("healthLabel");
@@ -409,8 +370,6 @@ const noticeElement = document.getElementById("notice");
 const fireButton = document.getElementById("fireButton");
 const jumpButton = document.getElementById("jumpButton");
 const reloadButton = document.getElementById("reloadButton");
-const stickBase = document.getElementById("stickBase");
-const stickKnob = document.getElementById("stickKnob");
 
 let noticeTimer = null;
 
@@ -418,50 +377,31 @@ function showNotice(message, duration = 1500) {
   noticeElement.textContent = message;
   noticeElement.style.opacity = "1";
   clearTimeout(noticeTimer);
-  noticeTimer = setTimeout(() => {
-    noticeElement.style.opacity = "0";
-  }, duration);
+  noticeTimer = setTimeout(() => { noticeElement.style.opacity = "0"; }, duration);
 }
 
 function updateHealthUI() {
   const safeHealth = Math.max(0, Math.min(CONFIG.maxHealth, health));
   healthLabel.textContent = `VIDA: ${Math.round(safeHealth)}`;
   healthInner.style.width = `${safeHealth}%`;
-  healthInner.style.background =
-    safeHealth > 55 ? "#4fe36b" :
-    safeHealth > 25 ? "#e8d34e" : "#ff5555";
+  healthInner.style.background = safeHealth > 55 ? "#4fe36b" : safeHealth > 25 ? "#e8d34e" : "#ff5555";
 }
 
 function updateAmmoUI() {
   const weapon = WEAPONS[currentWeapon];
-  ammoLabel.textContent =
-    `${weapon.label}: ${magazines[currentWeapon]} / ${reserves[currentWeapon]}`;
+  ammoLabel.textContent = `${weapon.label}: ${magazines[currentWeapon]} / ${reserves[currentWeapon]}`;
 }
 
 function updateScoreUI() {
   scoreLabel.textContent = `ELIMINAÇÕES: ${kills}`;
 }
 
-/* ============================================================
-   3. CENA THREE.JS
-   ============================================================ */
-
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9bc6d2);
 scene.fog = new THREE.Fog(0x9bc6d2, 65, 190);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  260
-);
-
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  powerPreference: "high-performance"
-});
-
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 260);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -475,84 +415,19 @@ scene.add(hemiLight);
 const sun = new THREE.DirectionalLight(0xfff2d5, 1.7);
 sun.position.set(-35, 65, 28);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.left = -100;
-sun.shadow.camera.right = 100;
-sun.shadow.camera.top = 100;
-sun.shadow.camera.bottom = -100;
 scene.add(sun);
 
-const fillLight = new THREE.DirectionalLight(0xc8e6ff, 0.35);
-fillLight.position.set(40, 20, -40);
-scene.add(fillLight);
-
-/* ============================================================
-   4. MATERIAIS
-   ============================================================ */
-
 const materials = {
-  grass: new THREE.MeshStandardMaterial({
-    color: 0x477d35,
-    roughness: 1
-  }),
-  grassLight: new THREE.MeshStandardMaterial({
-    color: 0x5d9340,
-    roughness: 1
-  }),
-  dirt: new THREE.MeshStandardMaterial({
-    color: 0x80603b,
-    roughness: 1
-  }),
-  dirtLight: new THREE.MeshStandardMaterial({
-    color: 0x96764d,
-    roughness: 1
-  }),
-  bark: new THREE.MeshStandardMaterial({
-    color: 0x68432a,
-    roughness: 1
-  }),
-  barkDark: new THREE.MeshStandardMaterial({
-    color: 0x49301f,
-    roughness: 1
-  }),
-  leaf: new THREE.MeshStandardMaterial({
-    color: 0x286b32,
-    roughness: 1
-  }),
-  leafLight: new THREE.MeshStandardMaterial({
-    color: 0x438b3e,
-    roughness: 1
-  }),
-  rock: new THREE.MeshStandardMaterial({
-    color: 0x777b78,
-    roughness: 1
-  }),
-  rockLight: new THREE.MeshStandardMaterial({
-    color: 0x969b94,
-    roughness: 1
-  }),
-  bush: new THREE.MeshStandardMaterial({
-    color: 0x2d7135,
-    roughness: 1
-  }),
-  flower: new THREE.MeshStandardMaterial({
-    color: 0xe9df9b,
-    roughness: 1
-  }),
-  wood: new THREE.MeshStandardMaterial({
-    color: 0x76512f,
-    roughness: 1
-  }),
-  metal: new THREE.MeshStandardMaterial({
-    color: 0x555e61,
-    metalness: 0.55,
-    roughness: 0.55
-  })
+  grass: new THREE.MeshStandardMaterial({ color: 0x477d35, roughness: 1 }),
+  grassLight: new THREE.MeshStandardMaterial({ color: 0x5d9340, roughness: 1 }),
+  dirt: new THREE.MeshStandardMaterial({ color: 0x80603b, roughness: 1 }),
+  bark: new THREE.MeshStandardMaterial({ color: 0x68432a, roughness: 1 }),
+  barkDark: new THREE.MeshStandardMaterial({ color: 0x49301f, roughness: 1 }),
+  leaf: new THREE.MeshStandardMaterial({ color: 0x286b32, roughness: 1 }),
+  leafLight: new THREE.MeshStandardMaterial({ color: 0x438b3e, roughness: 1 }),
+  rock: new THREE.MeshStandardMaterial({ color: 0x777b78, roughness: 1 }),
+  bush: new THREE.MeshStandardMaterial({ color: 0x2d7135, roughness: 1 })
 };
-
-/* ============================================================
-   5. GRUPOS E LISTAS DO MUNDO
-   ============================================================ */
 
 const worldGroup = new THREE.Group();
 const decorationGroup = new THREE.Group();
@@ -561,78 +436,21 @@ const botGroup = new THREE.Group();
 const remotePlayerGroup = new THREE.Group();
 const bulletGroup = new THREE.Group();
 
-scene.add(worldGroup);
-scene.add(decorationGroup);
-scene.add(obstacleGroup);
-scene.add(botGroup);
-scene.add(remotePlayerGroup);
-scene.add(bulletGroup);
+scene.add(worldGroup, decorationGroup, obstacleGroup, botGroup, remotePlayerGroup, bulletGroup);
 
 const solidObstacles = [];
-const platforms = [];
 const bots = [];
 const bullets = [];
 const remotePlayers = new Map();
 const worldDecorations = [];
 
 const clock = new THREE.Clock();
-const raycaster = new THREE.Raycaster();
-const centerScreen = new THREE.Vector2(0, 0);
 
-let gameStarted = false;
-let gamePaused = false;
-let playerObject = null;
 let health = CONFIG.maxHealth;
 let kills = 0;
 let currentWeapon = "rifle";
-let isReloading = false;
-let lastShotTime = 0;
-let lastNetworkTime = 0;
-let playerVelocityY = 0;
-let isGrounded = false;
-let playerYaw = 0;
-let playerPitch = 0;
-let isPointerLocked = false;
-let isFiring = false;
-let lastDamageTime = 0;
-let lastPositionSent = 0;
-let playerId = "player_" + Math.random().toString(36).slice(2, 11);
-
-/* ============================================================
-   6. ESTADO DAS ARMAS
-   ============================================================ */
-
-const magazines = {
-  rifle: WEAPONS.rifle.magazine,
-  pistol: WEAPONS.pistol.magazine,
-  shotgun: WEAPONS.shotgun.magazine
-};
-
-const reserves = {
-  rifle: WEAPONS.rifle.reserve,
-  pistol: WEAPONS.pistol.reserve,
-  shotgun: WEAPONS.shotgun.reserve
-};
-
-function selectWeapon(name) {
-  if (!WEAPONS[name]) return;
-  currentWeapon = name;
-  document.querySelectorAll(".weapon").forEach(button => {
-    button.classList.toggle("active", button.dataset.weapon === name);
-  });
-  updateAmmoUI();
-  showNotice(`Arma: ${WEAPONS[name].label}`);
-}
-
-document.querySelectorAll(".weapon").forEach(button => {
-  button.addEventListener("click", () => {
-    selectWeapon(button.dataset.weapon);
-  });
-});
-
-/* ============================================================
-   7. FUNÇÕES DE OBJETOS 3D
-   ============================================================ */
+let magazines = { rifle: 30, pistol: 12, shotgun: 6 };
+let reserves = { rifle: 120, pistol: 72, shotgun: 36 };
 
 function makeMesh(geometry, material, parent = worldGroup) {
   const mesh = new THREE.Mesh(geometry, material);
@@ -642,127 +460,7 @@ function makeMesh(geometry, material, parent = worldGroup) {
   return mesh;
 }
 
-function randomRange(min, max) {
-  return min + Math.random() * (max - min);
-}
-
-function randomInt(min, max) {
-  return Math.floor(randomRange(min, max + 1));
-}
-
-function distance2D(ax, az, bx, bz) {
-  const dx = ax - bx;
-  const dz = az - bz;
-  return Math.sqrt(dx * dx + dz * dz);
-}
-
-function addSolidBox(x, y, z, width, height, depth, material) {
-  const mesh = makeMesh(
-    new THREE.BoxGeometry(width, height, depth),
-    material,
-    obstacleGroup
-  );
-  mesh.position.set(x, y + height / 2, z);
-  solidObstacles.push({
-    minX: x - width / 2,
-    maxX: x + width / 2,
-    minZ: z - depth / 2,
-    maxZ: z + depth / 2,
-    minY: y,
-    maxY: y + height,
-    mesh
-  });
-  return mesh;
-}
-
-function addDecorationBox(x, y, z, width, height, depth, material) {
-  const mesh = makeMesh(
-    new THREE.BoxGeometry(width, height, depth),
-    material,
-    decorationGroup
-  );
-  mesh.position.set(x, y + height / 2, z);
-  return mesh;
-}
-
-/* ============================================================
-   8. CHÃO E TRILHAS
-   ============================================================ */
-
-function createGround() {
-  const ground = makeMesh(
-    new THREE.PlaneGeometry(CONFIG.worldSize, CONFIG.worldSize, 1, 1),
-    materials.grass,
-    worldGroup
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = CONFIG.groundY;
-  ground.receiveShadow = true;
-
-  const underLayer = makeMesh(
-    new THREE.PlaneGeometry(CONFIG.worldSize + 10, CONFIG.worldSize + 10),
-    new THREE.MeshStandardMaterial({ color: 0x263d22, roughness: 1 }),
-    worldGroup
-  );
-  underLayer.rotation.x = -Math.PI / 2;
-  underLayer.position.y = -0.12;
-
-  createMainTrail();
-  createSideTrails();
-  createGroundPatches();
-}
-
-function createTrailSegment(x, z, width, length, rotation = 0) {
-  const trail = makeMesh(
-    new THREE.PlaneGeometry(width, length),
-    materials.dirt,
-    decorationGroup
-  );
-  trail.rotation.x = -Math.PI / 2;
-  trail.rotation.z = rotation;
-  trail.position.set(x, 0.018, z);
-  return trail;
-}
-
-function createMainTrail() {
-  createTrailSegment(0, 0, 9, 180, 0);
-  createTrailSegment(0, 0, 180, 8, Math.PI / 2);
-  createTrailSegment(-48, 28, 7, 75, -0.42);
-  createTrailSegment(45, -35, 7, 85, 0.55);
-}
-
-function createSideTrails() {
-  const trails = [
-    [-35, -18, 6, 48, 0.65],
-    [36, 22, 6, 54, -0.7],
-    [-52, 48, 5, 36, -0.3],
-    [58, -55, 5, 42, 0.4],
-    [0, 65, 5, 45, 0.2],
-    [0, -65, 5, 45, -0.2]
-  ];
-  for (const trail of trails) {
-    createTrailSegment(...trail);
-  }
-}
-
-function createGroundPatches() {
-  for (let i = 0; i < 90; i++) {
-    const x = randomRange(-85, 85);
-    const z = randomRange(-85, 85);
-    if (Math.abs(x) < 7 || Math.abs(z) < 6) continue;
-    const patch = makeMesh(
-      new THREE.CircleGeometry(randomRange(1.2, 3.8), 9),
-      Math.random() > 0.5 ? materials.grassLight : materials.grass,
-      decorationGroup
-    );
-    patch.rotation.x = -Math.PI / 2;
-    patch.position.set(x, 0.025, z);
-  }
-}
-
-/* ============================================================
-   9. ÁRVORES
-   ============================================================ */
+function randomRange(min, max) { return min + Math.random() * (max - min); }
 
 function createTree(x, z, scale = 1, addCollision = true) {
   const tree = new THREE.Group();
@@ -771,67 +469,51 @@ function createTree(x, z, scale = 1, addCollision = true) {
   decorationGroup.add(tree);
 
   const trunkHeight = randomRange(3.2, 4.8);
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.43, trunkHeight, 7),
-    materials.bark
-  );
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.43, trunkHeight, 7), materials.bark);
   trunk.position.y = trunkHeight / 2;
   trunk.castShadow = true;
   tree.add(trunk);
 
-  const trunkBand = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.31, 0.35, 0.18, 7),
-    materials.barkDark
-  );
-  trunkBand.position.y = trunkHeight * 0.35;
-  tree.add(trunkBand);
-
-  const crownSizes = [
-    [2.05, 2.7, 2.0, 2.9],
-    [1.7, 2.25, 1.8, 4.1],
-    [1.35, 1.9, 1.45, 5.25]
-  ];
-
-  crownSizes.forEach((data, index) => {
-    const crown = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(data[0], 1),
-      index === 1 ? materials.leafLight : materials.leaf
-    );
-    crown.scale.set(data[1] / data[0], data[2] / data[0], 1);
-    crown.position.y = data[3];
-    crown.castShadow = true;
-    tree.add(crown);
-  });
-
-  for (let i = 0; i < 4; i++) {
-    const branch = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.15, 1.45, 5),
-      materials.bark
-    );
-    branch.position.set(
-      Math.cos(i * Math.PI / 2) * 0.42,
-      2.5 + i * 0.08,
-      Math.sin(i * Math.PI / 2) * 0.42
-    );
-    branch.rotation.z = randomRange(-0.75, 0.75);
-    branch.rotation.x = randomRange(-0.55, 0.55);
-    tree.add(branch);
-  }
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.05, 1), materials.leaf);
+  crown.position.y = 3.5;
+  crown.castShadow = true;
+  tree.add(crown);
 
   if (addCollision) {
     const radius = 0.55 * scale;
     solidObstacles.push({
-      minX: x - radius,
-      maxX: x + radius,
-      minZ: z - radius,
-      maxZ: z + radius,
-      minY: 0,
-      maxY: 3.5 * scale,
-      mesh: tree
+      minX: x - radius, maxX: x + radius,
+      minZ: z - radius, maxZ: z + radius,
+      minY: 0, maxY: 3.5 * scale, mesh: tree
     });
   }
-  worldDe
-    </div>
-  </main>
+  worldDecorations.push(tree);
+}
+
+function initWorld() {
+  const ground = makeMesh(new THREE.PlaneGeometry(CONFIG.worldSize, CONFIG.worldSize), materials.grass, worldGroup);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = CONFIG.groundY;
+
+  for (let i = 0; i < CONFIG.treeCount; i++) {
+    createTree(randomRange(-80, 80), randomRange(-80, 80), randomRange(0.8, 1.4));
+  }
+}
+
+initWorld();
+
+startButton.addEventListener("click", () => {
+  startScreen.style.display = "none";
+  gameStarted = true;
+  showNotice("Jogo iniciado!");
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
 </body>
 </html>
