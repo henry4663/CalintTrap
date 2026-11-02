@@ -4,34 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>goblox - Plataforma de Jogos</title>
-  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* Estilização da barra de rolagem */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
   </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex flex-col min-h-screen">
 
-  <!-- CABEÇALHO SUPERIOR (HEADER) -->
   <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      
-      <!-- Logo e Menu Mobile -->
       <div class="flex items-center gap-4">
         <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
           <i data-lucide="menu" class="w-6 h-6"></i>
@@ -41,28 +26,19 @@
         </a>
       </div>
 
-      <!-- Barra de Pesquisa -->
       <div class="flex-1 max-w-xl relative">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
         </div>
-        <input 
-          type="text" 
-          id="search-input" 
-          placeholder="Buscar jogos, experiências ou amigos..." 
-          class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
-        >
+        <input type="text" id="search-input" placeholder="Buscar jogos, experiências ou amigos..."
+          class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition">
       </div>
 
-      <!-- Ações do Usuário (Moeda + Avatar) -->
       <div class="flex items-center gap-4">
-        <!-- Saldo de Gobux -->
         <div class="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-300">
           <i data-lucide="coins" class="w-4 h-4 text-yellow-600"></i>
           <span>1.250</span>
         </div>
-
-        <!-- Perfil -->
         <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition">
           <div class="relative">
             <img class="w-9 h-9 rounded-full bg-red-100 border-2 border-red-500 object-cover" src="https://api.dicebear.com/7.x/bottts/svg?seed=PlayerOne" alt="Avatar">
@@ -71,14 +47,10 @@
           <span class="font-bold text-sm hidden sm:inline-block">PlayerOne</span>
         </div>
       </div>
-
     </div>
   </header>
 
-  <!-- CORPO PRINCIPAL -->
   <div class="flex-1 flex max-w-7xl w-full mx-auto">
-    
-    <!-- BARRA LATERAL (SIDEBAR) -->
     <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 p-4 hidden md:block flex-shrink-0">
       <nav class="space-y-1">
         <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-red-600 bg-red-50">
@@ -104,10 +76,7 @@
       </nav>
     </aside>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-      
-      <!-- Banner de Destaque -->
       <div class="bg-gradient-to-r from-red-600 to-rose-700 rounded-2xl p-6 sm:p-8 text-white mb-8 shadow-md">
         <h1 class="text-3xl sm:text-4xl font-extrabold mb-2">Bem-vindo ao goblox!</h1>
         <p class="text-red-100 max-w-xl mb-6">Explore milhares de mundos criados pela comunidade ou construa seu próprio jogo hoje mesmo.</p>
@@ -116,7 +85,6 @@
         </button>
       </div>
 
-      <!-- Seção de Jogos Em Destaque -->
       <section>
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -126,16 +94,11 @@
           <a href="#" class="text-sm font-semibold text-red-600 hover:underline">Ver todos</a>
         </div>
 
-        <!-- Grid de Jogos -->
-        <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <!-- Os cards de jogos serão inseridos via JavaScript -->
-        </div>
+        <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
       </section>
-
     </main>
   </div>
 
-  <!-- RODAPÉ -->
   <footer class="bg-white border-t border-gray-200 mt-auto py-6">
     <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 flex flex-wrap justify-center gap-6">
       <a href="#" class="hover:underline">Sobre</a>
@@ -146,26 +109,15 @@
     </div>
   </footer>
 
-  <!-- MODAL DE JOGO -->
   <div id="game-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in duration-200">
-      
-      <!-- Botão Fechar -->
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
       <button id="close-modal" class="absolute top-3 right-3 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-
-      <!-- Thumbnail -->
-      <div id="modal-banner" class="h-48 w-full flex items-center justify-center text-white font-black text-2xl">
-        BANNER JOGO
-      </div>
-
-      <!-- Detalhes do Jogo -->
+      <div id="modal-banner" class="h-48 w-full flex items-center justify-center text-white font-black text-2xl">BANNER JOGO</div>
       <div class="p-6">
         <h3 id="modal-title" class="text-2xl font-black text-gray-900 mb-1">Nome do Jogo</h3>
         <p id="modal-creator" class="text-sm text-gray-500 mb-4">Por Criador</p>
-
-        <!-- Estatísticas -->
         <div class="flex items-center gap-6 mb-6 border-y border-gray-100 py-3">
           <div class="flex items-center gap-2">
             <i data-lucide="users" class="w-5 h-5 text-gray-400"></i>
@@ -176,36 +128,37 @@
             <span id="modal-rating" class="font-bold text-gray-700">0%</span>
           </div>
         </div>
-
-        <!-- Botão Jogar / Carregando -->
         <div id="play-container">
           <button id="play-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold py-3 rounded-xl shadow-lg hover:shadow-green-500/30 transition flex items-center justify-center gap-2 text-lg active:scale-95">
             <i data-lucide="play" class="w-6 h-6 fill-current"></i>
             JOGAR
           </button>
         </div>
-
-        <!-- Tela de Carregando (Oculta por padrão) -->
         <div id="loading-container" class="hidden">
           <div class="w-full bg-gray-200 rounded-full h-4 mb-2 overflow-hidden">
             <div id="progress-bar" class="bg-green-500 h-full w-0 transition-all duration-300"></div>
           </div>
           <p class="text-center text-sm font-semibold text-gray-600">Conectando ao servidor...</p>
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- JAVASCRIPT -->
   <script>
-    // Inicializar Ícones Lucide
     lucide.createIcons();
 
-    // Lista de Jogos (Dados Fictícios)
+    // Lista de Jogos - ZOMBIE ATAQUE está interligado com a pasta zombieAtaquehtml
     const games = [
-      { id: 1, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
-      { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800' },
+      {
+        id: 1,
+        title: 'Zombie Ataque',
+        creator: 'goblox',
+        players: '8.1k',
+        rating: '88%',
+        color: 'from-emerald-600 to-teal-800',
+        url: 'zombieAtaquehtml/index.html'   // ← INTERLIGADO AQUI
+      },
+      { id: 2, title: 'Speed Run Arena', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600' },
       { id: 3, title: 'Pet Paradise', creator: 'goblox', players: '25.9k', rating: '97%', color: 'from-cyan-400 to-blue-500' },
       { id: 4, title: 'City Builder Tycoon', creator: 'goblox', players: '5.3k', rating: '91%', color: 'from-amber-500 to-orange-600' },
       { id: 5, title: 'Space Explorers', creator: 'goblox', players: '3.7k', rating: '85%', color: 'from-indigo-600 to-purple-800' },
@@ -221,11 +174,9 @@
     const gamesGrid = document.getElementById('games-grid');
     const searchInput = document.getElementById('search-input');
 
-    // Função para Renderizar a Grid de Jogos
     function renderGames(filterText = '') {
       gamesGrid.innerHTML = '';
-      
-      const filteredGames = games.filter(game => 
+      const filteredGames = games.filter(game =>
         game.title.toLowerCase().includes(filterText.toLowerCase())
       );
 
@@ -266,7 +217,6 @@
       lucide.createIcons();
     }
 
-    // Modal Control
     const modal = document.getElementById('game-modal');
     const closeModalBtn = document.getElementById('close-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -279,7 +229,10 @@
     const loadingContainer = document.getElementById('loading-container');
     const progressBar = document.getElementById('progress-bar');
 
+    let currentGame = null;
+
     function openModal(game) {
+      currentGame = game;
       modalTitle.innerText = game.title;
       modalCreator.innerText = `Por ${game.creator}`;
       modalPlayers.innerText = `${game.players} jogando agora`;
@@ -287,7 +240,6 @@
       modalBanner.className = `h-48 w-full flex items-center justify-center text-white font-black text-2xl bg-gradient-to-br ${game.color}`;
       modalBanner.innerText = game.title;
 
-      // Reset dos botões
       playContainer.classList.remove('hidden');
       loadingContainer.classList.add('hidden');
       progressBar.style.width = '0%';
@@ -297,7 +249,6 @@
 
     closeModalBtn.onclick = () => modal.classList.add('hidden');
 
-    // Simulação do Botão JOGAR
     playBtn.onclick = () => {
       playContainer.classList.add('hidden');
       loadingContainer.classList.remove('hidden');
@@ -309,25 +260,27 @@
         if (progress >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            alert('🚀 Iniciando o jogo no goblox Engine...');
-            modal.classList.add('hidden');
+            // 🔥 Se o jogo tem URL definida (ex: Zombie Ataque), abre na pasta
+            if (currentGame && currentGame.url) {
+              window.location.href = currentGame.url;
+            } else {
+              alert('🚀 Iniciando o jogo no goblox Engine...');
+              modal.classList.add('hidden');
+            }
           }, 300);
         }
       }, 400);
     };
 
-    // Evento de Busca
     searchInput.addEventListener('input', (e) => {
       renderGames(e.target.value);
     });
 
-    // Toggle Menu Mobile
     document.getElementById('mobile-menu-btn').onclick = () => {
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('hidden');
     };
 
-    // Inicialização da lista
     renderGames();
   </script>
 </body>
