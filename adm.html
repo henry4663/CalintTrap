@@ -216,6 +216,41 @@
               <th>Posição (X, Y, Z)</th>
               <th>Ações</th>
             </tr>
+
+<!-- SECÇÃO DE BANIMENTO -->
+<div class="action-box" style="border-color: #ef4444;">
+  <h3 style="color: #ef4444;">🔨 Gerir Banimentos</h3>
+  <div class="input-group">
+    <input type="text" id="banPlayerNick" class="input-field" placeholder="Nick exato do jogador" />
+    <input type="text" id="banMotivo" class="input-field" placeholder="Motivo do banimento" />
+    <select id="banTipo" class="input-field">
+      <option value="permanente">Ban Permanente</option>
+      <option value="temporario">Ban Temporário (Minutos)</option>
+    </select>
+    <input type="number" id="banTempoMinutos" class="input-field" placeholder="Duração em minutos (se temp.)" style="display:none;" />
+    
+    <div style="display: flex; gap: 8px;">
+      <button class="btn-adm" style="background: #ef4444; color: #fff; flex: 1;" onclick="aplicarBan()">Banir Jogador</button>
+      <button class="btn-adm" style="background: #22c55e; color: #000; flex: 1;" onclick="removerBan()">Desbanir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mostra ou oculta o campo de minutos dependendo do tipo de ban
+  document.getElementById('banTipo').addEventListener('change', (e) => {
+    const minInput = document.getElementById('banTempoMinutos');
+    minInput.style.display = e.target.value === 'temporario' ? 'block' : 'none';
+  });
+</script>
+
+
+
+
+
+
+
+            
           </thead>
           <tbody id="listaJogadoresOnline">
             <tr>
