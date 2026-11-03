@@ -1,162 +1,277 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Goblox - Jogo 3D Multiplayer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Goblox - Escape 3D Zumbi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
 
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-    user-select: none;
-    -webkit-user-select: none;
-}
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+        }
 
-body {
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    overflow: hidden;
-    position: relative;
-}
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
 
-/* CANVAS 3D */
-#gameCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+        /* HUD / INTERFACE */
+        .hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            background: rgba(10, 10, 20, 0.75);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 12px 18px;
+            border-radius: 12px;
+            color: white;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+        }
 
-/* HUD / INTERFACE */
-.hud {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 12px 20px;
-    border-radius: 12px;
-    color: white;
-    backdrop-filter: blur(5px);
-}
+        .hud-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #a855ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-.hud h2 { font-size: 1.1rem; color: #a855ff; }
-.hud p { font-size: 0.85rem; color: #4ade80; margin-top: 4px; }
+        .bar-container {
+            width: 100%;
+            height: 12px;
+            background: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
 
-.btn-voltar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-    background: rgba(239, 68, 68, 0.8);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.btn-voltar:hover { background: #dc2626; }
+        .hp-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #22c55e);
+            transition: width 0.2s ease;
+        }
 
-/* CONTROLES MOBILE (JOYSTICK + AÇÕES) */
-.mobile-controls {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    pointer-events: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding: 30px;
-}
+        .hud-info {
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+        }
 
-#joystick-base {
-    position: relative;
-    width: 130px;
-    height: 130px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    pointer-events: auto;
-    touch-action: none;
-    backdrop-filter: blur(4px);
-}
+        .btn-voltar {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            background: rgba(220, 38, 38, 0.85);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        .btn-voltar:active { transform: scale(0.95); }
 
-#joystick-stick {
-    position: absolute;
-    top: 35px;
-    left: 35px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #7900ff, #b56cff);
-    border-radius: 50%;
-    box-shadow: 0 0 15px rgba(121, 0, 255, 0.6);
-}
+        /* MINIMAPA */
+        #minimapCanvas {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            border: 2px solid rgba(168, 85, 247, 0.6);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.7);
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
 
-.action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    pointer-events: auto;
-}
+        /* CONTROLES MOBILE */
+        .mobile-controls {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 25px;
+        }
 
-.btn-act {
-    width: 75px;
-    height: 75px;
-    border: none;
-    border-radius: 50%;
-    color: white;
-    font-weight: bold;
-    font-size: 0.85rem;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-}
+        #joystick-base {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
 
-#btn-jump { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-#btn-jump:active { transform: scale(0.9); }
-</style>
+        #joystick-stick {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #a855ff, #6366f1);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .btn-act {
+            width: 75px;
+            height: 75px;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #btn-shoot {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        #btn-shoot:active { transform: scale(0.9); }
+
+        /* OVERLAYS GAME OVER / WIN */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .overlay h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px currentColor;
+        }
+        .overlay p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            margin-bottom: 25px;
+        }
+        .btn-restart {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #a855ff, #6366f1);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+
+        /* EFEITO DE DANOS NA TELA */
+        #damageFlash {
+            position: absolute;
+            inset: 0;
+            background: rgba(239, 68, 68, 0.35);
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+        }
+    </style>
 </head>
-
 <body>
 
+    <div id="damageFlash"></div>
+
     <div class="hud">
-        <h2 id="playerName">Sobrevivente</h2>
-        <p>🟢 3D Multiplayer Ativo</p>
+        <div class="hud-title">Sobrevivente</div>
+        <div class="bar-container">
+            <div class="hp-bar" id="hpBar"></div>
+        </div>
+        <div class="hud-info">
+            <span id="zombieCount">🧟 Zumbis: 0</span>
+            <span id="objectiveText">📍 Saída (Verde)</span>
+        </div>
     </div>
 
-    <button class="btn-voltar" onclick="sairDoJogo()">🏠 Sair</button>
+    <button class="btn-voltar" onclick="restartGame()">🔄 Reiniciar</button>
 
     <canvas id="gameCanvas"></canvas>
+    <canvas id="minimapCanvas" width="120" height="120"></canvas>
 
     <div class="mobile-controls">
         <div id="joystick-base">
             <div id="joystick-stick"></div>
         </div>
         <div class="action-buttons">
-            <button class="btn-act" id="btn-jump">PULAR</button>
+            <button class="btn-act" id="btn-shoot">ATIRAR</button>
         </div>
     </div>
 
-<script type="module">
-    import { db } from "./firebase.js";
-    import { ref, set, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-    import { getCurrentNick } from "./authLocal.js";
+    <!-- TELA DE DERROTA -->
+    <div class="overlay" id="gameOverScreen">
+        <h1 style="color: #ef4444;">VOCÊ MORREU!</h1>
+        <p>Os zumbis te alcançaram no labirinto.</p>
+        <button class="btn-restart" onclick="restartGame()">Tentar Novamente</button>
+    </div>
 
-    const nick = getCurrentNick() || "Player3D_" + Math.floor(Math.random() * 1000);
-    document.getElementById("playerName").textContent = nick;
+    <!-- TELA DE VITÓRIA -->
+    <div class="overlay" id="winScreen">
+        <h1 style="color: #22c55e;">VOCÊ ESCAPOU!</h1>
+        <p>Parabéns! Você encontrou a saída do labirinto!</p>
+        <button class="btn-restart" onclick="restartGame()">Jogar Novamente</button>
+    </div>
 
+<script>
+    // --- SETUP DO CANVAS ---
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const minimapCanvas = document.getElementById("minimapCanvas");
+    const minimapCtx = minimapCanvas.getContext("2d");
 
     function resize() {
         canvas.width = window.innerWidth;
@@ -165,50 +280,69 @@ body {
     window.addEventListener("resize", resize);
     resize();
 
-    // --- MOTOR 3D INDEPENDENTE ---
+    // --- MAPA DO LABIRINTO ---
+    // 1: Parede, 0: Caminho Livre, 2: Saída (Portal Verde)
+    const MAP_SIZE = 14;
+    const mapa = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,1,0,0,0,0,0,1,0,0,1],
+        [1,0,1,0,1,0,1,1,1,0,1,0,1,1],
+        [1,0,1,0,0,0,0,0,1,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+        [1,0,0,0,0,1,0,0,0,0,0,1,0,1],
+        [1,1,1,1,0,1,1,1,0,1,0,1,0,1],
+        [1,0,0,1,0,0,0,1,0,1,0,0,0,1],
+        [1,0,1,1,1,1,0,1,0,1,1,1,0,1],
+        [1,0,0,0,0,1,0,0,0,1,0,0,0,1],
+        [1,1,1,0,1,1,1,1,0,1,0,1,1,1],
+        [1,0,0,0,0,0,0,1,0,0,0,0,2,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    // --- JOGADOR ---
     let player = {
         x: 1.5,
         y: 1.5,
-        z: 1.5,
-        angulo: 0,
-        velocidade: 0.06,
-        pulando: false,
-        alturaPulo: 0,
-        vy: 0
+        angle: 0,
+        speed: 0.045,
+        rotSpeed: 0.035,
+        hp: 100,
+        maxHp: 100
     };
 
-    // ID único para esta conexão no Firebase
-    const clientId = 'player3d_' + Math.random().toString(36).substring(2, 9);
-    const playerRef = ref(db, `mundo3d_players/${clientId}`);
-    onDisconnect(playerRef).remove();
+    let zumbis = [];
+    let isShooting = false;
+    let shootCooldown = 0;
+    let gameState = "PLAYING";
 
-    let outrosJogadores = {};
-    onValue(ref(db, "mundo3d_players"), (snapshot) => {
-        outrosJogadores = snapshot.val() || {};
+    function initZumbis() {
+        // Zumbis posicionados longe do ponto inicial (1.5, 1.5)
+        zumbis = [
+            { x: 7.5, y: 1.5, hp: 3, alive: true, hitTimer: 0 },
+            { x: 9.5, y: 3.5, hp: 3, alive: true, hitTimer: 0 },
+            { x: 4.5, y: 7.5, hp: 3, alive: true, hitTimer: 0 },
+            { x: 10.5, y: 7.5, hp: 3, alive: true, hitTimer: 0 },
+            { x: 6.5, y: 11.5, hp: 3, alive: true, hitTimer: 0 },
+            { x: 11.5, y: 9.5, hp: 3, alive: true, hitTimer: 0 }
+        ];
+    }
+
+    // --- TECLADO ---
+    const keys = {};
+    window.addEventListener("keydown", e => {
+        keys[e.code] = true;
+        if (e.code === "Space") triggerShoot();
     });
+    window.addEventListener("keyup", e => keys[e.code] = false);
 
-    // Mapa 3D (1 = Parede, 0 = Caminho livre)
-    const mapa = [
-        [1,1,1,1,1,1,1,1],
-        [1,0,0,0,0,0,0,1],
-        [1,0,1,1,0,1,0,1],
-        [1,0,0,0,0,1,0,1],
-        [1,1,1,0,0,0,0,1],
-        [1,0,0,0,1,1,0,1],
-        [1,0,1,0,0,0,0,1],
-        [1,1,1,1,1,1,1,1]
-    ];
-    const tamanhoMapa = 8;
-
-    let moveForward = 0;
-    let turnSpeed = 0;
-
-    // Joystick
+    // --- JOYSTICK TOUCH ---
     const joystickBase = document.getElementById("joystick-base");
     const joystickStick = document.getElementById("joystick-stick");
     let joystickActive = false;
     let touchId = null;
-    const centerX = 65, centerY = 65, maxDist = 45;
+    let joyDX = 0, joyDY = 0;
+    const maxDist = 40;
 
     joystickBase.addEventListener("touchstart", (e) => {
         e.preventDefault();
@@ -223,180 +357,343 @@ body {
             const t = e.changedTouches[i];
             if (t.identifier === touchId) {
                 const rect = joystickBase.getBoundingClientRect();
-                let dx = t.clientX - rect.left - centerX;
-                let dy = t.clientY - rect.top - centerY;
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                let dx = t.clientX - centerX;
+                let dy = t.clientY - centerY;
                 const dist = Math.hypot(dx, dy);
                 if (dist > maxDist) {
                     dx = (dx / dist) * maxDist;
                     dy = (dy / dist) * maxDist;
                 }
                 joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
-                moveForward = -dy / maxDist;
-                turnSpeed = (dx / maxDist) * 0.04;
+                joyDX = dx / maxDist;
+                joyDY = dy / maxDist;
             }
         }
     }, { passive: false });
 
-    function resetJoy() {
+    function resetJoystick() {
         joystickActive = false;
         touchId = null;
-        moveForward = 0;
-        turnSpeed = 0;
+        joyDX = 0; joyDY = 0;
         joystickStick.style.transform = `translate(0px, 0px)`;
     }
     window.addEventListener("touchend", (e) => {
         for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === touchId) resetJoy();
+            if (e.changedTouches[i].identifier === touchId) resetJoystick();
         }
     });
 
-    let keys = {};
-    window.addEventListener("keydown", e => keys[e.key] = true);
-    window.addEventListener("keyup", e => keys[e.key] = false);
-
-    document.getElementById("btn-jump").addEventListener("touchstart", (e) => {
+    document.getElementById("btn-shoot").addEventListener("touchstart", (e) => {
         e.preventDefault();
-        if (!player.pulando) {
-            player.vy = 0.15;
-            player.pulando = true;
-        }
+        triggerShoot();
     }, { passive: false });
+    document.getElementById("btn-shoot").addEventListener("click", triggerShoot);
 
-    window.sairDoJogo = function() {
-        remove(playerRef).then(() => window.location.href = "lobby.html");
-    };
+    function triggerShoot() {
+        if (gameState !== "PLAYING" || shootCooldown > 0) return;
+        isShooting = true;
+        shootCooldown = 15;
+
+        let closestDist = Infinity;
+        let targetZumbi = null;
+
+        zumbis.forEach(z => {
+            if (!z.alive) return;
+            let dx = z.x - player.x;
+            let dy = z.y - player.y;
+            let angleToZumbi = Math.atan2(dy, dx);
+            let diffAngle = angleToZumbi - player.angle;
+
+            while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
+            while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
+
+            if (Math.abs(diffAngle) < 0.25) {
+                let dist = Math.hypot(dx, dy);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    targetZumbi = z;
+                }
+            }
+        });
+
+        if (targetZumbi && closestDist < 10) {
+            targetZumbi.hp--;
+            targetZumbi.hitTimer = 5;
+            if (targetZumbi.hp <= 0) targetZumbi.alive = false;
+        }
+    }
 
     function update() {
-        if (keys["ArrowLeft"] || keys["a"]) player.angulo -= 0.04;
-        if (keys["ArrowRight"] || keys["d"]) player.angulo += 0.04;
-        player.angulo += turnSpeed;
+        if (gameState !== "PLAYING") return;
 
-        let fwd = moveForward;
-        if (keys["ArrowUp"] || keys["w"]) fwd = 1;
-        if (keys["ArrowDown"] || keys["s"]) fwd = -1;
+        let moveStep = 0;
+        let rotStep = 0;
 
-        if (fwd !== 0) {
-            let nx = player.x + Math.cos(player.angulo) * player.velocidade * fwd;
-            let nz = player.z + Math.sin(player.angulo) * player.velocidade * fwd;
+        if (keys["KeyW"] || keys["ArrowUp"]) moveStep = 1;
+        if (keys["KeyS"] || keys["ArrowDown"]) moveStep = -1;
+        if (keys["KeyA"] || keys["ArrowLeft"]) rotStep = -1;
+        if (keys["KeyD"] || keys["ArrowRight"]) rotStep = 1;
 
-            if (mapa[Math.floor(nz)][Math.floor(nx)] === 0) {
-                player.x = nx;
-                player.z = nz;
+        if (joystickActive) {
+            moveStep = -joyDY;
+            rotStep = joyDX;
+        }
+
+        player.angle += rotStep * player.rotSpeed;
+
+        if (moveStep !== 0) {
+            let nextX = player.x + Math.cos(player.angle) * moveStep * player.speed;
+            let nextY = player.y + Math.sin(player.angle) * moveStep * player.speed;
+
+            if (mapa[Math.floor(player.y)][Math.floor(nextX)] !== 1) {
+                player.x = nextX;
+            }
+            if (mapa[Math.floor(nextY)][Math.floor(player.x)] !== 1) {
+                player.y = nextY;
             }
         }
 
-        if (player.pulando) {
-            player.alturaPulo += player.vy;
-            player.vy -= 0.01;
-            if (player.alturaPulo <= 0) {
-                player.alturaPulo = 0;
-                player.pulando = false;
-            }
+        if (mapa[Math.floor(player.y)][Math.floor(player.x)] === 2) {
+            gameState = "WIN";
+            document.getElementById("winScreen").classList.add("active");
         }
 
-        // Sincroniza posição no Firebase
-        set(playerRef, {
-            nome: nick,
-            x: player.x,
-            z: player.z,
-            angulo: player.angulo
-        }).catch(() => {});
+        let zumbisVivos = 0;
+        zumbis.forEach(z => {
+            if (!z.alive) return;
+            zumbisVivos++;
+            if (z.hitTimer > 0) z.hitTimer--;
+
+            let dx = player.x - z.x;
+            let dy = player.y - z.y;
+            let dist = Math.hypot(dx, dy);
+
+            // Persegue se estiver próximo (distância de detecção = 5 blocos)
+            if (dist < 5 && dist > 0.4) {
+                // Velocidade reduzida para o jogador conseguir fugir fácil
+                let speed = 0.012;
+                let nx = z.x + (dx / dist) * speed;
+                let ny = z.y + (dy / dist) * speed;
+
+                if (mapa[Math.floor(z.y)][Math.floor(nx)] !== 1) z.x = nx;
+                if (mapa[Math.floor(ny)][Math.floor(z.x)] !== 1) z.y = ny;
+            } else if (dist <= 0.4) {
+                player.hp -= 0.3;
+                flashDamage();
+                if (player.hp <= 0) {
+                    player.hp = 0;
+                    gameState = "GAMEOVER";
+                    document.getElementById("gameOverScreen").classList.add("active");
+                }
+            }
+        });
+
+        if (shootCooldown > 0) shootCooldown--;
+        else isShooting = false;
+
+        document.getElementById("hpBar").style.width = `${(player.hp / player.maxHp) * 100}%`;
+        document.getElementById("zombieCount").textContent = `🧟 Zumbis: ${zumbisVivos}`;
+    }
+
+    function flashDamage() {
+        const flash = document.getElementById("damageFlash");
+        flash.style.opacity = 1;
+        setTimeout(() => flash.style.opacity = 0, 100);
     }
 
     function render3D() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const width = canvas.width;
+        const height = canvas.height;
 
-        // Céu e Chão
-        ctx.fillStyle = "#0d0614";
-        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
-        ctx.fillStyle = "#1b102f";
-        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+        ctx.clearRect(0, 0, width, height);
 
-        const FOV = Math.PI / 3;
-        const numRays = Math.floor(canvas.width / 2);
-        const meioW = canvas.width / 2;
-        const meioH = canvas.height / 2;
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height / 2);
+        skyGrad.addColorStop(0, "#090514");
+        skyGrad.addColorStop(1, "#180b30");
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height / 2);
 
-        // 1. Raycasting do Cenário (Paredes)
+        const floorGrad = ctx.createLinearGradient(0, height / 2, 0, height);
+        floorGrad.addColorStop(0, "#0f172a");
+        floorGrad.addColorStop(1, "#020617");
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, height / 2, width, height / 2);
+
+        const fov = Math.PI / 3;
+        const numRays = Math.floor(width / 3);
+        const rayWidth = width / numRays;
+        const depthBuffer = new Array(numRays);
+
         for (let i = 0; i < numRays; i++) {
-            let cameraX = (2 * i / numRays) - 1;
-            let rayAngle = player.angulo + cameraX * (FOV / 2);
+            let rayAngle = (player.angle - fov / 2) + (i / numRays) * fov;
+            let distance = 0;
+            let hitWall = false;
+            let wallType = 1;
 
-            let distanciaParede = 0;
-            let hitParede = false;
             let cos = Math.cos(rayAngle);
             let sin = Math.sin(rayAngle);
 
-            while (!hitParede && distanciaParede < 16) {
-                distanciaParede += 0.05;
-                let testX = Math.floor(player.x + cos * distanciaParede);
-                let testZ = Math.floor(player.z + sin * distanciaParede);
+            while (!hitWall && distance < 16) {
+                distance += 0.04;
+                let checkX = Math.floor(player.x + cos * distance);
+                let checkY = Math.floor(player.y + sin * distance);
 
-                if (testX < 0 || testX >= tamanhoMapa || testZ < 0 || testZ >= tamanhoMapa) {
-                    hitParede = true;
-                    distanciaParede = 16;
-                } else if (mapa[testZ][testX] === 1) {
-                    hitParede = true;
+                if (checkX < 0 || checkX >= MAP_SIZE || checkY < 0 || checkY >= MAP_SIZE) {
+                    hitWall = true;
+                    distance = 16;
+                } else if (mapa[checkY][checkX] > 0) {
+                    hitWall = true;
+                    wallType = mapa[checkY][checkX];
                 }
             }
 
-            distanciaParede *= Math.cos(rayAngle - player.angulo);
+            let correctedDist = distance * Math.cos(rayAngle - player.angle);
+            depthBuffer[i] = correctedDist;
 
-            let alturaLinha = Math.min(canvas.height, (canvas.height / distanciaParede));
-            let inicioY = meioH - alturaLinha / 2 + player.alturaPulo * 100;
+            let lineHeight = (height / correctedDist);
+            let drawTop = (height / 2) - (lineHeight / 2);
 
-            let intensidade = Math.max(10, 255 - distanciaParede * 15);
-            ctx.fillStyle = `rgb(${intensidade}, ${intensidade/3}, ${intensidade})`;
-            ctx.fillRect(i * 2, inicioY, 2, alturaLinha);
+            let shade = Math.max(0, 255 - (correctedDist * 16));
+
+            if (wallType === 1) {
+                ctx.fillStyle = `rgb(${shade * 0.6}, ${shade * 0.2}, ${shade})`;
+            } else if (wallType === 2) {
+                let pulse = Math.sin(Date.now() * 0.005) * 40 + 200;
+                ctx.fillStyle = `rgb(0, ${pulse}, ${shade * 0.5})`;
+            }
+
+            ctx.fillRect(i * rayWidth, drawTop, rayWidth + 0.8, lineHeight);
         }
 
-        // 2. Renderizar Outros Jogadores no 3D
-        for (let id in outrosJogadores) {
-            if (id === clientId) continue;
-            let p = outrosJogadores[id];
+        let spriteList = zumbis.filter(z => z.alive).map(z => {
+            let dx = z.x - player.x;
+            let dy = z.y - player.y;
+            let dist = Math.hypot(dx, dy);
+            let angleToZumbi = Math.atan2(dy, dx) - player.angle;
 
-            // Calcula posição relativa ao jogador atual
-            let dx = p.x - player.x;
-            let dz = p.z - player.z;
+            while (angleToZumbi < -Math.PI) angleToZumbi += Math.PI * 2;
+            while (angleToZumbi > Math.PI) angleToZumbi -= Math.PI * 2;
 
-            let rotCam = player.angulo - Math.PI / 2;
-            let px = dx * Math.cos(-rotCam) - dz * Math.sin(-rotCam);
-            let pz = dx * Math.sin(-rotCam) + dz * Math.cos(-rotCam);
+            return { z, dist, angle: angleToZumbi };
+        }).sort((a, b) => b.dist - a.dist);
 
-            if (pz > 0.1) { // Se estiver à frente da câmara
-                let screenX = (canvas.width / 2) + (px / pz) * (canvas.width / 2);
-                let size = Math.min(300, canvas.height / pz);
+        spriteList.forEach(s => {
+            if (s.dist < 0.2 || s.dist > 14) return;
 
-                // Desenha o avatar do outro jogador como um círculo/bloco 3D no mundo
-                ctx.fillStyle = "#3b82f6";
-                ctx.beginPath();
-                ctx.arc(screenX, meioH, size / 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = "#93c5fd";
-                ctx.lineWidth = 3;
-                ctx.stroke();
+            let screenX = (width / 2) + Math.tan(s.angle) * (width / 2);
+            let spriteSize = Math.min(height, (height / s.dist));
+            let spriteTop = (height / 2) - (spriteSize / 2);
 
-                // Nome flutuante
-                ctx.fillStyle = "white";
-                ctx.font = "bold 14px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText(p.nome || "Outro Jogador", screenX, meioH - size / 4 - 10);
+            let rayIdx = Math.floor((screenX / width) * numRays);
+            if (rayIdx >= 0 && rayIdx < numRays && depthBuffer[rayIdx] > s.dist) {
+                let zombieColor = s.z.hitTimer > 0 ? "#ffffff" : "#22c55e";
+                ctx.fillStyle = zombieColor;
+                ctx.fillRect(screenX - spriteSize / 4, spriteTop + spriteSize * 0.2, spriteSize / 2, spriteSize * 0.7);
+
+                ctx.fillStyle = s.z.hitTimer > 0 ? "#ffffff" : "#15803d";
+                ctx.fillRect(screenX - spriteSize / 6, spriteTop, spriteSize / 3, spriteSize * 0.25);
+
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(screenX - spriteSize / 10, spriteTop + spriteSize * 0.05, spriteSize / 20, spriteSize / 20);
+                ctx.fillRect(screenX + spriteSize / 20, spriteTop + spriteSize * 0.05, spriteSize / 20, spriteSize / 20);
+
+                let barW = spriteSize / 2;
+                let barH = 5;
+                ctx.fillStyle = "#000";
+                ctx.fillRect(screenX - barW / 2, spriteTop - 12, barW, barH);
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(screenX - barW / 2, spriteTop - 12, barW * (s.z.hp / 3), barH);
+            }
+        });
+
+        const gunW = 140;
+        const gunH = 140;
+        const gunX = (width / 2) - (gunW / 2);
+        const gunY = height - gunH + (isShooting ? 15 : 0);
+
+        if (isShooting) {
+            ctx.fillStyle = "rgba(253, 224, 71, 0.8)";
+            ctx.beginPath();
+            ctx.arc(width / 2, gunY + 20, 45, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(gunX + 45, gunY, 50, 90);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(gunX + 55, gunY + 20, 30, 100);
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2, 6, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    function renderMinimap() {
+        const mSize = 120;
+        const tileSize = mSize / MAP_SIZE;
+        minimapCtx.clearRect(0, 0, mSize, mSize);
+
+        for (let r = 0; r < MAP_SIZE; r++) {
+            for (let c = 0; c < MAP_SIZE; c++) {
+                if (mapa[r][c] === 1) {
+                    minimapCtx.fillStyle = "#6b21a8";
+                    minimapCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                } else if (mapa[r][c] === 2) {
+                    minimapCtx.fillStyle = "#22c55e";
+                    minimapCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                }
             }
         }
 
-        // Mira central
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.fillRect(canvas.width / 2 - 4, canvas.height / 2 - 4, 8, 8);
+        minimapCtx.fillStyle = "#ef4444";
+        zumbis.forEach(z => {
+            if (z.alive) {
+                minimapCtx.beginPath();
+                minimapCtx.arc(z.x * tileSize, z.y * tileSize, 2.5, 0, Math.PI * 2);
+                minimapCtx.fill();
+            }
+        });
+
+        minimapCtx.fillStyle = "#38bdf8";
+        minimapCtx.beginPath();
+        minimapCtx.arc(player.x * tileSize, player.y * tileSize, 3.5, 0, Math.PI * 2);
+        minimapCtx.fill();
+
+        minimapCtx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(player.x * tileSize, player.y * tileSize);
+        minimapCtx.lineTo(
+            (player.x + Math.cos(player.angle) * 2) * tileSize,
+            (player.y + Math.sin(player.angle) * 2) * tileSize
+        );
+        minimapCtx.stroke();
     }
+
+    window.restartGame = function() {
+        player.x = 1.5;
+        player.y = 1.5;
+        player.angle = 0;
+        player.hp = 100;
+        gameState = "PLAYING";
+        initZumbis();
+
+        document.getElementById("gameOverScreen").classList.remove("active");
+        document.getElementById("winScreen").classList.remove("active");
+    };
 
     function loop() {
         update();
         render3D();
+        renderMinimap();
         requestAnimationFrame(loop);
     }
 
+    initZumbis();
     loop();
 </script>
-
 </body>
 </html>
