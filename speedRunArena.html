@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Endless Runner 3D</title>
+<title>Endless Runner 3D - Mapas</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0033; font-family: Arial, sans-serif; touch-action: none; }
@@ -22,47 +22,67 @@
   
   .screen {
     position: absolute; inset: 0;
-    background: rgba(0,0,0,0.78);
+    background: rgba(0,0,0,0.82);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     z-index: 100; color: white; text-align: center;
     padding: 20px;
   }
   .screen h1 {
-    font-size: 48px; margin-bottom: 15px;
+    font-size: 44px; margin-bottom: 10px;
     background: linear-gradient(45deg, #00c6ff, #ff00cc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .screen p { font-size: 18px; margin: 8px 0; opacity: 0.9; }
+  .screen p { font-size: 16px; margin: 6px 0; opacity: 0.9; }
+  
+  .map-selector {
+    display: flex; gap: 12px; margin: 20px 0;
+  }
+  .map-btn {
+    padding: 12px 20px;
+    font-size: 16px; font-weight: bold;
+    background: rgba(255,255,255,0.1);
+    color: white; border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .map-btn.selected {
+    background: linear-gradient(45deg, #00c6ff, #ff00cc);
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255,0,204,0.5);
+    transform: scale(1.05);
+  }
+
   .screen .key {
     display: inline-block;
     background: #fff; color: #000;
-    padding: 4px 12px; border-radius: 6px;
-    font-weight: bold; margin: 0 4px;
+    padding: 3px 10px; border-radius: 5px;
+    font-weight: bold; margin: 0 3px;
+    font-size: 14px;
   }
-  .screen button {
-    margin-top: 25px;
-    padding: 16px 55px;
-    font-size: 24px; font-weight: bold;
+  .screen button.main-btn {
+    margin-top: 15px;
+    padding: 15px 50px;
+    font-size: 22px; font-weight: bold;
     background: linear-gradient(45deg, #00c6ff, #ff00cc);
     color: white; border: none; border-radius: 50px;
     cursor: pointer;
-    box-shadow: 0 0 40px rgba(255,0,204,0.5);
+    box-shadow: 0 0 30px rgba(255,0,204,0.5);
   }
   .screen button:active { transform: scale(0.96); }
   
   #gameOver { display: none; }
-  #gameOver h1 { font-size: 56px; color: #ff3366; background: none; -webkit-text-fill-color: #ff3366; }
-  #finalScore { font-size: 34px; color: #ffdd00; margin: 15px 0; }
-  #finalCoins { font-size: 20px; opacity: 0.85; }
+  #gameOver h1 { font-size: 52px; color: #ff3366; background: none; -webkit-text-fill-color: #ff3366; }
+  #finalScore { font-size: 32px; color: #ffdd00; margin: 10px 0; }
+  #finalCoins { font-size: 18px; opacity: 0.85; }
   
   #hint {
-    position: absolute; bottom: 25px; left: 50%;
+    position: absolute; bottom: 20px; left: 50%;
     transform: translateX(-50%);
     color: rgba(255,255,255,0.65);
-    font-size: 15px; z-index: 10;
+    font-size: 14px; z-index: 10;
     pointer-events: none;
     text-shadow: 0 0 8px #000;
     white-space: nowrap;
@@ -77,20 +97,25 @@
 
 <div id="startScreen" class="screen">
   <h1>ENDLESS RUNNER</h1>
-  <p>Corra o mais longe possível!</p>
-  <p style="margin-top:18px;">
-    <span class="key">←</span><span class="key">→</span> ou <span class="key">A</span><span class="key">D</span> para desviar
+  <p>Escolha o seu mapa:</p>
+  
+  <div class="map-selector">
+    <button class="map-btn selected" data-map="cyber">🌆 Cyberpunk</button>
+    <button class="map-btn" data-map="city">🏙️ Cidade</button>
+    <button class="map-btn" data-map="forest">🌲 Floresta</button>
+  </div>
+
+  <p style="margin-top:5px;">
+    <span class="key">←</span><span class="key">→</span> desviar | <span class="key">↑</span> pular | <span class="key">↓</span> abaixar
   </p>
-  <p><span class="key">↑</span> / <span class="key">W</span> / <span class="key">ESPAÇO</span> para pular</p>
-  <p><span class="key">↓</span> / <span class="key">S</span> para abaixar</p>
-  <button id="startBtn">JOGAR</button>
+  <button id="startBtn" class="main-btn">JOGAR</button>
 </div>
 
 <div id="gameOver" class="screen">
   <h1>GAME OVER</h1>
   <div id="finalScore">0m</div>
   <div id="finalCoins">🪙 0 moedas</div>
-  <button id="restartBtn">JOGAR NOVAMENTE</button>
+  <button id="restartBtn" class="main-btn">JOGAR NOVAMENTE</button>
 </div>
 
 <!-- Three.js CDN -->
@@ -100,10 +125,19 @@
 (function() {
   'use strict';
   
+  let selectedMap = 'cyber';
+  
+  document.querySelectorAll('.map-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('selected'));
+      e.target.classList.add('selected');
+      selectedMap = e.target.getAttribute('data-map');
+      updateMapTheme();
+    });
+  });
+
   // ============ SETUP CENA E CÂMERA ============
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a0033);
-  scene.fog = new THREE.Fog(0x1a0033, 40, 100);
   
   const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 200);
   camera.position.set(0, 5.5, 8);
@@ -147,6 +181,7 @@
   floor.receiveShadow = true;
   scene.add(floor);
   
+  const lines = [];
   for (let i = 0; i < 3; i++) {
     const lineGeo = new THREE.PlaneGeometry(0.08, 300);
     const lineMat = new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.4 });
@@ -154,17 +189,43 @@
     line.rotation.x = -Math.PI/2;
     line.position.set(LANES[i], 0.01, -140);
     scene.add(line);
+    lines.push(line);
   }
   
+  const rails = [];
   for (const side of [-1, 1]) {
     const railGeo = new THREE.BoxGeometry(0.2, 0.5, 300);
     const railMat = new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0xff00cc, emissiveIntensity: 0.5 });
     const rail = new THREE.Mesh(railGeo, railMat);
     rail.position.set(side * (LANE_WIDTH + 1.5), 0.25, -140);
     scene.add(rail);
+    rails.push(rail);
   }
-  
-  // ============ PERSONAGEM OLHANDO PARA FRENTE ============
+
+  function updateMapTheme() {
+    if (selectedMap === 'cyber') {
+      scene.background.set(0x1a0033);
+      scene.fog.color.set(0x1a0033);
+      floor.material.color.set(0x2a1a44);
+      lines.forEach(l => l.material.color.set(0x00ccff));
+      rails.forEach(r => { r.material.color.set(0xff00cc); r.material.emissive.set(0xff00cc); });
+    } else if (selectedMap === 'city') {
+      scene.background.set(0x111927);
+      scene.fog.color.set(0x111927);
+      floor.material.color.set(0x2d3748);
+      lines.forEach(l => l.material.color.set(0xf6e05e));
+      rails.forEach(r => { r.material.color.set(0x4a5568); r.material.emissive.set(0x1a202c); });
+    } else if (selectedMap === 'forest') {
+      scene.background.set(0x0b2217);
+      scene.fog.color.set(0x0b2217);
+      floor.material.color.set(0x1c3b2b);
+      lines.forEach(l => l.material.color.set(0x68d391));
+      rails.forEach(r => { r.material.color.set(0x234e52); r.material.emissive.set(0x112b25); });
+    }
+  }
+
+  scene.fog = new THREE.Fog(0x1a0033, 40, 100);
+  updateMapTheme();  // ============ PERSONAGEM ============
   const player = new THREE.Group();
   
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.4, roughness: 0.3 });
@@ -280,7 +341,9 @@
   );
   playerShadow.rotation.x = -Math.PI/2;
   playerShadow.position.y = 0.02;
-  scene.add(playerShadow);  const deathShards = [];
+  scene.add(playerShadow);
+
+  const deathShards = [];
   
   function shatterPlayer() {
     player.visible = false;
@@ -328,7 +391,7 @@
     if (type === 'block') {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 1.6, 2.2),
-        new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x881133, emissiveIntensity: 0.5, roughness: 0.3 })
+        new THREE.MeshStandardMaterial({ color: 0xff3366, roughness: 0.3 })
       );
       mesh.position.y = 0.8; mesh.castShadow = true; mesh.receiveShadow = true;
       group.add(mesh);
@@ -337,14 +400,14 @@
     else if (type === 'low') {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(2.4, 0.5, 1.5),
-        new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xaa5500, emissiveIntensity: 0.6, roughness: 0.3 })
+        new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.3 })
       );
       mesh.position.y = 0.25; mesh.castShadow = true; mesh.receiveShadow = true;
       group.add(mesh);
       group.userData = { type, width: 2.4, height: 0.5, minY: 0 };
     }
     else if (type === 'highBar') {
-      const barMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x008866, emissiveIntensity: 0.6, roughness: 0.3 });
+      const barMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, roughness: 0.3 });
       
       const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.6, 0.8), barMat);
       bar.position.y = 1.95; bar.castShadow = true;
@@ -363,7 +426,7 @@
     else {
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(2.0, 3.0, 1.2),
-        new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0x550088, emissiveIntensity: 0.5, roughness: 0.3 })
+        new THREE.MeshStandardMaterial({ color: 0xaa00ff, roughness: 0.3 })
       );
       mesh.position.y = 1.5; mesh.castShadow = true; mesh.receiveShadow = true;
       group.add(mesh);
@@ -377,7 +440,7 @@
   function createCoin(lane, z) {
     const coin = new THREE.Mesh(
       new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16),
-      new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.8, roughness: 0.2 })
+      new THREE.MeshStandardMaterial({ color: 0xffdd00, roughness: 0.2 })
     );
     coin.rotation.x = Math.PI/2;
     coin.position.set(LANES[lane], 1.0, z);
@@ -401,7 +464,7 @@
     jumpY: 0,
     isDucking: false,
     duckTimer: 0,
-    duckDuration: 18, // TEMPO REDUZIDO PARA SE LEVANTAR MAIS RÁPIDO
+    duckDuration: 18,
     gravity: 0.022,
     jumpPower: 0.34,
     spawnTimer: 0,
@@ -479,6 +542,8 @@
     coins.forEach(c => scene.remove(c));
     coins.length = 0;
     clearShards();
+    
+    updateMapTheme();
     
     player.visible = true;
     playerShadow.visible = true;
