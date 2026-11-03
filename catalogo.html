@@ -3,196 +3,128 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GOBLOX — Catálogo & Loja</title>
-  <link rel="stylesheet" href="./global.css" />
-  <link rel="stylesheet" href="./lobby.css" />
-  <style>
-    /* Estilos adicionais para o Catálogo e Tabs */
-    .currency-container {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 6px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      font-size: 0.9rem;
-      font-weight: bold;
-    }
-    .currency-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .currency-fbux { color: #facc15; }
-    .currency-coins { color: #4ade80; }
-
-    .tabs-header {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 10px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      color: #a0aec0;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .tab-btn.active {
-      background: #63df70;
-      color: #09200c;
-      border-color: #63df70;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Loja de Skins */
-    .shop-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-    .shop-card {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: transform 0.2s ease;
-    }
-    .shop-card:hover {
-      transform: translateY(-3px);
-      border-color: #7dff83;
-    }
-    .item-icon {
-      font-size: 45px;
-      margin-bottom: 8px;
-    }
-    .shop-card h3 {
-      font-size: 1.1rem;
-      color: #fff;
-      margin-bottom: 6px;
-    }
-    .shop-card p {
-      font-size: 0.8rem;
-      color: #b0b0b0;
-      margin-bottom: 12px;
-      flex-grow: 1;
-    }
-    .price {
-      font-weight: bold;
-      font-size: 1rem;
-      margin-bottom: 12px;
-    }
-    .price-fbux { color: #facc15; }
-    .price-coins { color: #4ade80; }
-    .btn-buy {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #63df70;
-      color: #09200c;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-buy:hover {
-      background: #7dff83;
-    }
-  </style>
+  <title>Goblox - Editor de Avatar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-  <div class="bg"></div>
+<body class="bg-gray-100 font-sans text-gray-800 flex flex-col min-h-screen">
 
-  <header class="topbar">
-    <div class="logo">GOBLOX</div>
-
-    <div class="user-box">
-      <div class="currency-container">
-        <div class="currency-item currency-fbux">
-          💎 <span id="valFbux">0</span> FBUX
-        </div>
-        <div class="currency-item currency-coins">
-          🪙 <span id="valMoedas">0</span> Moedas
-        </div>
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold text-sm">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i> Voltar ao Início
+      </a>
+      <h1 class="text-xl font-black text-red-600 uppercase">Loja & Avatar</h1>
+      <div class="flex items-center gap-1.5 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold border border-yellow-300">
+        <i data-lucide="coins" class="w-4 h-4 text-yellow-600"></i>
+        <span id="saldoMoedas">1.250</span>
       </div>
-
-      <span id="boasVindas">Carregando...</span>
-      <button id="btnVoltar" class="btn btn-light" onclick="window.location.href='lobby.html'">Lobby</button>
-      <button id="btnSair" class="btn btn-dark">Sair</button>
     </div>
   </header>
 
-  <main class="container">
-    <section class="panel">
-      <!-- Sistema de Tabs -->
-      <div class="tabs-header">
-        <button class="tab-btn active" onclick="mudarTab(event, 'tabLoja')">🛒 Loja de Skins</button>
-        <button class="tab-btn" onclick="mudarTab(event, 'tabInventario')">🎒 Meu Inventário</button>
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- PAINEL VISUALIZADOR DO AVATAR -->
+    <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200 flex flex-col items-center justify-center text-center">
+      <h2 class="text-xl font-bold mb-4 text-gray-900">Seu Avatar Atual</h2>
+      
+      <!-- Visualização do Avatar -->
+      <div class="relative w-48 h-48 bg-gradient-to-b from-gray-100 to-gray-200 rounded-2xl border-4 border-red-500 flex items-center justify-center overflow-hidden shadow-inner mb-6">
+        <img id="avatar-preview" class="w-40 h-40 object-contain drop-shadow-md" src="" alt="Preview do Avatar">
       </div>
 
-      <!-- Conteúdo da Tab: Loja -->
-      <div id="tabLoja" class="tab-content active">
-        <h1>Catálogo & Loja</h1>
-        <p style="color: #a0aec0; margin-bottom: 20px;">Adquira acessórios exclusivos para personalizar o seu avatar.</p>
+      <p id="avatar-desc" class="text-sm font-medium text-gray-500 mb-6">Estilo selecionado</p>
+      
+      <button id="btn-salvar" class="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5"></i> SALVAR ESTILO
+      </button>
+    </div>
 
-        <div class="shop-grid">
-          <!-- Item 1: Coroa -->
-          <div class="shop-card">
-            <div class="item-icon">👑</div>
-            <h3>Coroa Real</h3>
-            <p>Mostre autoridade na arena.</p>
-            <div class="price price-fbux">💎 120 FBUX</div>
-            <button class="btn-buy" onclick="comprarItem('coroa', 120, 'fbux')">Comprar</button>
-          </div>
+    <!-- CATÁLOGO DE ITENS DA LOJA -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+      <h2 class="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
+        <i data-lucide="shopping-bag" class="w-5 h-5 text-red-600"></i> Catálogo de Estilos & Acessórios
+      </h2>
 
-          <!-- Item 2: Chupeta -->
-          <div class="shop-card">
-            <div class="item-icon">Não exite  foto:(</div>
-            <h3>Chupeta</h3>
-            <p>O acessório mais lendário do jogo.</p>
-            <div class="price price-fbux">💎 900 FBUX</div>
-            <button class="btn-buy" onclick="comprarItem('chupeta', 900, 'fbux')">Comprar</button>
-          </div>
-
-          <!-- Item 3: Cabelo Amarelo -->
-          <div class="shop-card">
-            <div class="item-icon">👱</div>
-            <h3>Cabelo Amarelo</h3>
-            <p>Novo estilo visual para o seu boneco.</p>
-            <div class="price price-coins">🪙 20 Moedas</div>
-            <button class="btn-buy" onclick="comprarItem('cabelo_amarelo', 20, 'moedas')">Comprar</button>
-          </div>
-        </div>
+      <!-- Grid de Itens -->
+      <div id="items-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <!-- Inserido dinamicamente via JS -->
       </div>
+    </div>
 
-      <!-- Conteúdo da Tab: Inventário -->
-      <div id="tabInventario" class="tab-content">
-        <h1>Seu Inventário</h1>
-        <p style="color: #a0aec0; margin-bottom: 20px;">Itens e acessórios que já comprou:</p>
-        <div id="listaInventario" style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <span style="color: #888;">Nenhum item comprado ainda.</span>
-        </div>
-      </div>
-    </section>
   </main>
 
-  <div id="toast" class="toast" aria-live="polite"></div>
+  <script type="module">
+    import { getCurrentNick } from "./authLocal.js";
 
-  <script type="module" src="./catalogo.js"></script>
+    // Ícones
+    lucide.createIcons();
+
+    // Lista de itens/avatares disponíveis
+    const itensDisponiveis = [
+      { id: 'player_one', nome: 'Clássico Bot', seed: 'PlayerOne', preco: 0, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=PlayerOne' },
+      { id: 'cyber_hero', nome: 'Cyber Bot 3000', seed: 'CyberHero', preco: 100, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberHero' },
+      { id: 'golden_bot', nome: 'Bot de Ouro', seed: 'GoldenBot', preco: 250, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=GoldenBot' },
+      { id: 'shadow_ninja', nome: 'Sombra Ninja', seed: 'ShadowNinja', preco: 300, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=ShadowNinja' },
+      { id: 'alien_king', nome: 'Rei Alienígena', seed: 'AlienKing', preco: 500, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=AlienKing' },
+      { id: 'neon_rider', nome: 'Corredor Neon', seed: 'NeonRider', preco: 400, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=NeonRider' },
+      { id: 'pixel_boss', nome: 'Chefão Pixel', seed: 'PixelBoss', preco: 600, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=PixelBoss' },
+      { id: 'astro_boy', nome: 'Astronauta Aventura', seed: 'AstroBoy', preco: 350, icone: 'https://api.dicebear.com/7.x/bottts/svg?seed=AstroBoy' }
+    ];
+
+    let seedAtual = localStorage.getItem('goblox_avatar_seed') || 'PlayerOne';
+    const previewImg = document.getElementById('avatar-preview');
+    const descText = document.getElementById('avatar-desc');
+    const grid = document.getElementById('items-grid');
+
+    function atualizarPreview(seed, nome) {
+      seedAtual = seed;
+      previewImg.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}`;
+      descText.innerText = `Equipado: ${nome}`;
+    }
+
+    function renderizarItens() {
+      grid.innerHTML = '';
+      itensDisponiveis.forEach(item => {
+        const card = document.createElement('div');
+        const equipado = item.seed === seedAtual;
+
+        card.className = `p-4 border-2 rounded-xl flex flex-col items-center justify-between text-center cursor-pointer transition ${
+          equipado ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-red-400 bg-gray-50'
+        }`;
+
+        card.onclick = () => atualizarPreview(item.seed, item.nome);
+
+        card.innerHTML = `
+          <img src="${item.icone}" class="w-20 h-20 mb-2 object-contain" alt="${item.nome}">
+          <span class="font-bold text-sm text-gray-800">${item.nome}</span>
+          <span class="text-xs font-semibold text-yellow-700 mt-1 flex items-center gap-1">
+            <i data-lucide="coins" class="w-3 h-3 text-yellow-600"></i> ${item.preco === 0 ? 'Grátis' : item.preco + ' G'}
+          </span>
+          <button class="mt-3 w-full py-1.5 text-xs font-extrabold rounded-lg ${
+            equipado ? 'bg-green-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
+          }">
+            ${equipado ? 'EQUIPADO' : 'EQUIPAR'}
+          </button>
+        `;
+
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // Salvar escolha do Avatar
+    document.getElementById('btn-salvar').onclick = () => {
+      localStorage.setItem('goblox_avatar_seed', seedAtual);
+      alert('✨ Avatar atualizado com sucesso!');
+      renderizarItens();
+    };
+
+    // Inicialização
+    atualizarPreview(seedAtual, 'Atual');
+    renderizarItens();
+  </script>
 </body>
 </html>
