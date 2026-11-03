@@ -3,50 +3,173 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Jogo de Futebol Multiplayer com Joystick</title>
+  <title>FUT-ONLINE 2D</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      touch-action: none; /* Impede rolagem da página em telas sensíveis ao toque */
+      touch-action: none;
+      user-select: none;
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen select-none overflow-hidden">
+<body class="bg-slate-950 text-white font-sans min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden">
 
-  <!-- Container do Jogo -->
-  <div class="relative w-full max-w-4xl p-2 flex flex-col items-center">
-    <!-- Canvas do Jogo -->
-    <div class="relative w-full aspect-[16/9] bg-green-700 rounded-lg shadow-2xl border-4 border-white overflow-hidden">
+  <!-- Painel Superior / Placar -->
+  <header class="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 mb-3 flex flex-wrap items-center justify-between shadow-lg">
+    <!-- Logo e Status -->
+    <div class="flex items-center space-x-3">
+      <div class="bg-emerald-600 p-2 rounded-lg flex items-center justify-center text-white font-bold shadow">
+        ⚽
+      </div>
+      <div>
+        <h1 class="font-extrabold text-base tracking-wider text-emerald-400">FUT-ONLINE 2D</h1>
+        <div class="flex items-center space-x-1.5 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Conectado | Sala: room_default</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placar Central -->
+    <div class="flex items-center space-x-4 bg-slate-950 px-4 py-1.5 rounded-lg border border-slate-800 my-1">
+      <div class="text-center">
+        <span class="text-[10px] uppercase tracking-wider font-bold text-blue-400 block">Azul</span>
+        <span id="scoreBlue" class="text-xl font-black text-white">1</span>
+      </div>
+      <div class="text-center px-2">
+        <span id="timer" class="text-xs font-mono font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded">00:51</span>
+        <span class="text-[9px] text-slate-500 block">VS</span>
+      </div>
+      <div class="text-center">
+        <span class="text-[10px] uppercase tracking-wider font-bold text-red-400 block">Vermelho</span>
+        <span id="scoreRed" class="text-xl font-black text-white">0</span>
+      </div>
+    </div>
+
+    <!-- Ações e Botões -->
+    <div class="flex items-center space-x-2">
+      <button onclick="resetBall()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-slate-300 transition" title="Reiniciar Bola">
+        🔄
+      </button>
+      <button onclick="alert('Link da sala copiado para a área de transferência!')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow flex items-center space-x-1.5 transition">
+        <span>🔗</span>
+        <span>Convidar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Container Principal do Jogo -->
+  <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
+    
+    <!-- Campo de Futebol (Canvas) -->
+    <div class="lg:col-span-3 relative w-full aspect-[16/9] bg-emerald-700 rounded-xl shadow-2xl border-4 border-slate-800 overflow-hidden">
       <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
       <!-- Joystick Virtual (Canto Inferior Esquerdo) -->
-      <div id="joystickZone" class="absolute bottom-6 left-6 w-32 h-32 bg-white/20 backdrop-blur-md rounded-full border-2 border-white/40 flex items-center justify-center touch-none z-10">
-        <div id="joystickKnob" class="w-12 h-12 bg-white/80 rounded-full shadow-md transition-transform duration-75"></div>
+      <div id="joystickZone" class="absolute bottom-4 left-4 w-28 h-28 bg-white/15 backdrop-blur-sm rounded-full border border-white/30 flex items-center justify-center touch-none z-20">
+        <div id="joystickKnob" class="w-10 h-10 bg-white/80 rounded-full shadow-md transition-transform duration-75"></div>
       </div>
 
       <!-- Botão de Chute (Canto Inferior Direito) -->
-      <button id="kickBtn" class="absolute bottom-6 right-6 w-20 h-20 bg-red-600 active:bg-red-700 text-white font-bold rounded-full shadow-lg border-2 border-white text-lg flex items-center justify-center z-10">
+      <button id="kickBtn" class="absolute bottom-4 right-4 w-16 h-16 bg-red-600 active:bg-red-700 text-white font-bold rounded-full shadow-lg border-2 border-white/80 text-xs flex items-center justify-center z-20 transition-transform active:scale-95">
         CHUTAR
       </button>
     </div>
+
+    <!-- Painéis Laterais (Jogadores & Como Jogar) -->
+    <div class="lg:col-span-1 flex flex-col space-y-3">
+      
+      <!-- Lista de Jogadores -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-300 flex items-center space-x-1">
+            <span>👥</span>
+            <span>JOGADORES</span>
+          </span>
+          <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">1/6</span>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span class="text-xs font-medium text-white">Jogador 1345 <span class="text-slate-400 text-[10px]">(Você)</span></span>
+          </div>
+          <span class="text-[10px] font-bold text-blue-400">AZUL</span>
+        </div>
+      </div>
+
+      <!-- Como Jogar / Controles -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow">
+        <div class="flex items-center space-x-1 mb-2 text-xs font-bold text-slate-300">
+          <span>🎮</span>
+          <span>COMO JOGAR</span>
+        </div>
+        <div class="space-y-1.5 text-xs text-slate-300">
+          <div class="flex justify-between items-center bg-slate-950 p-1.5 rounded border border-slate-800/60">
+            <span class="text-slate-400 text-[11px]">Mover Jogador</span>
+            <span class="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-400">Joystick / WASD</span>
+          </div>
+          <div class="flex justify-between items-center bg-slate-950 p-1.5 rounded border border-slate-800/60">
+            <span class="text-slate-400 text-[11px]">Chutar Bola</span>
+            <span class="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-red-400">Botão / Espaço</span>
+          </div>
+          <div class="flex justify-between items-center bg-slate-950 p-1.5 rounded border border-slate-800/60">
+            <span class="text-slate-400 text-[11px]">Trocar de Time</span>
+            <button onclick="toggleTeam()" class="text-emerald-400 hover:text-emerald-300 font-bold text-[11px]">Trocar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Configuração de resolução do Canvas
     canvas.width = 800;
     canvas.height = 450;
 
-    // Estado dos controles
+    // Estado do Jogador e Bola
+    const player = {
+      x: 250,
+      y: 225,
+      radius: 14,
+      speed: 4.5,
+      team: 'AZUL'
+    };
+
+    const ball = {
+      x: 400,
+      y: 225,
+      radius: 8,
+      vx: 0,
+      vy: 0,
+      friction: 0.98
+    };
+
     const inputState = {
-      vx: 0, // Velocidade X (-1 a 1)
-      vy: 0, // Velocidade Y (-1 a 1)
+      vx: 0,
+      vy: 0,
       kick: false
     };
 
-    // --- LÓGICA DO JOYSTICK ---
+    let scoreBlue = 1;
+    let scoreRed = 0;
+
+    function toggleTeam() {
+      player.team = player.team === 'AZUL' ? 'VERMELHO' : 'AZUL';
+      alert(`Você trocou para o time ${player.team}`);
+    }
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.vx = 0;
+      ball.vy = 0;
+    }
+
+    // --- LÓGICA DO JOYSTICK ANALÓGICO ---
     const joystickZone = document.getElementById('joystickZone');
     const joystickKnob = document.getElementById('joystickKnob');
 
@@ -54,7 +177,7 @@
     let joystickTouchId = null;
     let originX = 0;
     let originY = 0;
-    const maxRadius = 40; // Distância máxima do manípulo
+    const maxRadius = 36;
 
     function handleJoystickStart(e) {
       const touch = e.changedTouches ? e.changedTouches[0] : e;
@@ -70,7 +193,6 @@
 
     function handleJoystickMove(e) {
       if (!joystickActive) return;
-
       let touch = null;
       if (e.changedTouches) {
         for (let i = 0; i < e.changedTouches.length; i++) {
@@ -82,13 +204,11 @@
       } else {
         touch = e;
       }
-
       if (touch) updateJoystick(touch);
     }
 
     function handleJoystickEnd(e) {
       if (!joystickActive) return;
-
       if (e.changedTouches) {
         for (let i = 0; i < e.changedTouches.length; i++) {
           if (e.changedTouches[i].identifier === joystickTouchId) {
@@ -105,17 +225,13 @@
       const dx = touch.clientX - originX;
       const dy = touch.clientY - originY;
       const dist = Math.hypot(dx, dy);
-
       const angle = Math.atan2(dy, dx);
       const clampedDist = Math.min(dist, maxRadius);
 
       const knobX = Math.cos(angle) * clampedDist;
       const knobY = Math.sin(angle) * clampedDist;
 
-      // Move o manípulo visualmente
       joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-
-      // Normaliza as velocidades entre -1 e 1
       inputState.vx = knobX / maxRadius;
       inputState.vy = knobY / maxRadius;
     }
@@ -128,7 +244,6 @@
       inputState.vy = 0;
     }
 
-    // Eventos Touch e Mouse para o Joystick
     joystickZone.addEventListener('touchstart', handleJoystickStart, { passive: false });
     window.addEventListener('touchmove', handleJoystickMove, { passive: false });
     window.addEventListener('touchend', handleJoystickEnd, { passive: false });
@@ -137,43 +252,114 @@
     window.addEventListener('mousemove', handleJoystickMove);
     window.addEventListener('mouseup', handleJoystickEnd);
 
-    // Botão de Chute
+    // Controles por Teclado (WASD / Setas)
+    const keys = {};
+    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') inputState.kick = true; });
+    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; if(e.key === ' ') inputState.kick = false; });
+
+    // Botão de Chute Touch
     const kickBtn = document.getElementById('kickBtn');
     kickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); inputState.kick = true; });
     kickBtn.addEventListener('touchend', () => { inputState.kick = false; });
     kickBtn.addEventListener('mousedown', () => { inputState.kick = true; });
     kickBtn.addEventListener('mouseup', () => { inputState.kick = false; });
 
-    // --- LOOP DE RENDERIZAÇÃO E EXEMPLO DE MOVIMENTO ---
-    const player = { x: 400, y: 225, radius: 15, speed: 4 };
-
+    // --- LOOP DO JOGO ---
     function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Movimento por Teclado caso o joystick não esteja ativo
+      let moveX = inputState.vx;
+      let moveY = inputState.vy;
 
-      // Desenhar Campo
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      if (moveX === 0 && moveY === 0) {
+        if (keys['a'] || keys['arrowleft']) moveX = -1;
+        if (keys['d'] || keys['arrowright']) moveX = 1;
+        if (keys['w'] || keys['arrowup']) moveY = -1;
+        if (keys['s'] || keys['arrowdown']) moveY = 1;
+      }
+
+      player.x += moveX * player.speed;
+      player.y += moveY * player.speed;
+
+      // Limites do Campo
+      const border = 25;
+      player.x = Math.max(border + player.radius, Math.min(canvas.width - border - player.radius, player.x));
+      player.y = Math.max(border + player.radius, Math.min(canvas.height - border - player.radius, player.y));
+
+      // Física da Bola
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      ball.vx *= ball.friction;
+      ball.vy *= ball.friction;
+
+      // Colisão Traves / Paredes
+      if (ball.x - ball.radius < border) ball.vx *= -1, ball.x = border + ball.radius;
+      if (ball.x + ball.radius > canvas.width - border) ball.vx *= -1, ball.x = canvas.width - border - ball.radius;
+      if (ball.y - ball.radius < border) ball.vy *= -1, ball.y = border + ball.radius;
+      if (ball.y + ball.radius > canvas.height - border) ball.vy *= -1, ball.y = canvas.height - border - ball.radius;
+
+      // Colisão Jogador com a Bola
+      const dist = Math.hypot(player.x - ball.x, player.y - ball.y);
+      if (dist < player.radius + ball.radius) {
+        const angle = Math.atan2(ball.y - player.y, ball.x - player.x);
+        let kickPower = inputState.kick ? 12 : 4;
+        ball.vx = Math.cos(angle) * kickPower;
+        ball.vy = Math.sin(angle) * kickPower;
+      }
+
+      // --- RENDERIZAÇÃO DO CAMPO ---
+      ctx.fillStyle = '#047857';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Linhas do Campo
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(border, border, canvas.width - (border * 2), canvas.height - (border * 2));
+
+      // Linha do Meio
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
+      ctx.moveTo(canvas.width / 2, border);
+      ctx.lineTo(canvas.width / 2, canvas.height - border);
       ctx.stroke();
 
-      // Atualizar posição do Jogador com base no Joystick
-      player.x += inputState.vx * player.speed;
-      player.y += inputState.vy * player.speed;
+      // Círculo Central
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 55, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
 
-      // Limites da tela
-      player.x = Math.max(20 + player.radius, Math.min(canvas.width - 20 - player.radius, player.x));
-      player.y = Math.max(20 + player.radius, Math.min(canvas.height - 20 - player.radius, player.y));
+      // Gol Esquerdo e Direito
+      const goalWidth = 100;
+      const goalDepth = 15;
+      // Esquerdo
+      ctx.strokeRect(border - goalDepth, (canvas.height / 2) - (goalWidth / 2), goalDepth, goalWidth);
+      // Direito
+      ctx.strokeRect(canvas.width - border, (canvas.height / 2) - (goalWidth / 2), goalDepth, goalWidth);
+
+      // Desenhar Bola
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
+      ctx.stroke();
 
       // Desenhar Jogador
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-      ctx.fillStyle = inputState.kick ? '#ef4444' : '#3b82f6'; // Fica vermelho ao chutar
+      ctx.fillStyle = player.team === 'AZUL' ? '#3b82f6' : '#ef4444';
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
       ctx.stroke();
+
+      // Nome do Jogador
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Jogador 1345', player.x, player.y - player.radius - 4);
 
       requestAnimationFrame(gameLoop);
     }
