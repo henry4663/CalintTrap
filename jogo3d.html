@@ -1,1 +1,185 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Jogo de Futebol Multiplayer com Joystick</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      touch-action: none; /* Impede rolagem da página em telas sensíveis ao toque */
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen select-none overflow-hidden">
+
+  <!-- Container do Jogo -->
+  <div class="relative w-full max-w-4xl p-2 flex flex-col items-center">
+    <!-- Canvas do Jogo -->
+    <div class="relative w-full aspect-[16/9] bg-green-700 rounded-lg shadow-2xl border-4 border-white overflow-hidden">
+      <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+      <!-- Joystick Virtual (Canto Inferior Esquerdo) -->
+      <div id="joystickZone" class="absolute bottom-6 left-6 w-32 h-32 bg-white/20 backdrop-blur-md rounded-full border-2 border-white/40 flex items-center justify-center touch-none z-10">
+        <div id="joystickKnob" class="w-12 h-12 bg-white/80 rounded-full shadow-md transition-transform duration-75"></div>
+      </div>
+
+      <!-- Botão de Chute (Canto Inferior Direito) -->
+      <button id="kickBtn" class="absolute bottom-6 right-6 w-20 h-20 bg-red-600 active:bg-red-700 text-white font-bold rounded-full shadow-lg border-2 border-white text-lg flex items-center justify-center z-10">
+        CHUTAR
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configuração de resolução do Canvas
+    canvas.width = 800;
+    canvas.height = 450;
+
+    // Estado dos controles
+    const inputState = {
+      vx: 0, // Velocidade X (-1 a 1)
+      vy: 0, // Velocidade Y (-1 a 1)
+      kick: false
+    };
+
+    // --- LÓGICA DO JOYSTICK ---
+    const joystickZone = document.getElementById('joystickZone');
+    const joystickKnob = document.getElementById('joystickKnob');
+
+    let joystickActive = false;
+    let joystickTouchId = null;
+    let originX = 0;
+    let originY = 0;
+    const maxRadius = 40; // Distância máxima do manípulo
+
+    function handleJoystickStart(e) {
+      const touch = e.changedTouches ? e.changedTouches[0] : e;
+      joystickActive = true;
+      joystickTouchId = touch.identifier ?? 'mouse';
+
+      const rect = joystickZone.getBoundingClientRect();
+      originX = rect.left + rect.width / 2;
+      originY = rect.top + rect.height / 2;
+
+      updateJoystick(touch);
+    }
+
+    function handleJoystickMove(e) {
+      if (!joystickActive) return;
+
+      let touch = null;
+      if (e.changedTouches) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === joystickTouchId) {
+            touch = e.changedTouches[i];
+            break;
+          }
+        }
+      } else {
+        touch = e;
+      }
+
+      if (touch) updateJoystick(touch);
+    }
+
+    function handleJoystickEnd(e) {
+      if (!joystickActive) return;
+
+      if (e.changedTouches) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === joystickTouchId) {
+            resetJoystick();
+            break;
+          }
+        }
+      } else {
+        resetJoystick();
+      }
+    }
+
+    function updateJoystick(touch) {
+      const dx = touch.clientX - originX;
+      const dy = touch.clientY - originY;
+      const dist = Math.hypot(dx, dy);
+
+      const angle = Math.atan2(dy, dx);
+      const clampedDist = Math.min(dist, maxRadius);
+
+      const knobX = Math.cos(angle) * clampedDist;
+      const knobY = Math.sin(angle) * clampedDist;
+
+      // Move o manípulo visualmente
+      joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+      // Normaliza as velocidades entre -1 e 1
+      inputState.vx = knobX / maxRadius;
+      inputState.vy = knobY / maxRadius;
+    }
+
+    function resetJoystick() {
+      joystickActive = false;
+      joystickTouchId = null;
+      joystickKnob.style.transform = `translate(0px, 0px)`;
+      inputState.vx = 0;
+      inputState.vy = 0;
+    }
+
+    // Eventos Touch e Mouse para o Joystick
+    joystickZone.addEventListener('touchstart', handleJoystickStart, { passive: false });
+    window.addEventListener('touchmove', handleJoystickMove, { passive: false });
+    window.addEventListener('touchend', handleJoystickEnd, { passive: false });
+
+    joystickZone.addEventListener('mousedown', handleJoystickStart);
+    window.addEventListener('mousemove', handleJoystickMove);
+    window.addEventListener('mouseup', handleJoystickEnd);
+
+    // Botão de Chute
+    const kickBtn = document.getElementById('kickBtn');
+    kickBtn.addEventListener('touchstart', (e) => { e.preventDefault(); inputState.kick = true; });
+    kickBtn.addEventListener('touchend', () => { inputState.kick = false; });
+    kickBtn.addEventListener('mousedown', () => { inputState.kick = true; });
+    kickBtn.addEventListener('mouseup', () => { inputState.kick = false; });
+
+    // --- LOOP DE RENDERIZAÇÃO E EXEMPLO DE MOVIMENTO ---
+    const player = { x: 400, y: 225, radius: 15, speed: 4 };
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Desenhar Campo
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Atualizar posição do Jogador com base no Joystick
+      player.x += inputState.vx * player.speed;
+      player.y += inputState.vy * player.speed;
+
+      // Limites da tela
+      player.x = Math.max(20 + player.radius, Math.min(canvas.width - 20 - player.radius, player.x));
+      player.y = Math.max(20 + player.radius, Math.min(canvas.height - 20 - player.radius, player.y));
+
+      // Desenhar Jogador
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = inputState.kick ? '#ef4444' : '#3b82f6'; // Fica vermelho ao chutar
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
