@@ -27,7 +27,6 @@
             width: 100%;
             height: 100%;
             display: block;
-            image-rendering: pixelated;
         }
 
         /* HUD / INTERFACE */
@@ -36,23 +35,23 @@
             top: 15px;
             left: 15px;
             z-index: 10;
-            background: rgba(10, 10, 20, 0.75);
-            border: 1px solid rgba(168, 85, 247, 0.4);
+            background: rgba(15, 10, 30, 0.85);
+            border: 1px solid rgba(168, 85, 247, 0.5);
             padding: 12px 18px;
             border-radius: 12px;
             color: white;
             backdrop-filter: blur(8px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(168, 85, 247, 0.2);
             display: flex;
             flex-direction: column;
             gap: 6px;
-            min-width: 180px;
+            min-width: 190px;
         }
 
         .hud-title {
             font-size: 0.95rem;
             font-weight: bold;
-            color: #a855ff;
+            color: #c084fc;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -60,10 +59,10 @@
         .bar-container {
             width: 100%;
             height: 12px;
-            background: #222;
+            background: #111;
             border-radius: 6px;
             overflow: hidden;
-            border: 1px solid #444;
+            border: 1px solid rgba(255,255,255,0.15);
         }
 
         .hp-bar {
@@ -75,7 +74,7 @@
 
         .hud-info {
             font-size: 0.8rem;
-            color: #e2e8f0;
+            color: #cbd5e1;
             display: flex;
             justify-content: space-between;
         }
@@ -85,14 +84,15 @@
             top: 15px;
             right: 15px;
             z-index: 10;
-            background: rgba(220, 38, 38, 0.85);
+            background: linear-gradient(135deg, #dc2626, #991b1b);
             color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 10px 18px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
             transition: all 0.2s;
         }
         .btn-voltar:active { transform: scale(0.95); }
@@ -103,9 +103,9 @@
             bottom: 20px;
             left: 20px;
             z-index: 10;
-            border: 2px solid rgba(168, 85, 247, 0.6);
+            border: 2px solid rgba(168, 85, 247, 0.7);
             border-radius: 10px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(10, 5, 20, 0.8);
             box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
 
@@ -123,24 +123,25 @@
 
         #joystick-base {
             position: relative;
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.25);
+            width: 130px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             pointer-events: auto;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
         }
 
         #joystick-stick {
             position: absolute;
-            top: 30px;
-            left: 30px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #a855ff, #6366f1);
+            top: 32px;
+            left: 32px;
+            width: 62px;
+            height: 62px;
+            background: linear-gradient(135deg, #c084fc, #6366f1);
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.8);
         }
 
         .action-buttons {
@@ -150,72 +151,77 @@
         }
 
         .btn-act {
-            width: 75px;
-            height: 75px;
+            width: 80px;
+            height: 80px;
             border: none;
             border-radius: 50%;
             color: white;
             font-weight: bold;
-            font-size: 0.9rem;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+            font-size: 0.85rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            letter-spacing: 0.5px;
         }
         #btn-shoot {
-            background: linear-gradient(135deg, #ef4444, #b91c1c);
-            border: 2px solid rgba(255,255,255,0.3);
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            border: 2px solid rgba(255,255,255,0.35);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
         }
-        #btn-shoot:active { transform: scale(0.9); }
+        #btn-shoot:active { transform: scale(0.92); }
 
         /* OVERLAYS GAME OVER / WIN */
         .overlay {
             position: absolute;
             inset: 0;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(5, 3, 10, 0.9);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
         .overlay.active {
             opacity: 1;
             pointer-events: auto;
         }
         .overlay h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px currentColor;
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            text-shadow: 0 0 25px currentColor;
+            letter-spacing: 2px;
         }
         .overlay p {
-            font-size: 1.2rem;
-            color: #cbd5e1;
-            margin-bottom: 25px;
+            font-size: 1.25rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
         }
         .btn-restart {
-            padding: 12px 30px;
-            font-size: 1.1rem;
+            padding: 14px 35px;
+            font-size: 1.15rem;
             font-weight: bold;
             color: white;
-            background: linear-gradient(135deg, #a855ff, #6366f1);
+            background: linear-gradient(135deg, #a855ff, #4f46e5);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+            transition: transform 0.2s;
         }
+        .btn-restart:active { transform: scale(0.95); }
 
         /* EFEITO DE DANOS NA TELA */
         #damageFlash {
             position: absolute;
             inset: 0;
-            background: rgba(239, 68, 68, 0.35);
+            background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.5) 100%);
             z-index: 5;
             pointer-events: none;
             opacity: 0;
@@ -228,7 +234,7 @@
     <div id="damageFlash"></div>
 
     <div class="hud">
-        <div class="hud-title">Sobrevivente</div>
+        <div class="hud-title">Goblox Survivor</div>
         <div class="bar-container">
             <div class="hp-bar" id="hpBar"></div>
         </div>
@@ -241,7 +247,7 @@
     <button class="btn-voltar" onclick="restartGame()">🔄 Reiniciar</button>
 
     <canvas id="gameCanvas"></canvas>
-    <canvas id="minimapCanvas" width="120" height="120"></canvas>
+    <canvas id="minimapCanvas" width="130" height="130"></canvas>
 
     <div class="mobile-controls">
         <div id="joystick-base">
@@ -255,19 +261,18 @@
     <!-- TELA DE DERROTA -->
     <div class="overlay" id="gameOverScreen">
         <h1 style="color: #ef4444;">VOCÊ MORREU!</h1>
-        <p>Os zumbis te alcançaram no labirinto.</p>
+        <p>Os zumbis te alcançaram no labirinto sombrio.</p>
         <button class="btn-restart" onclick="restartGame()">Tentar Novamente</button>
     </div>
 
     <!-- TELA DE VITÓRIA -->
     <div class="overlay" id="winScreen">
         <h1 style="color: #22c55e;">VOCÊ ESCAPOU!</h1>
-        <p>Parabéns! Você encontrou a saída do labirinto!</p>
+        <p>Incrível! Você sobreviveu e achou a saída!</p>
         <button class="btn-restart" onclick="restartGame()">Jogar Novamente</button>
     </div>
 
 <script>
-    // --- SETUP DO CANVAS ---
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const minimapCanvas = document.getElementById("minimapCanvas");
@@ -280,8 +285,7 @@
     window.addEventListener("resize", resize);
     resize();
 
-    // --- MAPA DO LABIRINTO ---
-    // 1: Parede, 0: Caminho Livre, 2: Saída (Portal Verde)
+    // MAPA DO LABIRINTO (1: Parede Roxo-Escura, 0: Caminho, 2: Saída Portal)
     const MAP_SIZE = 14;
     const mapa = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -300,13 +304,12 @@
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     ];
 
-    // --- JOGADOR ---
     let player = {
         x: 1.5,
         y: 1.5,
         angle: 0,
-        speed: 0.045,
-        rotSpeed: 0.035,
+        speed: 0.048,
+        rotSpeed: 0.038,
         hp: 100,
         maxHp: 100
     };
@@ -314,21 +317,21 @@
     let zumbis = [];
     let isShooting = false;
     let shootCooldown = 0;
+    let recoilAnim = 0;
     let gameState = "PLAYING";
 
     function initZumbis() {
-        // Zumbis posicionados longe do ponto inicial (1.5, 1.5)
         zumbis = [
-            { x: 7.5, y: 1.5, hp: 3, alive: true, hitTimer: 0 },
-            { x: 9.5, y: 3.5, hp: 3, alive: true, hitTimer: 0 },
-            { x: 4.5, y: 7.5, hp: 3, alive: true, hitTimer: 0 },
-            { x: 10.5, y: 7.5, hp: 3, alive: true, hitTimer: 0 },
-            { x: 6.5, y: 11.5, hp: 3, alive: true, hitTimer: 0 },
-            { x: 11.5, y: 9.5, hp: 3, alive: true, hitTimer: 0 }
+            { x: 7.5, y: 1.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
+            { x: 9.5, y: 3.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
+            { x: 4.5, y: 7.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
+            { x: 10.5, y: 7.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
+            { x: 6.5, y: 11.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
+            { x: 11.5, y: 9.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 }
         ];
     }
 
-    // --- TECLADO ---
+    // CONTROLES DE TECLADO
     const keys = {};
     window.addEventListener("keydown", e => {
         keys[e.code] = true;
@@ -336,13 +339,13 @@
     });
     window.addEventListener("keyup", e => keys[e.code] = false);
 
-    // --- JOYSTICK TOUCH ---
+    // JOYSTICK TOUCH MOBILE
     const joystickBase = document.getElementById("joystick-base");
     const joystickStick = document.getElementById("joystick-stick");
     let joystickActive = false;
     let touchId = null;
     let joyDX = 0, joyDY = 0;
-    const maxDist = 40;
+    const maxDist = 45;
 
     joystickBase.addEventListener("touchstart", (e) => {
         e.preventDefault();
@@ -361,7 +364,7 @@
                 const centerY = rect.top + rect.height / 2;
                 let dx = t.clientX - centerX;
                 let dy = t.clientY - centerY;
-                const dist = Math.hypot(dx, dy);
+                let dist = Math.hypot(dx, dy);
                 if (dist > maxDist) {
                     dx = (dx / dist) * maxDist;
                     dy = (dy / dist) * maxDist;
@@ -394,7 +397,8 @@
     function triggerShoot() {
         if (gameState !== "PLAYING" || shootCooldown > 0) return;
         isShooting = true;
-        shootCooldown = 15;
+        shootCooldown = 14;
+        recoilAnim = 12;
 
         let closestDist = Infinity;
         let targetZumbi = null;
@@ -409,7 +413,7 @@
             while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
             while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
 
-            if (Math.abs(diffAngle) < 0.25) {
+            if (Math.abs(diffAngle) < 0.28) {
                 let dist = Math.hypot(dx, dy);
                 if (dist < closestDist) {
                     closestDist = dist;
@@ -420,7 +424,7 @@
 
         if (targetZumbi && closestDist < 10) {
             targetZumbi.hp--;
-            targetZumbi.hitTimer = 5;
+            targetZumbi.hitTimer = 6;
             if (targetZumbi.hp <= 0) targetZumbi.alive = false;
         }
     }
@@ -447,14 +451,11 @@
             let nextX = player.x + Math.cos(player.angle) * moveStep * player.speed;
             let nextY = player.y + Math.sin(player.angle) * moveStep * player.speed;
 
-            if (mapa[Math.floor(player.y)][Math.floor(nextX)] !== 1) {
-                player.x = nextX;
-            }
-            if (mapa[Math.floor(nextY)][Math.floor(player.x)] !== 1) {
-                player.y = nextY;
-            }
+            if (mapa[Math.floor(player.y)][Math.floor(nextX)] !== 1) player.x = nextX;
+            if (mapa[Math.floor(nextY)][Math.floor(player.x)] !== 1) player.y = nextY;
         }
 
+        // Checar Vitória (Chegar no bloco 2)
         if (mapa[Math.floor(player.y)][Math.floor(player.x)] === 2) {
             gameState = "WIN";
             document.getElementById("winScreen").classList.add("active");
@@ -470,17 +471,16 @@
             let dy = player.y - z.y;
             let dist = Math.hypot(dx, dy);
 
-            // Persegue se estiver próximo (distância de detecção = 5 blocos)
-            if (dist < 5 && dist > 0.4) {
-                // Velocidade reduzida para o jogador conseguir fugir fácil
-                let speed = 0.012;
+            // IA dos Zumbis perseguirem o jogador
+            if (dist < 6 && dist > 0.35) {
+                let speed = 0.014;
                 let nx = z.x + (dx / dist) * speed;
                 let ny = z.y + (dy / dist) * speed;
 
                 if (mapa[Math.floor(z.y)][Math.floor(nx)] !== 1) z.x = nx;
                 if (mapa[Math.floor(ny)][Math.floor(z.x)] !== 1) z.y = ny;
-            } else if (dist <= 0.4) {
-                player.hp -= 0.3;
+            } else if (dist <= 0.35) {
+                player.hp -= 0.4;
                 flashDamage();
                 if (player.hp <= 0) {
                     player.hp = 0;
@@ -493,6 +493,8 @@
         if (shootCooldown > 0) shootCooldown--;
         else isShooting = false;
 
+        if (recoilAnim > 0) recoilAnim -= 2;
+
         document.getElementById("hpBar").style.width = `${(player.hp / player.maxHp) * 100}%`;
         document.getElementById("zombieCount").textContent = `🧟 Zumbis: ${zumbisVivos}`;
     }
@@ -500,7 +502,7 @@
     function flashDamage() {
         const flash = document.getElementById("damageFlash");
         flash.style.opacity = 1;
-        setTimeout(() => flash.style.opacity = 0, 100);
+        setTimeout(() => flash.style.opacity = 0, 120);
     }
 
     function render3D() {
@@ -509,23 +511,26 @@
 
         ctx.clearRect(0, 0, width, height);
 
+        // Céu Escuro Estilizado
         const skyGrad = ctx.createLinearGradient(0, 0, 0, height / 2);
-        skyGrad.addColorStop(0, "#090514");
-        skyGrad.addColorStop(1, "#180b30");
+        skyGrad.addColorStop(0, "#05020a");
+        skyGrad.addColorStop(1, "#1a0b35");
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, width, height / 2);
 
+        // Chão Metálico Ciberpunk
         const floorGrad = ctx.createLinearGradient(0, height / 2, 0, height);
-        floorGrad.addColorStop(0, "#0f172a");
-        floorGrad.addColorStop(1, "#020617");
+        floorGrad.addColorStop(0, "#111827");
+        floorGrad.addColorStop(1, "#030712");
         ctx.fillStyle = floorGrad;
         ctx.fillRect(0, height / 2, width, height / 2);
 
         const fov = Math.PI / 3;
-        const numRays = Math.floor(width / 3);
+        const numRays = Math.floor(width / 2.5); // Mais resolução com densidade otimizada
         const rayWidth = width / numRays;
         const depthBuffer = new Array(numRays);
 
+        // Raycasting
         for (let i = 0; i < numRays; i++) {
             let rayAngle = (player.angle - fov / 2) + (i / numRays) * fov;
             let distance = 0;
@@ -536,7 +541,7 @@
             let sin = Math.sin(rayAngle);
 
             while (!hitWall && distance < 16) {
-                distance += 0.04;
+                distance += 0.035;
                 let checkX = Math.floor(player.x + cos * distance);
                 let checkY = Math.floor(player.y + sin * distance);
 
@@ -558,15 +563,16 @@
             let shade = Math.max(0, 255 - (correctedDist * 16));
 
             if (wallType === 1) {
-                ctx.fillStyle = `rgb(${shade * 0.6}, ${shade * 0.2}, ${shade})`;
+                ctx.fillStyle = `rgb(${shade * 0.5}, ${shade * 0.15}, ${shade * 0.8})`;
             } else if (wallType === 2) {
-                let pulse = Math.sin(Date.now() * 0.005) * 40 + 200;
-                ctx.fillStyle = `rgb(0, ${pulse}, ${shade * 0.5})`;
+                let pulse = Math.sin(Date.now() * 0.006) * 50 + 205;
+                ctx.fillStyle = `rgb(0, ${pulse}, ${shade * 0.4})`;
             }
 
             ctx.fillRect(i * rayWidth, drawTop, rayWidth + 0.8, lineHeight);
         }
 
+        // Renderizar Zumbis (Sprites 3D)
         let spriteList = zumbis.filter(z => z.alive).map(z => {
             let dx = z.x - player.x;
             let dy = z.y - player.y;
@@ -583,64 +589,75 @@
             if (s.dist < 0.2 || s.dist > 14) return;
 
             let screenX = (width / 2) + Math.tan(s.angle) * (width / 2);
-            let spriteSize = Math.min(height, (height / s.dist));
+            let spriteSize = Math.min(height * 1.2, (height / s.dist));
             let spriteTop = (height / 2) - (spriteSize / 2);
 
             let rayIdx = Math.floor((screenX / width) * numRays);
             if (rayIdx >= 0 && rayIdx < numRays && depthBuffer[rayIdx] > s.dist) {
-                let zombieColor = s.z.hitTimer > 0 ? "#ffffff" : "#22c55e";
+                let zombieColor = s.z.hitTimer > 0 ? "#ffffff" : "#16a34a";
+                
+                // Corpo do Zumbi
                 ctx.fillStyle = zombieColor;
-                ctx.fillRect(screenX - spriteSize / 4, spriteTop + spriteSize * 0.2, spriteSize / 2, spriteSize * 0.7);
+                ctx.fillRect(screenX - spriteSize / 4, spriteTop + spriteSize * 0.22, spriteSize / 2, spriteSize * 0.68);
 
+                // Cabeça
                 ctx.fillStyle = s.z.hitTimer > 0 ? "#ffffff" : "#15803d";
-                ctx.fillRect(screenX - spriteSize / 6, spriteTop, spriteSize / 3, spriteSize * 0.25);
+                ctx.fillRect(screenX - spriteSize / 5.5, spriteTop, spriteSize / 2.8, spriteSize * 0.25);
 
+                // Olhos brilhantes do zumbi
                 ctx.fillStyle = "#ef4444";
-                ctx.fillRect(screenX - spriteSize / 10, spriteTop + spriteSize * 0.05, spriteSize / 20, spriteSize / 20);
-                ctx.fillRect(screenX + spriteSize / 20, spriteTop + spriteSize * 0.05, spriteSize / 20, spriteSize / 20);
+                ctx.fillRect(screenX - spriteSize / 9, spriteTop + spriteSize * 0.07, spriteSize / 18, spriteSize / 18);
+                ctx.fillRect(screenX + spriteSize / 22, spriteTop + spriteSize * 0.07, spriteSize / 18, spriteSize / 18);
 
+                // Barra de Vida do Zumbi
                 let barW = spriteSize / 2;
                 let barH = 5;
-                ctx.fillStyle = "#000";
-                ctx.fillRect(screenX - barW / 2, spriteTop - 12, barW, barH);
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
+                ctx.fillRect(screenX - barW / 2, spriteTop - 15, barW, barH);
                 ctx.fillStyle = "#ef4444";
-                ctx.fillRect(screenX - barW / 2, spriteTop - 12, barW * (s.z.hp / 3), barH);
+                ctx.fillRect(screenX - barW / 2, spriteTop - 15, barW * (s.z.hp / s.z.maxHp), barH);
             }
         });
 
-        const gunW = 140;
-        const gunH = 140;
+        // Arma do Jogador na Tela
+        const gunW = 150;
+        const gunH = 150;
         const gunX = (width / 2) - (gunW / 2);
-        const gunY = height - gunH + (isShooting ? 15 : 0);
+        const gunY = height - gunH + recoilAnim;
 
         if (isShooting) {
-            ctx.fillStyle = "rgba(253, 224, 71, 0.8)";
+            ctx.fillStyle = "rgba(253, 224, 71, 0.9)";
             ctx.beginPath();
-            ctx.arc(width / 2, gunY + 20, 45, 0, Math.PI * 2);
+            ctx.arc(width / 2, gunY + 15, 55, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        ctx.fillStyle = "#334155";
-        ctx.fillRect(gunX + 45, gunY, 50, 90);
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(gunX + 55, gunY + 20, 30, 100);
+        // Desenho da arma de fogo (estilo retro-moderno)
+        ctx.fillStyle = "#475569";
+        ctx.fillRect(gunX + 45, gunY, 60, 100);
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(gunX + 58, gunY + 15, 34, 110);
 
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.lineWidth = 2;
+        // Mira central estilizada
+        ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(width / 2, height / 2, 6, 0, Math.PI * 2);
+        ctx.arc(width / 2, height / 2, 7, 0, Math.PI * 2);
         ctx.stroke();
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillRect(width / 2 - 1.5, height / 2 - 1.5, 3, 3);
     }
 
     function renderMinimap() {
-        const mSize = 120;
+        const mSize = 130;
         const tileSize = mSize / MAP_SIZE;
         minimapCtx.clearRect(0, 0, mSize, mSize);
 
         for (let r = 0; r < MAP_SIZE; r++) {
             for (let c = 0; c < MAP_SIZE; c++) {
                 if (mapa[r][c] === 1) {
-                    minimapCtx.fillStyle = "#6b21a8";
+                    minimapCtx.fillStyle = "#581c87";
                     minimapCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
                 } else if (mapa[r][c] === 2) {
                     minimapCtx.fillStyle = "#22c55e";
@@ -649,26 +666,30 @@
             }
         }
 
+        // Zumbis no minimapa
         minimapCtx.fillStyle = "#ef4444";
         zumbis.forEach(z => {
             if (z.alive) {
                 minimapCtx.beginPath();
-                minimapCtx.arc(z.x * tileSize, z.y * tileSize, 2.5, 0, Math.PI * 2);
+                minimapCtx.arc(z.x * tileSize, z.y * tileSize, 3, 0, Math.PI * 2);
                 minimapCtx.fill();
             }
         });
 
+        // Jogador no minimapa
         minimapCtx.fillStyle = "#38bdf8";
         minimapCtx.beginPath();
-        minimapCtx.arc(player.x * tileSize, player.y * tileSize, 3.5, 0, Math.PI * 2);
+        minimapCtx.arc(player.x * tileSize, player.y * tileSize, 4, 0, Math.PI * 2);
         minimapCtx.fill();
 
-        minimapCtx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+        // Linha de Visão (Cone)
+        minimapCtx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+        minimapCtx.lineWidth = 1.5;
         minimapCtx.beginPath();
         minimapCtx.moveTo(player.x * tileSize, player.y * tileSize);
         minimapCtx.lineTo(
-            (player.x + Math.cos(player.angle) * 2) * tileSize,
-            (player.y + Math.sin(player.angle) * 2) * tileSize
+            (player.x + Math.cos(player.angle) * 2.2) * tileSize,
+            (player.y + Math.sin(player.angle) * 2.2) * tileSize
         );
         minimapCtx.stroke();
     }
