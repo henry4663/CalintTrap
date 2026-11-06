@@ -280,7 +280,9 @@
   );
   playerShadow.rotation.x = -Math.PI/2;
   playerShadow.position.y = 0.02;
-  scene.add(playerShadow);  const deathShards = [];
+  scene.add(playerShadow);
+  
+  const deathShards = [];
   
   function shatterPlayer() {
     player.visible = false;
@@ -317,6 +319,7 @@
     deathShards.length = 0;
   }
 
+  // ============ SISTEMA DE OBSTÁCULOS MELHORADO ============
   const obstacles = [];
   const coins = [];
   const TYPES = ['block', 'low', 'tall', 'highBar'];
@@ -326,48 +329,76 @@
     group.position.set(LANES[lane], 0, z);
     
     if (type === 'block') {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 1.6, 2.2),
-        new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x881133, emissiveIntensity: 0.5, roughness: 0.3 })
+      // CAIXA METÁLICA FUTURISTA NEON ROSA
+      const mainBox = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 1.6, 2.0),
+        new THREE.MeshStandardMaterial({ color: 0x1f1a24, roughness: 0.4, metalness: 0.6 })
       );
-      mesh.position.y = 0.8; mesh.castShadow = true; mesh.receiveShadow = true;
-      group.add(mesh);
+      mainBox.position.y = 0.8; mainBox.castShadow = true; mainBox.receiveShadow = true;
+      group.add(mainBox);
+
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 0xff0066, emissive: 0xff0066, emissiveIntensity: 0.8 });
+      const stripe1 = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.15, 2.06), stripeMat);
+      stripe1.position.y = 0.5; group.add(stripe1);
+      
+      const stripe2 = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.15, 2.06), stripeMat);
+      stripe2.position.y = 1.1; group.add(stripe2);
+
       group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
     } 
     else if (type === 'low') {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 0.5, 1.5),
-        new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xaa5500, emissiveIntensity: 0.6, roughness: 0.3 })
-      );
-      mesh.position.y = 0.25; mesh.castShadow = true; mesh.receiveShadow = true;
-      group.add(mesh);
-      group.userData = { type, width: 2.4, height: 0.5, minY: 0 };
+      // BARREIRA DE ATLETISMO AMARELA/LARANJA NEON (PULÁVEL)
+      const matMain = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 0.5, roughness: 0.3 });
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.25, 0.4), matMain);
+      bar.position.y = 0.5; bar.castShadow = true;
+      group.add(bar);
+
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.6), legMat);
+      legL.position.set(-1.1, 0.25, 0); legL.castShadow = true;
+      group.add(legL);
+
+      const legR = legL.clone();
+      legR.position.x = 1.1;
+      group.add(legR);
+
+      group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
     }
     else if (type === 'highBar') {
-      const barMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x008866, emissiveIntensity: 0.6, roughness: 0.3 });
+      // TRAVE ALTA NEON AZUL/TURQUESA (ABAIXÁVEL)
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
+      const neonMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x00ffcc, emissiveIntensity: 0.9 });
       
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.6, 0.8), barMat);
-      bar.position.y = 1.95; bar.castShadow = true;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.4, 0.6), neonMat);
+      bar.position.y = 1.9; bar.castShadow = true;
       group.add(bar);
       
-      const pillarL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.3, 0.2), barMat);
-      pillarL.position.set(-1.2, 1.15, 0);
+      const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.1, 12), frameMat);
+      pillarL.position.set(-1.25, 1.05, 0); pillarL.castShadow = true;
       group.add(pillarL);
       
-      const pillarR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.3, 0.2), barMat);
-      pillarR.position.set(1.2, 1.15, 0);
+      const pillarR = pillarL.clone();
+      pillarR.position.x = 1.25;
       group.add(pillarR);
       
-      group.userData = { type, width: 2.6, height: 2.25, minY: 1.35 };
+      group.userData = { type, width: 2.7, height: 2.2, minY: 1.4 };
     }
     else {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(2.0, 3.0, 1.2),
-        new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0x550088, emissiveIntensity: 0.5, roughness: 0.3 })
+      // TORRE MONOLÍTICA ROXA CRISTALINA
+      const mainPillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.1, 1.25, 3.4, 6),
+        new THREE.MeshStandardMaterial({ color: 0x6600cc, emissive: 0x330066, emissiveIntensity: 0.6, roughness: 0.2 })
       );
-      mesh.position.y = 1.5; mesh.castShadow = true; mesh.receiveShadow = true;
-      group.add(mesh);
-      group.userData = { type, width: 2.0, height: 3.0, minY: 0 };
+      mainPillar.position.y = 1.7; mainPillar.castShadow = true; mainPillar.receiveShadow = true;
+      group.add(mainPillar);
+
+      const topGlow = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.12, 1.12, 0.2, 6),
+        new THREE.MeshStandardMaterial({ color: 0xcc00ff, emissive: 0xcc00ff, emissiveIntensity: 0.9 })
+      );
+      topGlow.position.y = 3.3; group.add(topGlow);
+
+      group.userData = { type, width: 2.2, height: 3.4, minY: 0 };
     }
     
     scene.add(group);
@@ -661,13 +692,14 @@
         
         if (dx < w * 0.5 + 0.35 && dz < 1.3) {
           const pBottom = player.position.y - (G.isDucking ? 0.2 : 0.5);
-          const pTop = player.position.y + (G.isDucking ? 0.8 : 2.1);
+          const pTop = player.position.y + (G.isDucking ? 0.6 : 2.0);
           
           if (obs.userData.type === 'highBar') {
             if (pTop > minY) {
               gameOver();
             }
-          } else if (obs.userData.type === 'low' && pBottom > h - 0.15) {
+          } else if (obs.userData.type === 'low' && pBottom > h - 0.1) {
+            // Pulo limpo sobre barreira baixa
           } else if (obs.userData.type === 'tall') {
             if (pBottom < h - 0.8) { gameOver(); }
           } else {
@@ -724,4 +756,3 @@
 </script>
 </body>
 </html>
-
