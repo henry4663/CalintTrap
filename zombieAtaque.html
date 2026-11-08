@@ -2,719 +2,774 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Goblox - Escape 3D Zumbi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sobrevivência Urbana - Zombie Escape</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
         }
-
-        body {
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-            overflow: hidden;
-            position: relative;
-        }
-
-        #gameCanvas {
+        body, html {
             width: 100%;
             height: 100%;
-            display: block;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
-        /* HUD / INTERFACE */
-        .hud {
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #ui-layer {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-            background: rgba(15, 10, 30, 0.85);
-            border: 1px solid rgba(168, 85, 247, 0.5);
-            padding: 12px 18px;
-            border-radius: 12px;
-            color: white;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(168, 85, 247, 0.2);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            min-width: 190px;
+            justify-content: space-between;
+            padding: 20px;
         }
-
-        .hud-title {
-            font-size: 0.95rem;
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .stat-box {
+            background: rgba(0, 0, 0, 0.65);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            color: #fff;
+            min-width: 180px;
+            backdrop-filter: blur(4px);
+        }
+        .bar-container {
+            width: 100%;
+            height: 14px;
+            background: #222;
+            border-radius: 7px;
+            overflow: hidden;
+            margin-top: 6px;
+            border: 1px solid #555;
+        }
+        .bar-fill {
+            height: 100%;
+            transition: width 0.1s linear;
+        }
+        #health-fill { background: linear-gradient(90deg, #ff3333, #ff6666); width: 100%; }
+        #stamina-fill { background: linear-gradient(90deg, #33cc33, #66ff66); width: 100%; }
+        .weapon-hud {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 2px solid #555;
+            color: #fff;
+            text-align: right;
+        }
+        .weapon-name {
+            font-size: 20px;
             font-weight: bold;
-            color: #c084fc;
+            color: #ffcc00;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-
-        .bar-container {
-            width: 100%;
-            height: 12px;
-            background: #111;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.15);
+        .ammo-count {
+            font-size: 28px;
+            font-weight: bold;
         }
-
-        .hp-bar {
+        .game-over-screen, .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #ef4444, #22c55e);
-            transition: width 0.2s ease;
-        }
-
-        .hud-info {
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .btn-voltar {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 10;
-            background: linear-gradient(135deg, #dc2626, #991b1b);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.25);
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-            transition: all 0.2s;
-        }
-        .btn-voltar:active { transform: scale(0.95); }
-
-        /* MINIMAPA */
-        #minimapCanvas {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 10;
-            border: 2px solid rgba(168, 85, 247, 0.7);
-            border-radius: 10px;
-            background: rgba(10, 5, 20, 0.8);
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-        }
-
-        /* CONTROLES MOBILE */
-        .mobile-controls {
-            position: absolute;
-            inset: 0;
-            z-index: 20;
-            pointer-events: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding: 25px;
-        }
-
-        #joystick-base {
-            position: relative;
-            width: 130px;
-            height: 130px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            pointer-events: auto;
-            backdrop-filter: blur(6px);
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-        }
-
-        #joystick-stick {
-            position: absolute;
-            top: 32px;
-            left: 32px;
-            width: 62px;
-            height: 62px;
-            background: linear-gradient(135deg, #c084fc, #6366f1);
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.8);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            pointer-events: auto;
-        }
-
-        .btn-act {
-            width: 80px;
-            height: 80px;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-weight: bold;
-            font-size: 0.85rem;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            letter-spacing: 0.5px;
-        }
-        #btn-shoot {
-            background: linear-gradient(135deg, #ef4444, #991b1b);
-            border: 2px solid rgba(255,255,255,0.35);
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-        }
-        #btn-shoot:active { transform: scale(0.92); }
-
-        /* OVERLAYS GAME OVER / WIN */
-        .overlay {
-            position: absolute;
-            inset: 0;
-            z-index: 100;
-            background: rgba(5, 3, 10, 0.9);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             color: white;
-            backdrop-filter: blur(12px);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
-        }
-        .overlay.active {
-            opacity: 1;
+            z-index: 10;
             pointer-events: auto;
         }
-        .overlay h1 {
-            font-size: 3.5rem;
-            margin-bottom: 12px;
-            text-shadow: 0 0 25px currentColor;
-            letter-spacing: 2px;
-        }
-        .overlay p {
-            font-size: 1.25rem;
-            color: #94a3b8;
-            margin-bottom: 30px;
-        }
-        .btn-restart {
-            padding: 14px 35px;
-            font-size: 1.15rem;
-            font-weight: bold;
+        .btn {
+            background: #cc2222;
             color: white;
-            background: linear-gradient(135deg, #a855ff, #4f46e5);
             border: none;
-            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
-            transition: transform 0.2s;
+            margin-top: 25px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(204, 34, 34, 0.6);
         }
-        .btn-restart:active { transform: scale(0.95); }
-
-        /* EFEITO DE DANOS NA TELA */
-        #damageFlash {
+        .btn:hover {
+            background: #ff3333;
+            transform: scale(1.05);
+        }
+        #touch-controls {
             position: absolute;
-            inset: 0;
-            background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.5) 100%);
-            z-index: 5;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            height: 180px;
             pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.1s ease-out;
+            display: none;
+        }
+        .joystick-zone {
+            position: absolute;
+            bottom: 20px;
+            width: 130px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: auto;
+        }
+        #move-zone { left: 30px; }
+        #shoot-zone { right: 30px; }
+        .joystick-knob {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            top: 40px;
+            left: 40px;
         }
     </style>
 </head>
 <body>
 
-    <div id="damageFlash"></div>
-
-    <div class="hud">
-        <div class="hud-title">Goblox Survivor</div>
-        <div class="bar-container">
-            <div class="hp-bar" id="hpBar"></div>
-        </div>
-        <div class="hud-info">
-            <span id="zombieCount">🧟 Zumbis: 0</span>
-            <span id="objectiveText">📍 Saída (Verde)</span>
-        </div>
-    </div>
-
-    <button class="btn-voltar" onclick="restartGame()">🔄 Reiniciar</button>
-
+<div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    <canvas id="minimapCanvas" width="130" height="130"></canvas>
-
-    <div class="mobile-controls">
-        <div id="joystick-base">
-            <div id="joystick-stick"></div>
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="stat-box">
+                <div>VIDA</div>
+                <div class="bar-container"><div id="health-fill" class="bar-fill"></div></div>
+                <div style="margin-top: 8px;">ESTÂMINA</div>
+                <div class="bar-container"><div id="stamina-fill" class="bar-fill"></div></div>
+            </div>
+            <div class="stat-box" style="text-align: center;">
+                <div style="font-size: 14px; color: #aaa;">ZUMBIS ELIMINADOS</div>
+                <div id="kill-count" style="font-size: 32px; font-weight: bold; color: #ff4444;">0</div>
+            </div>
+            <div class="weapon-hud">
+                <div id="weapon-name" class="weapon-name">Pistola 9mm</div>
+                <div class="ammo-count"><span id="ammo-clip">12</span> / <span id="ammo-reserve">∞</span></div>
+            </div>
         </div>
-        <div class="action-buttons">
-            <button class="btn-act" id="btn-shoot">ATIRAR</button>
+    </div>
+    <div id="start-screen" class="start-screen">
+        <h1 style="font-size: 48px; color: #ff3333; margin-bottom: 10px; text-shadow: 0 0 10px #000;">FUGA DA CIDADE ZUMBIS</h1>
+        <p style="color: #ccc; max-width: 600px; text-align: center; font-size: 16px; line-height: 1.5;">
+            Explore as ruas da cidade infectada. Encontre novas armas (Escopeta, Submetralhadora, Fuzil), munição e kits médicos para sobreviver às hordas.
+        </p>
+        <div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; font-size: 14px;">
+            <b>Controles PC:</b> WASD (Mover) | MOUSE (Mirar/Atirar) | SHIFT (Correr) | R (Recarregar) | 1-4 (Trocar Arma)<br>
+            <b>Mobile:</b> Joysticks virtuais na tela.
         </div>
+        <button class="btn" onclick="startGame()">JOGAR NOW</button>
     </div>
-
-    <!-- TELA DE DERROTA -->
-    <div class="overlay" id="gameOverScreen">
-        <h1 style="color: #ef4444;">VOCÊ MORREU!</h1>
-        <p>Os zumbis te alcançaram no labirinto sombrio.</p>
-        <button class="btn-restart" onclick="restartGame()">Tentar Novamente</button>
+    <div id="game-over-screen" class="game-over-screen" style="display: none;">
+        <h1 style="font-size: 56px; color: #ff2222; text-shadow: 0 0 15px #ff0000;">VOCÊ MORREU!</h1>
+        <p style="font-size: 20px; margin-top: 10px;">Zumbis Eliminados: <span id="final-kills" style="color: #ffcc00;">0</span></p>
+        <button class="btn" onclick="restartGame()">TENTAR NOVAMENTE</button>
     </div>
-
-    <!-- TELA DE VITÓRIA -->
-    <div class="overlay" id="winScreen">
-        <h1 style="color: #22c55e;">VOCÊ ESCAPOU!</h1>
-        <p>Incrível! Você sobreviveu e achou a saída!</p>
-        <button class="btn-restart" onclick="restartGame()">Jogar Novamente</button>
-    </div>
-
+</div>
 <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const minimapCanvas = document.getElementById("minimapCanvas");
-    const minimapCtx = minimapCanvas.getContext("2d");
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    function resize() {
+    // Sons Sintetizados (Web Audio API)
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'shoot') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'hit') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        } else if (type === 'pickup') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+    }
+
+    // Configuração do Canvas
+    function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    window.addEventListener("resize", resize);
-    resize();
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    // MAPA DO LABIRINTO (1: Parede Roxo-Escura, 0: Caminho, 2: Saída Portal)
-    const MAP_SIZE = 14;
-    const mapa = [
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,0,0,0,1,0,0,0,0,0,1,0,0,1],
-        [1,0,1,0,1,0,1,1,1,0,1,0,1,1],
-        [1,0,1,0,0,0,0,0,1,0,0,0,0,1],
-        [1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-        [1,0,0,0,0,1,0,0,0,0,0,1,0,1],
-        [1,1,1,1,0,1,1,1,0,1,0,1,0,1],
-        [1,0,0,1,0,0,0,1,0,1,0,0,0,1],
-        [1,0,1,1,1,1,0,1,0,1,1,1,0,1],
-        [1,0,0,0,0,1,0,0,0,1,0,0,0,1],
-        [1,1,1,0,1,1,1,1,0,1,0,1,1,1],
-        [1,0,0,0,0,0,0,1,0,0,0,0,2,1],
-        [1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    ];
-
-    let player = {
-        x: 1.5,
-        y: 1.5,
-        angle: 0,
-        speed: 0.048,
-        rotSpeed: 0.038,
-        hp: 100,
-        maxHp: 100
+    // Definição das Armas
+    const WEAPONS = {
+        pistol: { name: 'Pistola 9mm', clipSize: 12, reserveMax: Infinity, fireRate: 250, damage: 35, speed: 14, spread: 0.05, count: 1, color: '#ffcc00' },
+        smg: { name: 'Submetralhadora MP5', clipSize: 30, reserveMax: 180, fireRate: 90, damage: 22, speed: 16, spread: 0.12, count: 1, color: '#00ccff' },
+        shotgun: { name: 'Escopeta 12GA', clipSize: 6, reserveMax: 36, fireRate: 800, damage: 28, speed: 12, spread: 0.25, count: 6, color: '#ff3300' },
+        rifle: { name: 'Fuzil AK-47', clipSize: 30, reserveMax: 150, fireRate: 140, damage: 50, speed: 18, spread: 0.04, count: 1, color: '#33ff33' }
     };
 
-    let zumbis = [];
-    let isShooting = false;
-    let shootCooldown = 0;
-    let recoilAnim = 0;
-    let gameState = "PLAYING";
+    // Estado do Jogo
+    let gameActive = false;
+    let camera = { x: 0, y: 0 };
+    let mouse = { x: 0, y: 0, worldX: 0, worldY: 0 };
+    let keys = {};
+    let lastShootTime = 0;
+    let kills = 0;
 
-    function initZumbis() {
-        zumbis = [
-            { x: 7.5, y: 1.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
-            { x: 9.5, y: 3.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
-            { x: 4.5, y: 7.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
-            { x: 10.5, y: 7.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
-            { x: 6.5, y: 11.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 },
-            { x: 11.5, y: 9.5, hp: 3, maxHp: 3, alive: true, hitTimer: 0 }
+    const MAP_SIZE = 2400;
+
+    // Jogador
+    const player = {
+        x: 1200, y: 1200, radius: 18, speed: 3.5, sprintSpeed: 5.5,
+        health: 100, maxHealth: 100, stamina: 100, maxStamina: 100,
+        angle: 0, currentWeapon: 'pistol',
+        inventory: {
+            pistol: { clip: 12, reserve: Infinity, unlocked: true },
+            smg: { clip: 0, reserve: 0, unlocked: false },
+            shotgun: { clip: 0, reserve: 0, unlocked: false },
+            rifle: { clip: 0, reserve: 0, unlocked: false }
+        }
+    };
+
+    // Entidades
+    let bullets = [];
+    let zombis = [];
+    let items = [];
+    let buildings = [];
+    let particles = [];
+
+    // Gerar Mapa da Cidade
+    function generateCity() {
+        buildings = [];
+        const gridCount = 6;
+        const size = MAP_SIZE / gridCount;
+
+        for (let i = 0; i < gridCount; i++) {
+            for (let j = 0; j < gridCount; j++) {
+                if (i === 3 && j === 3) continue; // Praça central vazia
+                if (Math.random() > 0.2) {
+                    buildings.push({
+                        x: i * size + 60,
+                        y: j * size + 60,
+                        w: size - 120,
+                        h: size - 120
+                    });
+                }
+            }
+        }
+    }
+
+    // Spawn de Itens
+    function spawnItem(x, y, forcedType = null) {
+        const types = ['smg', 'shotgun', 'rifle', 'ammo', 'health'];
+        const type = forcedType || types[Math.floor(Math.random() * types.length)];
+        items.push({ x, y, type, radius: 12 });
+    }
+
+    // Spawn de Zumbis
+    function spawnZombie() {
+        if (!gameActive || zombis.length > 50) return;
+        let x, y;
+        do {
+            x = Math.random() * MAP_SIZE;
+            y = Math.random() * MAP_SIZE;
+        } while (Math.hypot(x - player.x, y - player.y) < 400);
+
+        const types = [
+            { type: 'normal', speed: 1.8, health: 80, damage: 10, radius: 18, color: '#44aa44' },
+            { type: 'runner', speed: 3.2, health: 45, damage: 6, radius: 15, color: '#cccc33' },
+            { type: 'tank', speed: 1.1, health: 300, damage: 25, radius: 26, color: '#aa3333' }
         ];
+
+        const rand = Math.random();
+        let config = types[0];
+        if (rand > 0.75) config = types[1];
+        if (rand > 0.92) config = types[2];
+
+        zombis.push({ x, y, ...config, maxHealth: config.health, angle: 0 });
     }
 
-    // CONTROLES DE TECLADO
-    const keys = {};
-    window.addEventListener("keydown", e => {
-        keys[e.code] = true;
-        if (e.code === "Space") triggerShoot();
-    });
-    window.addEventListener("keyup", e => keys[e.code] = false);
-
-    // JOYSTICK TOUCH MOBILE
-    const joystickBase = document.getElementById("joystick-base");
-    const joystickStick = document.getElementById("joystick-stick");
-    let joystickActive = false;
-    let touchId = null;
-    let joyDX = 0, joyDY = 0;
-    const maxDist = 45;
-
-    joystickBase.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        const t = e.changedTouches[0];
-        touchId = t.identifier;
-        joystickActive = true;
-    }, { passive: false });
-
-    window.addEventListener("touchmove", (e) => {
-        if (!joystickActive) return;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            const t = e.changedTouches[i];
-            if (t.identifier === touchId) {
-                const rect = joystickBase.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                let dx = t.clientX - centerX;
-                let dy = t.clientY - centerY;
-                let dist = Math.hypot(dx, dy);
-                if (dist > maxDist) {
-                    dx = (dx / dist) * maxDist;
-                    dy = (dy / dist) * maxDist;
-                }
-                joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
-                joyDX = dx / maxDist;
-                joyDY = dy / maxDist;
-            }
+    // Controles por Evento
+    window.addEventListener('keydown', e => {
+        keys[e.key.toLowerCase()] = true;
+        if (e.key >= '1' && e.key <= '4') {
+            const wNames = ['pistol', 'smg', 'shotgun', 'rifle'];
+            switchWeapon(wNames[e.key - 1]);
         }
-    }, { passive: false });
-
-    function resetJoystick() {
-        joystickActive = false;
-        touchId = null;
-        joyDX = 0; joyDY = 0;
-        joystickStick.style.transform = `translate(0px, 0px)`;
-    }
-    window.addEventListener("touchend", (e) => {
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === touchId) resetJoystick();
-        }
+        if (e.key.toLowerCase() === 'r') reloadWeapon();
     });
 
-    document.getElementById("btn-shoot").addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        triggerShoot();
-    }, { passive: false });
-    document.getElementById("btn-shoot").addEventListener("click", triggerShoot);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-    function triggerShoot() {
-        if (gameState !== "PLAYING" || shootCooldown > 0) return;
-        isShooting = true;
-        shootCooldown = 14;
-        recoilAnim = 12;
+    window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    });
 
-        let closestDist = Infinity;
-        let targetZumbi = null;
+    window.addEventListener('mousedown', e => {
+        if (e.button === 0 && gameActive) shoot();
+    });
 
-        zumbis.forEach(z => {
-            if (!z.alive) return;
-            let dx = z.x - player.x;
-            let dy = z.y - player.y;
-            let angleToZumbi = Math.atan2(dy, dx);
-            let diffAngle = angleToZumbi - player.angle;
-
-            while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
-            while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
-
-            if (Math.abs(diffAngle) < 0.28) {
-                let dist = Math.hypot(dx, dy);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    targetZumbi = z;
-                }
-            }
-        });
-
-        if (targetZumbi && closestDist < 10) {
-            targetZumbi.hp--;
-            targetZumbi.hitTimer = 6;
-            if (targetZumbi.hp <= 0) targetZumbi.alive = false;
+    function switchWeapon(type) {
+        if (player.inventory[type] && player.inventory[type].unlocked) {
+            player.currentWeapon = type;
+            updateHUD();
         }
     }
 
+    function reloadWeapon() {
+        const wData = WEAPONS[player.currentWeapon];
+        const inv = player.inventory[player.currentWeapon];
+        if (inv.clip < wData.clipSize && inv.reserve > 0) {
+            const needed = wData.clipSize - inv.clip;
+            if (inv.reserve === Infinity) {
+                inv.clip = wData.clipSize;
+            } else {
+                const toAdd = Math.min(needed, inv.reserve);
+                inv.clip += toAdd;
+                inv.reserve -= toAdd;
+            }
+            updateHUD();
+        }
+    }
+
+    function shoot() {
+        const now = Date.now();
+        const wData = WEAPONS[player.currentWeapon];
+        const inv = player.inventory[player.currentWeapon];
+
+        if (now - lastShootTime < wData.fireRate) return;
+        if (inv.clip <= 0) {
+            reloadWeapon();
+            return;
+        }
+
+        inv.clip--;
+        lastShootTime = now;
+        playSound('shoot');
+
+        for (let i = 0; i < wData.count; i++) {
+            const spreadAngle = player.angle + (Math.random() - 0.5) * wData.spread;
+            bullets.push({
+                x: player.x,
+                y: player.y,
+                vx: Math.cos(spreadAngle) * wData.speed,
+                vy: Math.sin(spreadAngle) * wData.speed,
+                damage: wData.damage,
+                life: 60,
+                color: wData.color
+            });
+        }
+        updateHUD();
+    }
+
+    // Colisão Retângulo x Círculo
+    function checkBuildingCollision(circle) {
+        for (let b of buildings) {
+            let closestX = Math.max(b.x, Math.min(circle.x, b.x + b.w));
+            let closestY = Math.max(b.y, Math.min(circle.y, b.y + b.h));
+            let distX = circle.x - closestX;
+            let distY = circle.y - closestY;
+            let distance = Math.hypot(distX, distY);
+
+            if (distance < circle.radius) {
+                let overlap = circle.radius - distance;
+                if (distance === 0) {
+                    circle.x += circle.radius;
+                } else {
+                    circle.x += (distX / distance) * overlap;
+                    circle.y += (distY / distance) * overlap;
+                }
+            }
+        }
+    }
+
+    // Atualização Principal
     function update() {
-        if (gameState !== "PLAYING") return;
+        if (!gameActive) return;
 
-        let moveStep = 0;
-        let rotStep = 0;
+        // Atualizar Posição da Câmera
+        mouse.worldX = mouse.x + camera.x;
+        mouse.worldY = mouse.y + camera.y;
+        player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
 
-        if (keys["KeyW"] || keys["ArrowUp"]) moveStep = 1;
-        if (keys["KeyS"] || keys["ArrowDown"]) moveStep = -1;
-        if (keys["KeyA"] || keys["ArrowLeft"]) rotStep = -1;
-        if (keys["KeyD"] || keys["ArrowRight"]) rotStep = 1;
+        // Movimento do Jogador
+        let moveX = 0, moveY = 0;
+        if (keys['w'] || keys['arrowup']) moveY -= 1;
+        if (keys['s'] || keys['arrowdown']) moveY += 1;
+        if (keys['a'] || keys['arrowleft']) moveX -= 1;
+        if (keys['d'] || keys['arrowright']) moveX += 1;
 
-        if (joystickActive) {
-            moveStep = -joyDY;
-            rotStep = joyDX;
+        let isSprinting = keys['shift'] && player.stamina > 0 && (moveX !== 0 || moveY !== 0);
+        let speed = isSprinting ? player.sprintSpeed : player.speed;
+
+        if (isSprinting) {
+            player.stamina = Math.max(0, player.stamina - 0.6);
+        } else {
+            player.stamina = Math.min(player.maxStamina, player.stamina + 0.3);
         }
 
-        player.angle += rotStep * player.rotSpeed;
-
-        if (moveStep !== 0) {
-            let nextX = player.x + Math.cos(player.angle) * moveStep * player.speed;
-            let nextY = player.y + Math.sin(player.angle) * moveStep * player.speed;
-
-            if (mapa[Math.floor(player.y)][Math.floor(nextX)] !== 1) player.x = nextX;
-            if (mapa[Math.floor(nextY)][Math.floor(player.x)] !== 1) player.y = nextY;
+        if (moveX !== 0 && moveY !== 0) {
+            moveX *= 0.7071;
+            moveY *= 0.7071;
         }
 
-        // Checar Vitória (Chegar no bloco 2)
-        if (mapa[Math.floor(player.y)][Math.floor(player.x)] === 2) {
-            gameState = "WIN";
-            document.getElementById("winScreen").classList.add("active");
+        player.x += moveX * speed;
+        player.y += moveY * speed;
+
+        // Limite do Mapa e Prédios
+        player.x = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.x));
+        player.y = Math.max(player.radius, Math.min(MAP_SIZE - player.radius, player.y));
+        checkBuildingCollision(player);
+
+        // Atualizar Câmera
+        camera.x = player.x - canvas.width / 2;
+        camera.y = player.y - canvas.height / 2;
+
+        // Tiros Automáticos (SMG/Rifle segurando o mouse)
+        if (keys['mouseHold'] && (player.currentWeapon === 'smg' || player.currentWeapon === 'rifle')) {
+            shoot();
         }
 
-        let zumbisVivos = 0;
-        zumbis.forEach(z => {
-            if (!z.alive) return;
-            zumbisVivos++;
-            if (z.hitTimer > 0) z.hitTimer--;
+        // Atualizar Projéteis
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.x += b.vx;
+            b.y += b.vy;
+            b.life--;
 
-            let dx = player.x - z.x;
-            let dy = player.y - z.y;
-            let dist = Math.hypot(dx, dy);
-
-            // IA dos Zumbis perseguirem o jogador
-            if (dist < 6 && dist > 0.35) {
-                let speed = 0.014;
-                let nx = z.x + (dx / dist) * speed;
-                let ny = z.y + (dy / dist) * speed;
-
-                if (mapa[Math.floor(z.y)][Math.floor(nx)] !== 1) z.x = nx;
-                if (mapa[Math.floor(ny)][Math.floor(z.x)] !== 1) z.y = ny;
-            } else if (dist <= 0.35) {
-                player.hp -= 0.4;
-                flashDamage();
-                if (player.hp <= 0) {
-                    player.hp = 0;
-                    gameState = "GAMEOVER";
-                    document.getElementById("gameOverScreen").classList.add("active");
-                }
-            }
-        });
-
-        if (shootCooldown > 0) shootCooldown--;
-        else isShooting = false;
-
-        if (recoilAnim > 0) recoilAnim -= 2;
-
-        document.getElementById("hpBar").style.width = `${(player.hp / player.maxHp) * 100}%`;
-        document.getElementById("zombieCount").textContent = `🧟 Zumbis: ${zumbisVivos}`;
-    }
-
-    function flashDamage() {
-        const flash = document.getElementById("damageFlash");
-        flash.style.opacity = 1;
-        setTimeout(() => flash.style.opacity = 0, 120);
-    }
-
-    function render3D() {
-        const width = canvas.width;
-        const height = canvas.height;
-
-        ctx.clearRect(0, 0, width, height);
-
-        // Céu Escuro Estilizado
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, height / 2);
-        skyGrad.addColorStop(0, "#05020a");
-        skyGrad.addColorStop(1, "#1a0b35");
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, width, height / 2);
-
-        // Chão Metálico Ciberpunk
-        const floorGrad = ctx.createLinearGradient(0, height / 2, 0, height);
-        floorGrad.addColorStop(0, "#111827");
-        floorGrad.addColorStop(1, "#030712");
-        ctx.fillStyle = floorGrad;
-        ctx.fillRect(0, height / 2, width, height / 2);
-
-        const fov = Math.PI / 3;
-        const numRays = Math.floor(width / 2.5); // Mais resolução com densidade otimizada
-        const rayWidth = width / numRays;
-        const depthBuffer = new Array(numRays);
-
-        // Raycasting
-        for (let i = 0; i < numRays; i++) {
-            let rayAngle = (player.angle - fov / 2) + (i / numRays) * fov;
-            let distance = 0;
-            let hitWall = false;
-            let wallType = 1;
-
-            let cos = Math.cos(rayAngle);
-            let sin = Math.sin(rayAngle);
-
-            while (!hitWall && distance < 16) {
-                distance += 0.035;
-                let checkX = Math.floor(player.x + cos * distance);
-                let checkY = Math.floor(player.y + sin * distance);
-
-                if (checkX < 0 || checkX >= MAP_SIZE || checkY < 0 || checkY >= MAP_SIZE) {
-                    hitWall = true;
-                    distance = 16;
-                } else if (mapa[checkY][checkX] > 0) {
-                    hitWall = true;
-                    wallType = mapa[checkY][checkX];
+            let hitBuilding = false;
+            for (let bg of buildings) {
+                if (b.x > bg.x && b.x < bg.x + bg.w && b.y > bg.y && b.y < bg.y + bg.h) {
+                    hitBuilding = true;
+                    break;
                 }
             }
 
-            let correctedDist = distance * Math.cos(rayAngle - player.angle);
-            depthBuffer[i] = correctedDist;
-
-            let lineHeight = (height / correctedDist);
-            let drawTop = (height / 2) - (lineHeight / 2);
-
-            let shade = Math.max(0, 255 - (correctedDist * 16));
-
-            if (wallType === 1) {
-                ctx.fillStyle = `rgb(${shade * 0.5}, ${shade * 0.15}, ${shade * 0.8})`;
-            } else if (wallType === 2) {
-                let pulse = Math.sin(Date.now() * 0.006) * 50 + 205;
-                ctx.fillStyle = `rgb(0, ${pulse}, ${shade * 0.4})`;
+            if (hitBuilding || b.life <= 0) {
+                bullets.splice(i, 1);
+                continue;
             }
 
-            ctx.fillRect(i * rayWidth, drawTop, rayWidth + 0.8, lineHeight);
+            // Colisão Tiros x Zumbis
+            for (let j = zombis.length - 1; j >= 0; j--) {
+                let z = zombis[j];
+                if (Math.hypot(b.x - z.x, b.y - z.y) < z.radius) {
+                    z.health -= b.damage;
+                    playSound('hit');
+                    // Efeito de Sangue
+                    for (let k = 0; k < 4; k++) {
+                        particles.push({
+                            x: z.x, y: z.y,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: (Math.random() - 0.5) * 4,
+                            life: 15, color: '#990000', size: 3
+                        });
+                    }
+                    bullets.splice(i, 1);
+                    if (z.health <= 0) {
+                        kills++;
+                        if (Math.random() < 0.35) spawnItem(z.x, z.y);
+                        zombis.splice(j, 1);
+                    }
+                    break;
+                }
+            }
         }
 
-        // Renderizar Zumbis (Sprites 3D)
-        let spriteList = zumbis.filter(z => z.alive).map(z => {
-            let dx = z.x - player.x;
-            let dy = z.y - player.y;
-            let dist = Math.hypot(dx, dy);
-            let angleToZumbi = Math.atan2(dy, dx) - player.angle;
+        // Atualizar Zumbis
+        for (let z of zombis) {
+            z.angle = Math.atan2(player.y - z.y, player.x - z.x);
+            z.x += Math.cos(z.angle) * z.speed;
+            z.y += Math.sin(z.angle) * z.speed;
+            checkBuildingCollision(z);
 
-            while (angleToZumbi < -Math.PI) angleToZumbi += Math.PI * 2;
-            while (angleToZumbi > Math.PI) angleToZumbi -= Math.PI * 2;
-
-            return { z, dist, angle: angleToZumbi };
-        }).sort((a, b) => b.dist - a.dist);
-
-        spriteList.forEach(s => {
-            if (s.dist < 0.2 || s.dist > 14) return;
-
-            let screenX = (width / 2) + Math.tan(s.angle) * (width / 2);
-            let spriteSize = Math.min(height * 1.2, (height / s.dist));
-            let spriteTop = (height / 2) - (spriteSize / 2);
-
-            let rayIdx = Math.floor((screenX / width) * numRays);
-            if (rayIdx >= 0 && rayIdx < numRays && depthBuffer[rayIdx] > s.dist) {
-                let zombieColor = s.z.hitTimer > 0 ? "#ffffff" : "#16a34a";
-                
-                // Corpo do Zumbi
-                ctx.fillStyle = zombieColor;
-                ctx.fillRect(screenX - spriteSize / 4, spriteTop + spriteSize * 0.22, spriteSize / 2, spriteSize * 0.68);
-
-                // Cabeça
-                ctx.fillStyle = s.z.hitTimer > 0 ? "#ffffff" : "#15803d";
-                ctx.fillRect(screenX - spriteSize / 5.5, spriteTop, spriteSize / 2.8, spriteSize * 0.25);
-
-                // Olhos brilhantes do zumbi
-                ctx.fillStyle = "#ef4444";
-                ctx.fillRect(screenX - spriteSize / 9, spriteTop + spriteSize * 0.07, spriteSize / 18, spriteSize / 18);
-                ctx.fillRect(screenX + spriteSize / 22, spriteTop + spriteSize * 0.07, spriteSize / 18, spriteSize / 18);
-
-                // Barra de Vida do Zumbi
-                let barW = spriteSize / 2;
-                let barH = 5;
-                ctx.fillStyle = "rgba(0,0,0,0.7)";
-                ctx.fillRect(screenX - barW / 2, spriteTop - 15, barW, barH);
-                ctx.fillStyle = "#ef4444";
-                ctx.fillRect(screenX - barW / 2, spriteTop - 15, barW * (s.z.hp / s.z.maxHp), barH);
+            // Ataque ao Jogador
+            if (Math.hypot(player.x - z.x, player.y - z.y) < player.radius + z.radius) {
+                player.health -= z.damage * 0.03;
+                if (player.health <= 0) gameOver();
             }
-        });
+        }
 
-        // Arma do Jogador na Tela
-        const gunW = 150;
-        const gunH = 150;
-        const gunX = (width / 2) - (gunW / 2);
-        const gunY = height - gunH + recoilAnim;
+        // Coleta de Itens
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            if (Math.hypot(player.x - item.x, player.y - item.y) < player.radius + item.radius) {
+                playSound('pickup');
+                if (item.type === 'health') {
+                    player.health = Math.min(player.maxHealth, player.health + 40);
+                } else if (item.type === 'ammo') {
+                    for (let w in player.inventory) {
+                        if (w !== 'pistol' && player.inventory[w].unlocked) {
+                            player.inventory[w].reserve += WEAPONS[w].clipSize * 2;
+                        }
+                    }
+                } else { // Desbloquear Armas
+                    player.inventory[item.type].unlocked = true;
+                    player.inventory[item.type].reserve += WEAPONS[item.type].clipSize * 3;
+                    switchWeapon(item.type);
+                }
+                items.splice(i, 1);
+                updateHUD();
+            }
+        }
 
-        if (isShooting) {
-            ctx.fillStyle = "rgba(253, 224, 71, 0.9)";
+        // Partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        updateHUD();
+    }
+
+    // Renderização
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+
+        // Fundo do Mapa (Asfalto/Cidade)
+        ctx.fillStyle = '#22252a';
+        ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+        // Linhas de Grade de Ruas
+        ctx.strokeStyle = '#333840';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        for (let x = 0; x < MAP_SIZE; x += 200) {
+            ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE);
+        }
+        for (let y = 0; y < MAP_SIZE; y += 200) {
+            ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y);
+        }
+        ctx.stroke();
+
+        // Limite do Mapa
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+        // Construções (Prédios)
+        for (let b of buildings) {
+            ctx.fillStyle = '#16181b';
+            ctx.fillRect(b.x, b.y, b.w, b.h);
+            ctx.strokeStyle = '#444c56';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(b.x, b.y, b.w, b.h);
+        }
+
+        // Desenhar Itens no Chão
+        for (let item of items) {
             ctx.beginPath();
-            ctx.arc(width / 2, gunY + 15, 55, 0, Math.PI * 2);
+            ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+            if (item.type === 'health') ctx.fillStyle = '#00ff66';
+            else if (item.type === 'ammo') ctx.fillStyle = '#ffcc00';
+            else ctx.fillStyle = '#ff0055';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+        }
+
+        // Desenhar Projéteis
+        for (let b of bullets) {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = b.color;
             ctx.fill();
         }
 
-        // Desenho da arma de fogo (estilo retro-moderno)
-        ctx.fillStyle = "#475569";
-        ctx.fillRect(gunX + 45, gunY, 60, 100);
-        ctx.fillStyle = "#1e293b";
-        ctx.fillRect(gunX + 58, gunY + 15, 34, 110);
+        // Desenhar Partículas
+        for (let p of particles) {
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
 
-        // Mira central estilizada
-        ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, 7, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.fillRect(width / 2 - 1.5, height / 2 - 1.5, 3, 3);
-    }
+        // Desenhar Zumbis
+        for (let z of zombis) {
+            ctx.save();
+            ctx.translate(z.x, z.y);
+            ctx.rotate(z.angle);
 
-    function renderMinimap() {
-        const mSize = 130;
-        const tileSize = mSize / MAP_SIZE;
-        minimapCtx.clearRect(0, 0, mSize, mSize);
+            // Corpo do Zumbi
+            ctx.fillStyle = z.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, z.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-        for (let r = 0; r < MAP_SIZE; r++) {
-            for (let c = 0; c < MAP_SIZE; c++) {
-                if (mapa[r][c] === 1) {
-                    minimapCtx.fillStyle = "#581c87";
-                    minimapCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-                } else if (mapa[r][c] === 2) {
-                    minimapCtx.fillStyle = "#22c55e";
-                    minimapCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-                }
+            // Braços do Zumbi
+            ctx.fillStyle = '#225522';
+            ctx.fillRect(z.radius - 4, -8, 10, 5);
+            ctx.fillRect(z.radius - 4, 3, 10, 5);
+
+            ctx.restore();
+
+            // Barra de Vida dos Zumbis (se danificado)
+            if (z.health < z.maxHealth) {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(z.x - 20, z.y - z.radius - 12, 40, 6);
+                ctx.fillStyle = '#ff3333';
+                ctx.fillRect(z.x - 20, z.y - z.radius - 12, (z.health / z.maxHealth) * 40, 6);
             }
         }
 
-        // Zumbis no minimapa
-        minimapCtx.fillStyle = "#ef4444";
-        zumbis.forEach(z => {
-            if (z.alive) {
-                minimapCtx.beginPath();
-                minimapCtx.arc(z.x * tileSize, z.y * tileSize, 3, 0, Math.PI * 2);
-                minimapCtx.fill();
-            }
-        });
+        // Desenhar Jogador
+        if (gameActive) {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
 
-        // Jogador no minimapa
-        minimapCtx.fillStyle = "#38bdf8";
-        minimapCtx.beginPath();
-        minimapCtx.arc(player.x * tileSize, player.y * tileSize, 4, 0, Math.PI * 2);
-        minimapCtx.fill();
+            // Corpo
+            ctx.fillStyle = '#2277ff';
+            ctx.beginPath();
+            ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-        // Linha de Visão (Cone)
-        minimapCtx.strokeStyle = "rgba(56, 189, 248, 0.6)";
-        minimapCtx.lineWidth = 1.5;
-        minimapCtx.beginPath();
-        minimapCtx.moveTo(player.x * tileSize, player.y * tileSize);
-        minimapCtx.lineTo(
-            (player.x + Math.cos(player.angle) * 2.2) * tileSize,
-            (player.y + Math.sin(player.angle) * 2.2) * tileSize
-        );
-        minimapCtx.stroke();
+            // Arma Segurada
+            ctx.fillStyle = '#555';
+            ctx.fillRect(8, 4, 16, 6);
+
+            ctx.restore();
+        }
+
+        ctx.restore();
     }
 
-    window.restartGame = function() {
-        player.x = 1.5;
-        player.y = 1.5;
-        player.angle = 0;
-        player.hp = 100;
-        gameState = "PLAYING";
-        initZumbis();
+    // Atualização da HUD
+    function updateHUD() {
+        document.getElementById('health-fill').style.width = Math.max(0, (player.health / player.maxHealth) * 100) + '%';
+        document.getElementById('stamina-fill').style.width = Math.max(0, (player.stamina / player.maxStamina) * 100) + '%';
+        document.getElementById('kill-count').innerText = kills;
 
-        document.getElementById("gameOverScreen").classList.remove("active");
-        document.getElementById("winScreen").classList.remove("active");
-    };
+        const wData = WEAPONS[player.currentWeapon];
+        const inv = player.inventory[player.currentWeapon];
+        document.getElementById('weapon-name').innerText = wData.name;
+        document.getElementById('ammo-clip').innerText = inv.clip;
+        document.getElementById('ammo-reserve').innerText = inv.reserve === Infinity ? '∞' : inv.reserve;
+    }
 
-    function loop() {
+    // Loop do Jogo
+    function gameLoop() {
         update();
-        render3D();
-        renderMinimap();
-        requestAnimationFrame(loop);
+        draw();
+        requestAnimationFrame(gameLoop);
     }
 
-    initZumbis();
-    loop();
+    // Início / Restart
+    function startGame() {
+        initAudio();
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-over-screen').style.display = 'none';
+
+        // Reset Status
+        player.x = 1200;
+        player.y = 1200;
+        player.health = 100;
+        player.stamina = 100;
+        player.currentWeapon = 'pistol';
+        kills = 0;
+        bullets = [];
+        zombis = [];
+        items = [];
+
+        player.inventory = {
+            pistol: { clip: 12, reserve: Infinity, unlocked: true },
+            smg: { clip: 0, reserve: 0, unlocked: false },
+            shotgun: { clip: 0, reserve: 0, unlocked: false },
+            rifle: { clip: 0, reserve: 0, unlocked: false }
+        };
+
+        generateCity();
+
+        // Spawn inicial de armas no chão da cidade
+        spawnItem(1250, 1150, 'smg');
+        spawnItem(1100, 1300, 'shotgun');
+        spawnItem(1300, 1300, 'rifle');
+
+        gameActive = true;
+    }
+
+    function gameOver() {
+        gameActive = false;
+        document.getElementById('final-kills').innerText = kills;
+        document.getElementById('game-over-screen').style.display = 'flex';
+    }
+
+    function restartGame() {
+        startGame();
+    }
+
+    // Suporte para Manter Botão do Mouse Pressionado
+    window.addEventListener('mousedown', () => keys['mouseHold'] = true);
+    window.addEventListener('mouseup', () => keys['mouseHold'] = false);
+
+    // Gerador Contínuo de Hordas Zumbi
+    setInterval(() => {
+        if (gameActive) spawnZombie();
+    }, 1200);
+
+    // Iniciar loop visual
+    requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
