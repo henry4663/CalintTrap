@@ -1,0 +1,1059 @@
+<!DOCTYPE1 html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Zombie Survivor: Evolution</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: #0f111a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 1200px;
+            max-height: 800px;
+            background: #181c2b;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        @media (min-width: 1200px) and (min-height: 800px) {
+            #game-container {
+                border-radius: 12px;
+                border: 2px solid #2a324d;
+            }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #121522;
+        }
+
+        /* HUD Overlay */
+        .hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-card {
+            background: rgba(15, 17, 26, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8a99ad;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffd700;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .health-bar-container {
+            width: 180px;
+            height: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff4d4d, #ff2e63);
+            transition: width 0.15s ease-out;
+        }
+
+        .shop-btn {
+            pointer-events: auto;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            border: none;
+            color: #fff;
+            padding: 10px 18px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.4);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 180, 219, 0.6);
+        }
+
+        .shop-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Virtual Joystick */
+        #joystick-zone {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 140px;
+            height: 140px;
+            z-index: 10;
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(200, 200, 200, 0.5));
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+
+        /* Modal Screens */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #181c2b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #8a99ad;
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .upgrades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .upgrade-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .upgrade-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .upgrade-info h4 {
+            font-size: 15px;
+            margin-bottom: 4px;
+            color: #e2e8f0;
+        }
+
+        .upgrade-info p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .buy-btn {
+            background: #10b981;
+            border: none;
+            color: #fff;
+            padding: 8px 14px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .buy-btn:disabled {
+            background: #374151;
+            color: #6b7280;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .buy-btn:not(:disabled):hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        /* Start / Game Over Screen */
+        .center-card {
+            text-align: center;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            color: #fff;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: 800;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(239, 68, 68, 0.6);
+        }
+
+        .controls-hint {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- HUD -->
+        <div class="hud">
+            <div style="display: flex; gap: 10px;">
+                <div class="hud-card">
+                    <span class="stat-label">Vida</span>
+                    <div class="health-bar-container">
+                        <div id="health-bar" class="health-bar-fill"></div>
+                    </div>
+                </div>
+                <div class="hud-card">
+                    <span class="stat-label">Moedas</span>
+                    <div id="coin-count" class="stat-value">0</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="hud-card" style="align-items: flex-end;">
+                    <span class="stat-label">Onda</span>
+                    <div id="wave-count" class="stat-value" style="color: #60a5fa;">1</div>
+                </div>
+                <button id="open-shop-btn" class="shop-btn">
+                    <span>🛒</span> LOJA
+                </button>
+            </div>
+        </div>
+
+        <!-- Virtual Joystick -->
+        <div id="joystick-zone">
+            <div class="joystick-base">
+                <div id="joystick-stick" class="joystick-stick"></div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Shop Modal -->
+        <div id="shop-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Armazém de Upgrades</h3>
+                    <button id="close-shop-btn" class="close-btn">&times;</button>
+                </div>
+                <div class="upgrades-list" id="shop-items-container">
+                    <!-- Dinamicamente preenchido via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Start / Game Over Screen -->
+        <div id="start-modal" class="modal-overlay active">
+            <div class="modal-content center-card">
+                <h1 style="font-size: 28px; color: #ef4444; margin-bottom: 5px;">ZOMBIE SURVIVOR</h1>
+                <p style="color: #94a3b8; font-size: 14px;">Sobreviva a hordas infinitas e evolua seu armamento!</p>
+                <div style="margin: 15px 0; text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; width: 100%;">
+                    <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 4px;">🎮 <b>Controles:</b></p>
+                    <p style="font-size: 12px; color: #94a3b8;">• <b>Mobile:</b> Use o Joystick na tela para mover.</p>
+                    <p style="font-size: 12px; color: #94a3b8;">• <b>PC:</b> Use as teclas <b>WASD</b> ou <b>Setas</b>.</p>
+                    <p style="font-size: 12px; color: #94a3b8;">• <b>Ataque:</b> Automático no zumbi mais próximo.</p>
+                </div>
+                <button id="start-game-btn" class="btn-primary">INICIAR JOGO</button>
+            </div>
+        </div>
+
+        <div id="gameover-modal" class="modal-overlay">
+            <div class="modal-content center-card">
+                <h1 style="font-size: 32px; color: #ef4444; margin-bottom: 5px;">VOCÊ MORREU!</h1>
+                <p style="color: #94a3b8; font-size: 14px;">A horda acabou superando suas forças.</p>
+                <div style="margin: 15px 0;">
+                    <span class="stat-label">Sobreviveu até a Onda</span>
+                    <div id="final-wave" class="stat-value" style="font-size: 36px; color: #60a5fa;">1</div>
+                </div>
+                <button id="restart-game-btn" class="btn-primary">JOGAR NOVAMENTE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Setup Canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Audio System (Sintetizado via Web Audio API)
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playSound(freq, type, duration, vol=0.1) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function soundShoot() { playSound(400, 'square', 0.08, 0.05); }
+        function soundHit() { playSound(120, 'sawtooth', 0.1, 0.08); }
+        function soundCoin() { playSound(800, 'sine', 0.12, 0.06); }
+        function soundUpgrade() { playSound(600, 'sine', 0.2, 0.1); }
+
+        // Game State
+        let gameState = 'START'; // START, PLAYING, SHOP, GAMEOVER
+        let coins = 0;
+        let wave = 1;
+        let waveTimer = 0;
+        let zombiesToSpawn = 10;
+        let spawnedZombies = 0;
+        let lastTime = 0;
+
+        // Armas e Evoluções
+        const WEAPONS = [
+            { name: 'Pistola Simples', damage: 15, fireRate: 400, speed: 10, count: 1, color: '#f59e0b', price: 0 },
+            { name: 'Escopeta Duelista', damage: 12, fireRate: 700, speed: 9, count: 3, color: '#ef4444', price: 50 },
+            { name: 'Fuzil de Assalto', damage: 22, fireRate: 200, speed: 12, count: 1, color: '#3b82f6', price: 150 },
+            { name: 'Metralhadora Dupla', damage: 18, fireRate: 150, speed: 11, count: 2, color: '#10b981', price: 350 },
+            { name: 'Canhão de Plasma', damage: 65, fireRate: 500, speed: 8, count: 1, color: '#a855f7', price: 800 }
+        ];
+
+        let currentWeaponIndex = 0;
+
+        // Player
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 16,
+            color: '#3b82f6',
+            speed: 3.5,
+            maxHp: 100,
+            hp: 100,
+            lastShootTime: 0,
+            angle: 0
+        };
+
+        // Upgrades de Loja
+        const upgrades = {
+            damageLevel: 1,
+            speedLevel: 1,
+            fireRateLevel: 1,
+            getDamageMultiplier() { return 1 + (this.damageLevel - 1) * 0.25; },
+            getSpeedMultiplier() { return 1 + (this.speedLevel - 1) * 0.15; },
+            getFireRateMultiplier() { return 1 - (this.fireRateLevel - 1) * 0.1; }
+        };
+
+        // Entidades
+        let bullets = [];
+        let zombies = [];
+        let particles = [];
+        let coinItems = [];
+
+        // Input Handling
+        const keys = {};
+        const joystickData = { active: false, x: 0, y: 0 };
+
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === 'ArrowUp') keys['w'] = true;
+            if (e.key === 'ArrowDown') keys['s'] = true;
+            if (e.key === 'ArrowLeft') keys['a'] = true;
+            if (e.key === 'ArrowRight') keys['d'] = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+            if (e.key === 'ArrowUp') keys['w'] = false;
+            if (e.key === 'ArrowDown') keys['s'] = false;
+            if (e.key === 'ArrowLeft') keys['a'] = false;
+            if (e.key === 'ArrowRight') keys['d'] = false;
+        });
+
+        // Joystick Setup
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickStick = document.getElementById('joystick-stick');
+        let joystickTouchId = null;
+
+        joystickZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            joystickTouchId = touch.identifier;
+            updateJoystick(touch);
+        });
+
+        window.addEventListener('touchmove', e => {
+            if (joystickTouchId === null) return;
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) {
+                    updateJoystick(touch);
+                    break;
+                }
+            }
+        });
+
+        window.addEventListener('touchend', e => {
+            if (joystickTouchId === null) return;
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) {
+                    resetJoystick();
+                    break;
+                }
+            }
+        });
+
+        function updateJoystick(touch) {
+            const rect = joystickZone.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+
+            const distance = Math.hypot(dx, dy);
+            const maxRadius = rect.width / 2;
+
+            if (distance > maxRadius) {
+                dx = (dx / distance) * maxRadius;
+                dy = (dy / distance) * maxRadius;
+            }
+
+            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joystickData.active = true;
+            joystickData.x = dx / maxRadius;
+            joystickData.y = dy / maxRadius;
+        }
+
+        function resetJoystick() {
+            joystickTouchId = null;
+            joystickData.active = false;
+            joystickData.x = 0;
+            joystickData.y = 0;
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+        }
+
+        // Spawn Mechanics
+        function spawnZombie() {
+            let x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -20 : canvas.width + 20;
+                y = Math.random() * canvas.height;
+            } else {
+                x = Math.random() * canvas.width;
+                y = Math.random() < 0.5 ? -20 : canvas.height + 20;
+            }
+
+            const baseHp = 30 + (wave * 15);
+            const baseSpeed = 1.2 + Math.min(wave * 0.1, 1.8);
+            const isFast = Math.random() < 0.2;
+
+            zombies.push({
+                x, y,
+                radius: isFast ? 12 : 16,
+                color: isFast ? '#84cc16' : '#22c55e',
+                hp: isFast ? baseHp * 0.6 : baseHp,
+                maxHp: isFast ? baseHp * 0.6 : baseHp,
+                speed: isFast ? baseSpeed * 1.5 : baseSpeed,
+                damage: 10 + wave * 2,
+                lastAttack: 0
+            });
+        }
+
+        function createParticles(x, y, color, count=5) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1,
+                    color,
+                    alpha: 1,
+                    life: 20
+                });
+            }
+        }
+
+        // Auto Targeting & Shooting
+        function autoShoot(now) {
+            const curWeapon = WEAPONS[currentWeaponIndex];
+            const effectiveFireRate = curWeapon.fireRate * upgrades.getFireRateMultiplier();
+
+            if (now - player.lastShootTime < effectiveFireRate) return;
+
+            // Encontrar zumbi mais próximo
+            let nearestZombie = null;
+            let minDistance = Infinity;
+
+            zombies.forEach(zombie => {
+                const dist = Math.hypot(zombie.x - player.x, zombie.y - player.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    nearestZombie = zombie;
+                }
+            });
+
+            if (nearestZombie) {
+                player.angle = Math.atan2(nearestZombie.y - player.y, nearestZombie.x - player.x);
+                player.lastShootTime = now;
+
+                const baseDamage = curWeapon.damage * upgrades.getDamageMultiplier();
+                const spreadAngle = 0.15;
+
+                for (let i = 0; i < curWeapon.count; i++) {
+                    let offset = (i - (curWeapon.count - 1) / 2) * spreadAngle;
+                    let finalAngle = player.angle + offset;
+
+                    bullets.push({
+                        x: player.x + Math.cos(player.angle) * player.radius,
+                        y: player.y + Math.sin(player.angle) * player.radius,
+                        vx: Math.cos(finalAngle) * curWeapon.speed,
+                        vy: Math.sin(finalAngle) * curWeapon.speed,
+                        radius: 4,
+                        color: curWeapon.color,
+                        damage: baseDamage
+                    });
+                }
+                soundShoot();
+            }
+        }
+
+        // Game Loop Update
+        function update(now) {
+            if (gameState !== 'PLAYING') return;
+
+            // Player Movement
+            let moveX = 0;
+            let moveY = 0;
+
+            if (keys['w']) moveY -= 1;
+            if (keys['s']) moveY += 1;
+            if (keys['a']) moveX -= 1;
+            if (keys['d']) moveX += 1;
+
+            if (joystickData.active) {
+                moveX = joystickData.x;
+                moveY = joystickData.y;
+            }
+
+            const magnitude = Math.hypot(moveX, moveY);
+            if (magnitude > 0) {
+                const normX = moveX / (magnitude > 1 ? magnitude : 1);
+                const normY = moveY / (magnitude > 1 ? magnitude : 1);
+                
+                const speed = player.speed * upgrades.getSpeedMultiplier();
+                player.x += normX * speed;
+                player.y += normY * speed;
+
+                // Limites de tela
+                player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+                player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+            }
+
+            // Shooting
+            autoShoot(now);
+
+            // Spawner System
+            if (spawnedZombies < zombiesToSpawn) {
+                waveTimer += 16;
+                if (waveTimer > 1000 - Math.min(wave * 50, 700)) {
+                    spawnZombie();
+                    spawnedZombies++;
+                    waveTimer = 0;
+                }
+            } else if (zombies.length === 0) {
+                // Próxima onda
+                wave++;
+                zombiesToSpawn = 10 + wave * 5;
+                spawnedZombies = 0;
+                document.getElementById('wave-count').innerText = wave;
+                soundUpgrade();
+            }
+
+            // Update Bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Bounds Check
+                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Bullet vs Zombie Collision
+                for (let j = zombies.length - 1; j >= 0; j--) {
+                    let z = zombies[j];
+                    let dist = Math.hypot(b.x - z.x, b.y - z.y);
+                    if (dist < b.radius + z.radius) {
+                        z.hp -= b.damage;
+                        createParticles(b.x, b.y, z.color, 4);
+                        soundHit();
+
+                        if (z.hp <= 0) {
+                            // Drop Coins
+                            coinItems.push({
+                                x: z.x, y: z.y,
+                                radius: 6,
+                                value: 5 + wave
+                            });
+                            zombies.splice(j, 1);
+                        }
+                        bullets.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+
+            // Update Zombies
+            zombies.forEach(zombie => {
+                let angle = Math.atan2(player.y - zombie.y, player.x - zombie.x);
+                zombie.x += Math.cos(angle) * zombie.speed;
+                zombie.y += Math.sin(angle) * zombie.speed;
+
+                // Damage Player
+                let dist = Math.hypot(player.x - zombie.x, player.y - zombie.y);
+                if (dist < player.radius + zombie.radius) {
+                    if (now - zombie.lastAttack > 800) {
+                        player.hp -= zombie.damage;
+                        zombie.lastAttack = now;
+                        createParticles(player.x, player.y, '#ef4444', 8);
+                        updateHUD();
+
+                        if (player.hp <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            });
+
+            // Update Coins
+            for (let i = coinItems.length - 1; i >= 0; i--) {
+                let c = coinItems[i];
+                let dist = Math.hypot(player.x - c.x, player.y - c.y);
+
+                // Magnet radius
+                if (dist < 80) {
+                    c.x += (player.x - c.x) * 0.1;
+                    c.y += (player.y - c.y) * 0.1;
+                }
+
+                if (dist < player.radius + c.radius) {
+                    coins += c.value;
+                    soundCoin();
+                    updateHUD();
+                    coinItems.splice(i, 1);
+                }
+            }
+
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.05;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // Render Game
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Grid Background
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Draw Coins
+            coinItems.forEach(c => {
+                ctx.fillStyle = '#ffd700';
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw Bullets
+            bullets.forEach(b => {
+                ctx.fillStyle = b.color;
+                ctx.shadowColor = b.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw Zombies
+            zombies.forEach(z => {
+                ctx.fillStyle = z.color;
+                ctx.beginPath();
+                ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Zombie Health Bar
+                if (z.hp < z.maxHp) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.fillRect(z.x - 15, z.y - z.radius - 8, 30, 4);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(z.x - 15, z.y - z.radius - 8, (z.hp / z.maxHp) * 30, 4);
+                }
+            });
+
+            // Draw Player
+            if (gameState !== 'GAMEOVER') {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle);
+
+                // Gun Barrel
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(0, -3, player.radius + 8, 6);
+
+                // Body
+                ctx.fillStyle = player.color;
+                ctx.shadowColor = player.color;
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Draw Particles
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // Main Loop
+        function loop(timestamp) {
+            update(timestamp);
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        function updateHUD() {
+            document.getElementById('coin-count').innerText = coins;
+            const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
+            document.getElementById('health-bar').style.width = hpPercent + '%';
+        }
+
+        function resetGame() {
+            coins = 0;
+            wave = 1;
+            zombiesToSpawn = 10;
+            spawnedZombies = 0;
+            currentWeaponIndex = 0;
+            upgrades.damageLevel = 1;
+            upgrades.speedLevel = 1;
+            upgrades.fireRateLevel = 1;
+
+            player.hp = player.maxHp;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+
+            bullets = [];
+            zombies = [];
+            particles = [];
+            coinItems = [];
+
+            document.getElementById('wave-count').innerText = wave;
+            updateHUD();
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            document.getElementById('final-wave').innerText = wave;
+            document.getElementById('gameover-modal').classList.add('active');
+        }
+
+        // Shop Interface Setup
+        function renderShopItems() {
+            const container = document.getElementById('shop-items-container');
+            container.innerHTML = '';
+
+            // Cura
+            const healCost = 20;
+            const healCard = document.createElement('div');
+            healCard.className = 'upgrade-card';
+            healCard.innerHTML = `
+                <div class="upgrade-info">
+                    <h4>Recuperar Vida (+30)</h4>
+                    <p>Restaura a saúde do jogador.</p>
+                </div>
+                <button class="buy-btn" ${coins < healCost || player.hp >= player.maxHp ? 'disabled' : ''} onclick="buyHeal()">
+                    💰 ${healCost}
+                </button>
+            `;
+            container.appendChild(healCard);
+
+            // Upgrades Básicos
+            const dmgCost = upgrades.damageLevel * 30;
+            const dmgCard = document.createElement('div');
+            dmgCard.className = 'upgrade-card';
+            dmgCard.innerHTML = `
+                <div class="upgrade-info">
+                    <h4>Aumentar Dano (Nível ${upgrades.damageLevel})</h4>
+                    <p>+25% de dano base nas armas.</p>
+                </div>
+                <button class="buy-btn" ${coins < dmgCost ? 'disabled' : ''} onclick="buyUpgrade('damage')">
+                    💰 ${dmgCost}
+                </button>
+            `;
+            container.appendChild(dmgCard);
+
+            const spdCost = upgrades.speedLevel * 25;
+            const spdCard = document.createElement('div');
+            spdCard.className = 'upgrade-card';
+            spdCard.innerHTML = `
+                <div class="upgrade-info">
+                    <h4>Velocidade de Movimento (Nível ${upgrades.speedLevel})</h4>
+                    <p>+15% de agilidade para esquiva.</p>
+                </div>
+                <button class="buy-btn" ${coins < spdCost ? 'disabled' : ''} onclick="buyUpgrade('speed')">
+                    💰 ${spdCost}
+                </button>
+            `;
+            container.appendChild(spdCard);
+
+            // Evolução de Arma
+            if (currentWeaponIndex < WEAPONS.length - 1) {
+                const nextWeapon = WEAPONS[currentWeaponIndex + 1];
+                const weaponCard = document.createElement('div');
+                weaponCard.className = 'upgrade-card';
+                weaponCard.style.border = '1px solid rgba(0, 180, 219, 0.4)';
+                weaponCard.innerHTML = `
+                    <div class="upgrade-info">
+                        <h4 style="color: #00b4db;">EVOLUIR: ${nextWeapon.name}</h4>
+                        <p>Dano: ${nextWeapon.damage} | Tiros: ${nextWeapon.count}</p>
+                    </div>
+                    <button class="buy-btn" style="background: linear-gradient(135deg, #00b4db, #0083b0);" ${coins < nextWeapon.price ? 'disabled' : ''} onclick="buyWeapon()">
+                        💰 ${nextWeapon.price}
+                    </button>
+                `;
+                container.appendChild(weaponCard);
+            }
+        }
+
+        window.buyHeal = function() {
+            if (coins >= 20 && player.hp < player.maxHp) {
+                coins -= 20;
+                player.hp = Math.min(player.maxHp, player.hp + 30);
+                soundUpgrade();
+                updateHUD();
+                renderShopItems();
+            }
+        };
+
+        window.buyUpgrade = function(type) {
+            if (type === 'damage') {
+                const cost = upgrades.damageLevel * 30;
+                if (coins >= cost) {
+                    coins -= cost;
+                    upgrades.damageLevel++;
+                }
+            } else if (type === 'speed') {
+                const cost = upgrades.speedLevel * 25;
+                if (coins >= cost) {
+                    coins -= cost;
+                    upgrades.speedLevel++;
+                }
+            }
+            soundUpgrade();
+            updateHUD();
+            renderShopItems();
+        };
+
+        window.buyWeapon = function() {
+            const nextWeapon = WEAPONS[currentWeaponIndex + 1];
+            if (nextWeapon && coins >= nextWeapon.price) {
+                coins -= nextWeapon.price;
+                currentWeaponIndex++;
+                soundUpgrade();
+                updateHUD();
+                renderShopItems();
+            }
+        };
+
+        // Event Listeners UI
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-modal').classList.remove('active');
+            resetGame();
+            gameState = 'PLAYING';
+        });
+
+        document.getElementById('restart-game-btn').addEventListener('click', () => {
+            document.getElementById('gameover-modal').classList.remove('active');
+            resetGame();
+            gameState = 'PLAYING';
+        });
+
+        document.getElementById('open-shop-btn').addEventListener('click', () => {
+            if (gameState === 'PLAYING') {
+                gameState = 'SHOP';
+                renderShopItems();
+                document.getElementById('shop-modal').classList.add('active');
+            }
+        });
+
+        document.getElementById('close-shop-btn').addEventListener('click', () => {
+            document.getElementById('shop-modal').classList.remove('active');
+            if (gameState === 'SHOP') gameState = 'PLAYING';
+        });
+
+        // Start Loop
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
