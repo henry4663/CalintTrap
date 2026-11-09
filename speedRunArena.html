@@ -346,7 +346,7 @@
     duckTimer: 0,
     duckDuration: 18,
     gravity: 0.025,
-    jumpPower: 0.20,
+    jumpPower: 0.30,
     spawnTimer: 0,
     spawnInterval: 75,
     lastTime: 0,
@@ -520,22 +520,8 @@
       G.visualJumpY += (G.jumpY - G.visualJumpY) * 0.35 * dt;
       player.position.y = G.visualJumpY;
       
-      let sx = 1, sy = 1, sz = 1;
-      if (G.isDucking) {
-        sy = 0.88;
-        sx = 1.04;
-        sz = 1.04;
-        player.position.y = 0;
-      } else if (G.isJumping) {
-        const v = G.jumpVel / G.jumpPower;
-        if (v > 0) { sy = 1 + v * 0.15; sx = 1 - v * 0.1; }
-        else { sy = 1 + v * 0.1; sx = 1 - v * 0.05; }
-      } else {
-        sy = 1;
-        sx = 1;
-        sz = 1;
-      }
-      player.scale.set(sx, sy, sz);
+      // Escala fixa: a bolinha não pulsa, estica nem achata.
+      player.scale.set(1, 1, 1);
       
       if (G.isJumping) {
         player.rotation.x = G.visualJumpY * 0.35;
@@ -551,16 +537,8 @@
       if (!G.isDucking) player.rotation.x -= rollSpeed;
       else player.rotation.x -= rollSpeed * 1.25;
 
-      // Inclina levemente nas mudanças de faixa e dá uma pequena compressão ao saltar.
-      player.rotation.z = (G.currentLane - 1) * -0.12;
-      if (G.isJumping) {
-        const stretch = Math.min(Math.abs(G.jumpVel) * 0.22, 0.045);
-        player.scale.set(1 - stretch, 1 + stretch, 1 - stretch);
-      } else if (G.isDucking) {
-        player.scale.set(1.06, 0.92, 1.06);
-      } else {
-        player.scale.set(1, 1, 1);
-      }
+      // Mantém o tamanho da bolinha constante durante toda a partida.
+      player.scale.set(1, 1, 1);
       
       playerShadow.position.set(player.position.x, 0.02, player.position.z);
       const ss = Math.max(0.45, 1 - G.visualJumpY / 1.8);
