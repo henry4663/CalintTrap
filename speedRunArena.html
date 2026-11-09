@@ -164,66 +164,154 @@
     scene.add(rail);
   }
   
-  // ============ PERSONAGEM: BOLINHA COM OLHOS ============
-  // A esfera fica no centro da pista e rola enquanto o cenário vem em sua direção.
+  // ============ PERSONAGEM OLHANDO PARA FRENTE ============
   const player = new THREE.Group();
-  player.name = 'SpeedRunBall';
-
-  const ballMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    roughness: 0.38,
-    metalness: 0.04
-  });
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.62, 32, 24), ballMat);
-  ball.name = 'Bolinha';
-  ball.position.y = 0.62;
-  ball.castShadow = true;
-  ball.receiveShadow = true;
-  player.add(ball);
-
-  const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 });
-  const pupilMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.2 });
-  function addEye(x) {
-    const eye = new THREE.Group();
-    eye.position.set(x, 0.79, -0.49);
-    const white = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), eyeWhiteMat);
-    white.scale.set(0.9, 1.12, 0.55);
-    eye.add(white);
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), pupilMat);
-    pupil.position.set(0.015, -0.005, -0.075);
-    eye.add(pupil);
-    player.add(eye);
-    return eye;
-  }
-  const eyeLeft = addEye(-0.22);
-  const eyeRight = addEye(0.22);
-
-  // Sorriso discreto na frente da esfera.
-  const smilePoints = [];
-  for (let i = 0; i <= 14; i++) {
-    const t = i / 14;
-    smilePoints.push(new THREE.Vector3(-0.13 + t * 0.26, 0.43 - Math.sin(t * Math.PI) * 0.045, -0.586));
-  }
-  const smile = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(smilePoints),
-    new THREE.LineBasicMaterial({ color: 0x172033 })
+  
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.4, roughness: 0.3 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 1.1, 12), bodyMat);
+  body.position.y = 1.0;
+  body.castShadow = true;
+  player.add(body);
+  
+  const chest = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.5 })
   );
+  chest.position.set(0, 1.2, -0.22);
+  chest.scale.set(1, 0.7, 0.5);
+  player.add(chest);
+  
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xaa6600, emissiveIntensity: 0.3, roughness: 0.4 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), headMat);
+  head.position.y = 1.85;
+  head.castShadow = true;
+  player.add(head);
+  
+  const hatGroup = new THREE.Group();
+  hatGroup.position.set(0, 2.08, -0.05);
+  
+  const brimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.05, 16), brimMat);
+  brim.castShadow = true;
+  hatGroup.add(brim);
+  
+  const crownMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.41, 0.36, 16), crownMat);
+  crown.position.y = 0.18;
+  crown.castShadow = true;
+  hatGroup.add(crown);
+  
+  const ribbonMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.42, 0.08, 16), ribbonMat);
+  ribbon.position.y = 0.05;
+  hatGroup.add(ribbon);
+  
+  player.add(hatGroup);
+  
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  eyeL.position.set(-0.13, 1.9, -0.3);
+  player.add(eyeL);
+  const pL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+  pL.position.set(-0.13, 1.9, -0.38);
+  player.add(pL);
+  const eyeR = eyeL.clone(); eyeR.position.x = 0.13; player.add(eyeR);
+  const pR = pL.clone(); pR.position.x = 0.13; player.add(pR);
+  
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
+  );
+  smile.position.set(0, 1.73, -0.32);
+  smile.rotation.z = Math.PI;
+  smile.rotation.y = Math.PI;
   player.add(smile);
+  
+  const armMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff });
+  const handMat = new THREE.MeshStandardMaterial({ color: 0xffdd00 });
+  
+  const armPivotL = new THREE.Group();
+  armPivotL.position.set(-0.42, 1.35, 0);
+  player.add(armPivotL);
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armL.position.y = -0.3; armL.castShadow = true;
+  armPivotL.add(armL);
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handL.position.y = -0.65;
+  armPivotL.add(handL);
+  
+  const armPivotR = new THREE.Group();
+  armPivotR.position.set(0.42, 1.35, 0);
+  player.add(armPivotR);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armR.position.y = -0.3; armR.castShadow = true;
+  armPivotR.add(armR);
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handR.position.y = -0.65;
+  armPivotR.add(handR);
+  
+  const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc });
+  const footMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  
+  const legPivotL = new THREE.Group();
+  legPivotL.position.set(-0.18, 0.5, 0);
+  player.add(legPivotL);
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legL.position.y = -0.28; legL.castShadow = true;
+  legPivotL.add(legL);
+  const footL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footL.position.set(0, -0.6, -0.05);
+  legPivotL.add(footL);
+  
+  const legPivotR = new THREE.Group();
+  legPivotR.position.set(0.18, 0.5, 0);
+  player.add(legPivotR);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legR.position.y = -0.28; legR.castShadow = true;
+  legPivotR.add(legR);
+  const footR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footR.position.set(0, -0.6, -0.05);
+  legPivotR.add(footR);
+  
   scene.add(player);
-
+  
   const playerShadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.58, 24),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 })
+    new THREE.CircleGeometry(0.55, 16),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
   );
-  playerShadow.rotation.x = -Math.PI / 2;
+  playerShadow.rotation.x = -Math.PI/2;
   playerShadow.position.y = 0.02;
   scene.add(playerShadow);
-
+  
   const deathShards = [];
   
   function shatterPlayer() {
     player.visible = false;
     playerShadow.visible = false;
+    
+    const parts = [body, chest, head, brim, crown, armL, armR, legL, legR];
+    
+    parts.forEach(part => {
+      const shard = new THREE.Mesh(part.geometry.clone(), part.material.clone());
+      const worldPos = new THREE.Vector3();
+      part.getWorldPosition(worldPos);
+      shard.position.copy(worldPos);
+      
+      shard.userData = {
+        vel: new THREE.Vector3(
+          (Math.random() - 0.5) * 0.25,
+          Math.random() * 0.3 + 0.15,
+          (Math.random() - 0.5) * 0.25 - 0.1
+        ),
+        rotVel: new THREE.Vector3(
+          (Math.random() - 0.5) * 0.2,
+          (Math.random() - 0.5) * 0.2,
+          (Math.random() - 0.5) * 0.2
+        )
+      };
+      
+      scene.add(shard);
+      deathShards.push(shard);
+    });
   }
   
   function clearShards() {
@@ -259,22 +347,22 @@
       group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
     } 
     else if (type === 'low') {
-      // BARREIRA BAIXA E MENOR (PULÁVEL)
+      // BARREIRA DE ATLETISMO AMARELA/LARANJA NEON (PULÁVEL)
       const matMain = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 0.5, roughness: 0.3 });
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.18, 0.32), matMain);
-      bar.position.y = 0.38; bar.castShadow = true;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.25, 0.4), matMain);
+      bar.position.y = 0.5; bar.castShadow = true;
       group.add(bar);
 
       const legMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.38, 0.42), legMat);
-      legL.position.set(-0.92, 0.19, 0); legL.castShadow = true;
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.6), legMat);
+      legL.position.set(-1.1, 0.25, 0); legL.castShadow = true;
       group.add(legL);
 
       const legR = legL.clone();
-      legR.position.x = 0.92;
+      legR.position.x = 1.1;
       group.add(legR);
 
-      group.userData = { type, width: 2.1, height: 0.47, minY: 0 };
+      group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
     }
     else if (type === 'highBar') {
       // TRAVE ALTA NEON AZUL/TURQUESA (ABAIXÁVEL)
@@ -345,8 +433,8 @@
     isDucking: false,
     duckTimer: 0,
     duckDuration: 18,
-    gravity: 0.025,
-    jumpPower: 0.35,
+    gravity: 0.022,
+    jumpPower: 0.34,
     spawnTimer: 0,
     spawnInterval: 75,
     lastTime: 0,
@@ -425,7 +513,7 @@
     
     player.visible = true;
     playerShadow.visible = true;
-    player.position.set(0, 0, 0);
+    player.position.set(0, 0.5, 0);
     player.rotation.set(0, 0, 0);
     player.scale.set(1, 1, 1);
     
@@ -518,10 +606,23 @@
       }
       
       G.visualJumpY += (G.jumpY - G.visualJumpY) * 0.35 * dt;
-      player.position.y = G.visualJumpY;
+      player.position.y = 0.5 + G.visualJumpY;
       
-      // Escala fixa: a bolinha não pulsa, estica nem achata.
-      player.scale.set(1, 1, 1);
+      let sx = 1, sy = 1, sz = 1;
+      if (G.isDucking) {
+        sy = 0.5;
+        sx = 1.3;
+        sz = 1.3;
+        player.position.y = 0.25;
+      } else if (G.isJumping) {
+        const v = G.jumpVel / G.jumpPower;
+        if (v > 0) { sy = 1 + v * 0.15; sx = 1 - v * 0.1; }
+        else { sy = 1 + v * 0.1; sx = 1 - v * 0.05; }
+      } else {
+        sy = 1 + Math.sin(now * 0.004) * 0.02;
+        sx = 1 - Math.sin(now * 0.004) * 0.02;
+      }
+      player.scale.set(sx, sy, sz);
       
       if (G.isJumping) {
         player.rotation.x = G.visualJumpY * 0.35;
@@ -532,16 +633,38 @@
       }
       player.rotation.z = (G.currentLane - 1) * 0.15;
       
-      // Rolagem contínua: a esfera gira conforme a velocidade da corrida.
-      const rollSpeed = (G.speed * dt * 15) / 0.62;
-      if (!G.isDucking) player.rotation.x -= rollSpeed;
-      else player.rotation.x -= rollSpeed * 1.25;
-
-      // Mantém o tamanho da bolinha constante durante toda a partida.
-      player.scale.set(1, 1, 1);
+      G.animPhase += dt * G.speed * 4.5;
+      const cycle = G.animPhase;
+      
+      if (!G.isJumping && !G.isDucking) {
+        const swing = Math.sin(cycle) * 0.9;
+        legPivotL.rotation.x = swing;
+        legPivotR.rotation.x = -swing;
+        armPivotL.rotation.x = -swing * 0.8;
+        armPivotR.rotation.x = swing * 0.8;
+        armPivotL.rotation.z = 0;
+        armPivotR.rotation.z = 0;
+        
+        const bob = Math.abs(Math.sin(cycle)) * 0.05;
+        player.position.y = 0.5 + G.visualJumpY + bob;
+        body.rotation.z = Math.sin(cycle * 2) * 0.03;
+      } else if (G.isDucking) {
+        legPivotL.rotation.x = -1.2;
+        legPivotR.rotation.x = -1.2;
+        armPivotL.rotation.x = 0.8;
+        armPivotR.rotation.x = 0.8;
+      } else {
+        legPivotL.rotation.x = 0.7;
+        legPivotR.rotation.x = 0.4;
+        armPivotL.rotation.x = -1.5;
+        armPivotR.rotation.x = -1.5;
+        armPivotL.rotation.z = -0.3;
+        armPivotR.rotation.z = 0.3;
+        body.rotation.z = 0;
+      }
       
       playerShadow.position.set(player.position.x, 0.02, player.position.z);
-      const ss = Math.max(0.45, 1 - G.visualJumpY / 1.8);
+      const ss = Math.max(0.4, 1 - G.visualJumpY / 2);
       playerShadow.scale.set(ss, ss, 1);
       playerShadow.material.opacity = 0.35 * ss;
       
@@ -568,9 +691,8 @@
         const minY = obs.userData.minY || 0;
         
         if (dx < w * 0.5 + 0.35 && dz < 1.3) {
-          const ballRadius = G.isDucking ? 0.53 : 0.62;
-          const pBottom = player.position.y + 0.62 - ballRadius;
-          const pTop = player.position.y + 0.62 + ballRadius;
+          const pBottom = player.position.y - (G.isDucking ? 0.2 : 0.5);
+          const pTop = player.position.y + (G.isDucking ? 0.6 : 2.0);
           
           if (obs.userData.type === 'highBar') {
             if (pTop > minY) {
@@ -602,7 +724,7 @@
         const dz = Math.abs(player.position.z - coin.position.z);
         const dy = Math.abs(player.position.y - coin.position.y);
         
-        if (dx < 0.55 && dz < 0.65 && dy < 0.75) {
+        if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
           G.coins++;
           scene.remove(coin);
           coins.splice(i, 1);
