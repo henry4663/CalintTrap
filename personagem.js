@@ -69,6 +69,7 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   
   const armPivotL = new THREE.Group();
   armPivotL.position.set(-0.42, 1.35, 0);
+  armPivotL.name = 'armPivotL';
   player.add(armPivotL);
   const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
   armL.position.y = -0.3; armL.castShadow = true;
@@ -79,6 +80,7 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   
   const armPivotR = new THREE.Group();
   armPivotR.position.set(0.42, 1.35, 0);
+  armPivotR.name = 'armPivotR';
   player.add(armPivotR);
   const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
   armR.position.y = -0.3; armR.castShadow = true;
@@ -92,6 +94,7 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   
   const legPivotL = new THREE.Group();
   legPivotL.position.set(-0.18, 0.5, 0);
+  legPivotL.name = 'legPivotL';
   player.add(legPivotL);
   const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
   legL.position.y = -0.28; legL.castShadow = true;
@@ -102,6 +105,7 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   
   const legPivotR = new THREE.Group();
   legPivotR.position.set(0.18, 0.5, 0);
+  legPivotR.name = 'legPivotR';
   player.add(legPivotR);
   const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
   legR.position.y = -0.28; legR.castShadow = true;
@@ -114,6 +118,8 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   body.name = 'body'; chest.name = 'chest'; head.name = 'head';
   brim.name = 'brim'; crown.name = 'crown'; armL.name = 'armL'; armR.name = 'armR';
   legL.name = 'legL'; legR.name = 'legR';
+  armPivotL.name = 'armPivotL'; armPivotR.name = 'armPivotR';
+  legPivotL.name = 'legPivotL'; legPivotR.name = 'legPivotR';
   player.userData.nick = String(nick || 'Jogador');
   return player;
 }
