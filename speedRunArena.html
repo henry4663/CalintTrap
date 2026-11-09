@@ -168,6 +168,19 @@ import { criarPersonagem } from "./personagem.js";
   // ============ PERSONAGEM OLHANDO PARA FRENTE ============
   const player = criarPersonagem('Jogador');
   scene.add(player);
+  const body = player.getObjectByName('body');
+  const chest = player.getObjectByName('chest');
+  const head = player.getObjectByName('head');
+  const brim = player.getObjectByName('brim');
+  const crown = player.getObjectByName('crown');
+  const armL = player.getObjectByName('armL');
+  const armR = player.getObjectByName('armR');
+  const legL = player.getObjectByName('legL');
+  const legR = player.getObjectByName('legR');
+  const armPivotL = player.getObjectByName('armPivotL');
+  const armPivotR = player.getObjectByName('armPivotR');
+  const legPivotL = player.getObjectByName('legPivotL');
+  const legPivotR = player.getObjectByName('legPivotR');
   
   const playerShadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.55, 16),
