@@ -259,22 +259,22 @@
       group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
     } 
     else if (type === 'low') {
-      // BARREIRA DE ATLETISMO AMARELA/LARANJA NEON (PULÁVEL)
+      // BARREIRA BAIXA E MENOR (PULÁVEL)
       const matMain = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 0.5, roughness: 0.3 });
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.25, 0.4), matMain);
-      bar.position.y = 0.5; bar.castShadow = true;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.18, 0.32), matMain);
+      bar.position.y = 0.38; bar.castShadow = true;
       group.add(bar);
 
       const legMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.6), legMat);
-      legL.position.set(-1.1, 0.25, 0); legL.castShadow = true;
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.38, 0.42), legMat);
+      legL.position.set(-0.92, 0.19, 0); legL.castShadow = true;
       group.add(legL);
 
       const legR = legL.clone();
-      legR.position.x = 1.1;
+      legR.position.x = 0.92;
       group.add(legR);
 
-      group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
+      group.userData = { type, width: 2.1, height: 0.47, minY: 0 };
     }
     else if (type === 'highBar') {
       // TRAVE ALTA NEON AZUL/TURQUESA (ABAIXÁVEL)
@@ -346,7 +346,7 @@
     duckTimer: 0,
     duckDuration: 18,
     gravity: 0.025,
-    jumpPower: 0.33,
+    jumpPower: 0.35,
     spawnTimer: 0,
     spawnInterval: 75,
     lastTime: 0,
