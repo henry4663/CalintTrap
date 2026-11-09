@@ -1,154 +1,120 @@
-// Personagem padrão do CalintTrap
-// Compatível com jogos 3D que usam Three.js (THREE deve estar carregado antes deste módulo).
-// Uso: import { criarPersonagem } from './personagem.js';
-//      const player = criarPersonagem('Henry');
-//      scene.add(player);
-
+// Personagem humanoide original do Speed Run Arena, reutilizável nos jogos do CalintTrap.
+// Requer Three.js carregado globalmente antes de importar este módulo.
 export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
-  if (typeof THREE === 'undefined') {
-    throw new Error('Carregue o Three.js antes de importar personagem.js.');
-  }
-
-  const cor = opcoes.cor ?? opcoes.color ?? 0x7c3aed;
-  const escala = Number.isFinite(opcoes.escala) ? opcoes.escala : 1;
-  const mostrarNome = opcoes.mostrarNome !== false;
-
-  const personagem = new THREE.Group();
-  personagem.name = 'Personagem_' + String(nick || 'Jogador');
-
-  const materialCorpo = new THREE.MeshStandardMaterial({
-    color: cor,
-    roughness: 0.48,
-    metalness: 0.04
-  });
-
-  // Corpo esférico: frente do personagem aponta para -Z.
-  const corpo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.62, 24, 18),
-    materialCorpo
+  if (typeof THREE === 'undefined') throw new Error('Three.js precisa ser carregado antes de personagem.js');
+  const player = new THREE.Group();
+  player.name = 'PersonagemSpeedRunArena';
+  
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 0.4, roughness: 0.3 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 1.1, 12), bodyMat);
+  body.position.y = 1.0;
+  body.castShadow = true;
+  player.add(body);
+  
+  const chest = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xff00cc, emissive: 0x880066, emissiveIntensity: 0.5 })
   );
-  corpo.name = 'Corpo';
-  corpo.position.y = 0.64;
-  corpo.castShadow = true;
-  corpo.receiveShadow = true;
-  personagem.add(corpo);
-
-  const materialOlho = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.28
-  });
-  const materialPupila = new THREE.MeshStandardMaterial({
-    color: 0x101018,
-    roughness: 0.2
-  });
-
-  function criarOlho(x) {
-    const olho = new THREE.Group();
-    olho.position.set(x, 0.78, -0.49);
-
-    const branco = new THREE.Mesh(
-      new THREE.SphereGeometry(0.145, 16, 12),
-      materialOlho
-    );
-    branco.scale.set(0.88, 1.08, 0.58);
-    branco.castShadow = true;
-    olho.add(branco);
-
-    const pupila = new THREE.Mesh(
-      new THREE.SphereGeometry(0.073, 12, 10),
-      materialPupila
-    );
-    pupila.position.set(0.018, -0.005, -0.075);
-    pupila.scale.set(0.9, 1, 0.65);
-    olho.add(pupila);
-
-    personagem.add(olho);
-    return olho;
-  }
-
-  const olhoEsquerdo = criarOlho(-0.22);
-  const olhoDireito = criarOlho(0.22);
-
-  // Sorriso pequeno feito com uma linha curva.
-  const pontosSorriso = [];
-  for (let i = 0; i <= 16; i++) {
-    const t = i / 16;
-    const x = -0.14 + t * 0.28;
-    const y = 0.43 - Math.sin(t * Math.PI) * 0.055;
-    pontosSorriso.push(new THREE.Vector3(x, y, -0.586));
-  }
-  const geometriaSorriso = new THREE.BufferGeometry().setFromPoints(pontosSorriso);
-  const sorriso = new THREE.Line(
-    geometriaSorriso,
-    new THREE.LineBasicMaterial({ color: 0x17131f, linewidth: 2 })
+  chest.position.set(0, 1.2, -0.22);
+  chest.scale.set(1, 0.7, 0.5);
+  player.add(chest);
+  
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xaa6600, emissiveIntensity: 0.3, roughness: 0.4 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), headMat);
+  head.position.y = 1.85;
+  head.castShadow = true;
+  player.add(head);
+  
+  const hatGroup = new THREE.Group();
+  hatGroup.position.set(0, 2.08, -0.05);
+  
+  const brimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.05, 16), brimMat);
+  brim.castShadow = true;
+  hatGroup.add(brim);
+  
+  const crownMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.41, 0.36, 16), crownMat);
+  crown.position.y = 0.18;
+  crown.castShadow = true;
+  hatGroup.add(crown);
+  
+  const ribbonMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.42, 0.08, 16), ribbonMat);
+  ribbon.position.y = 0.05;
+  hatGroup.add(ribbon);
+  
+  player.add(hatGroup);
+  
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  eyeL.position.set(-0.13, 1.9, -0.3);
+  player.add(eyeL);
+  const pL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+  pL.position.set(-0.13, 1.9, -0.38);
+  player.add(pL);
+  const eyeR = eyeL.clone(); eyeR.position.x = 0.13; player.add(eyeR);
+  const pR = pL.clone(); pR.position.x = 0.13; player.add(pR);
+  
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
   );
-  personagem.add(sorriso);
+  smile.position.set(0, 1.73, -0.32);
+  smile.rotation.z = Math.PI;
+  smile.rotation.y = Math.PI;
+  player.add(smile);
+  
+  const armMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff });
+  const handMat = new THREE.MeshStandardMaterial({ color: 0xffdd00 });
+  
+  const armPivotL = new THREE.Group();
+  armPivotL.position.set(-0.42, 1.35, 0);
+  player.add(armPivotL);
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armL.position.y = -0.3; armL.castShadow = true;
+  armPivotL.add(armL);
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handL.position.y = -0.65;
+  armPivotL.add(handL);
+  
+  const armPivotR = new THREE.Group();
+  armPivotR.position.set(0.42, 1.35, 0);
+  player.add(armPivotR);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.6, 8), armMat);
+  armR.position.y = -0.3; armR.castShadow = true;
+  armPivotR.add(armR);
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), handMat);
+  handR.position.y = -0.65;
+  armPivotR.add(handR);
+  
+  const legMat = new THREE.MeshStandardMaterial({ color: 0xff00cc });
+  const footMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  
+  const legPivotL = new THREE.Group();
+  legPivotL.position.set(-0.18, 0.5, 0);
+  player.add(legPivotL);
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legL.position.y = -0.28; legL.castShadow = true;
+  legPivotL.add(legL);
+  const footL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footL.position.set(0, -0.6, -0.05);
+  legPivotL.add(footL);
+  
+  const legPivotR = new THREE.Group();
+  legPivotR.position.set(0.18, 0.5, 0);
+  player.add(legPivotR);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.55, 8), legMat);
+  legR.position.y = -0.28; legR.castShadow = true;
+  legPivotR.add(legR);
+  const footR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.3), footMat);
+  footR.position.set(0, -0.6, -0.05);
+  legPivotR.add(footR);
+  
 
-  let etiqueta = null;
-  let texturaNome = null;
-
-  if (mostrarNome && typeof document !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-
-    const nome = String(nick || 'Jogador').slice(0, 24);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = 'bold 46px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 9;
-    ctx.strokeStyle = 'rgba(10, 8, 20, 0.88)';
-    ctx.strokeText(nome, 256, 64, 480);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(nome, 256, 64, 480);
-
-    texturaNome = new THREE.CanvasTexture(canvas);
-    if ('colorSpace' in texturaNome && THREE.SRGBColorSpace) {
-      texturaNome.colorSpace = THREE.SRGBColorSpace;
-    }
-
-    etiqueta = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: texturaNome,
-      transparent: true,
-      depthWrite: false
-    }));
-    etiqueta.name = 'NomeDoJogador';
-    etiqueta.position.set(0, 1.55, 0);
-    etiqueta.scale.set(1.8, 0.45, 1);
-    personagem.add(etiqueta);
-  }
-
-  personagem.scale.setScalar(escala);
-  personagem.userData.tipo = 'CalintTrapBall';
-  personagem.userData.cor = cor;
-  personagem.userData.olhos = [olhoEsquerdo, olhoDireito];
-  personagem.userData.etiqueta = etiqueta;
-
-  personagem.userData.definirCor = function(novaCor) {
-    materialCorpo.color.set(novaCor);
-    personagem.userData.cor = novaCor;
-  };
-
-  personagem.userData.definirNome = function(novoNome) {
-    if (!etiqueta || !texturaNome) return;
-    const ctx = texturaNome.image.getContext('2d');
-    ctx.clearRect(0, 0, 512, 128);
-    ctx.font = 'bold 46px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 9;
-    ctx.strokeStyle = 'rgba(10, 8, 20, 0.88)';
-    ctx.strokeText(String(novoNome || 'Jogador').slice(0, 24), 256, 64, 480);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(String(novoNome || 'Jogador').slice(0, 24), 256, 64, 480);
-    texturaNome.needsUpdate = true;
-  };
-
-  return personagem;
+  body.name = 'body'; chest.name = 'chest'; head.name = 'head';
+  brim.name = 'brim'; crown.name = 'crown'; armL.name = 'armL'; armR.name = 'armR';
+  legL.name = 'legL'; legR.name = 'legR';
+  player.userData.nick = String(nick || 'Jogador');
+  return player;
 }
-
 export default criarPersonagem;
