@@ -9,7 +9,7 @@ function avatarPadrao(username){return "https://api.dicebear.com/7.x/bottts/svg?
 function mensagem(texto,erro=false){$("profile-message").textContent=texto;$("profile-message").classList.toggle("error",erro);}
 function imagemSegura(url,username){const valor=String(url||"").trim();if(!valor)return avatarPadrao(username);try{const parsed=new URL(valor);return ["https:","http:"].includes(parsed.protocol)?parsed.href:avatarPadrao(username);}catch{return avatarPadrao(username);}}
 async function carregarPerfil(){
- if(!nickAlvo||!nickLogado){location.href="index.html";return;}
+ if(!nickAlvo){location.href="index.html";return;}
  $("edit-panel").hidden=!souDono;$("profile-username").textContent="@"+nickAlvo;$("profile-avatar").src=avatarPadrao(nickAlvo);
  try{
   const snapshot=await get(ref(db,"profiles/"+profileKey(nickAlvo)));const dados=snapshot.exists()?snapshot.val():{};
