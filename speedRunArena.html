@@ -282,138 +282,188 @@
 
   <script type="module">
     import { criarPersonagem } from "./personagem.js";
-    import { db, ref, set, get, onValue, toast } from "./firebase.js";
+    import {
+      db,
+      ref,
+      set,
+      get,
+      onValue,
+      remove,
+      toast
+    } from "./firebase.js";
     import { getCurrentNick } from "./authLocal.js";
 
     (function () {
-      'use strict';
+      "use strict";
 
       const playerNick = getCurrentNick() || "Anônimo";
-      const MIN_SCORE = 10;
+      const PONTUACAO_MINIMA = 10;
       const leaderboardRef = ref(db, "leaderboard");
 
       document.getElementById("displayNick").textContent = playerNick;
 
-      function normalizeName(name) {
-        return String(name || "Anônimo")
+      function normalizarNome(nome) {
+        return String(nome || "Anônimo")
           .trim()
           .substring(0, 12)
-          .toLowerCase();
+          .toLocaleLowerCase("pt-BR") || "anônimo";
       }
 
-      async function salvarPontuacaoGlobal(nome, distancia, moedas) {
-        const pontuacaoTotal = Math.floor(distancia) + moedas * 5;
-        const nomeLimpo = String(nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
-
-        if (pontuacaoTotal < MIN_SCORE) {
-          toast(`Pontuação baixa. São necessários ${MIN_SCORE} pontos para entrar no ranking.`, "aviso");
-          return;
-        }
-
-        try {
-          const snapshot = await get(leaderboardRef);
-          const data = snapshot.val() || {};
-          const nomeProcurado = normalizeName(nomeLimpo);
-
-          let melhorRegistroKey = null;
-          let melhorPontuacao = -1;
-
-          // Procura o melhor registro existente para este apelido.
-          for (const [key, item] of Object.entries(data)) {
-            if (!item || normalizeName(item.name) !== nomeProcurado) continue;
-
-            const score = Number(item.score) || 0;
-            if (score > melhorPontuacao) {
-              melhorPontuacao = score;
-              melhorRegistroKey = key;
-            }
-          }
-
-          if (melhorRegistroKey !== null && pontuacaoTotal <= melhorPontuacao) {
-            toast("Sua pontuação anterior era maior. Recorde mantido!", "aviso");
-            return;
-          }
-
-          const key = melhorRegistroKey ||
-            `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-          await set(ref(db, "leaderboard/" + key), {
-            name: nomeLimpo,
-            score: pontuacaoTotal,
-            distance: Math.floor(distancia),
-            coins: moedas,
-            timestamp: Date.now()
-          });
-
-          toast(
-            melhorRegistroKey
-              ? "Novo recorde salvo no ranking!"
-              : "Pontuação salva no ranking global!",
-            "sucesso"
-          );
-        } catch (error) {
-          console.error("Erro ao salvar no Firebase:", error);
-          toast("Erro ao salvar pontuação.", "erro");
-        }
-      }
-
-      function getTopUniquePlayers(data) {
-        const bestByName = new Map();
+      function obterTopCincoUnicos(data) {
+        const melhoresPorNome = new Map();
 
         if (!data) return [];
 
         for (const item of Object.values(data)) {
           if (!item) continue;
 
-          const name = String(item.name || "Anônimo").trim().substring(0, 12) || "Anônimo";
-          const normalized = normalizeName(name);
-          const score = Number(item.score) || 0;
-          const previous = bestByName.get(normalized);
+          const nome =
+            String(item.name || "Anônimo").trim().substring(0, 12) || "Anônimo";
+          const chaveNome = normalizarNome(nome);
+          const pontuacao = Number(item.score) || 0;
+          const registroAtual = melhoresPorNome.get(chaveNome);
 
-          if (!previous || score > previous.score) {
-            bestByName.set(normalized, { name, score });
+          if (!registroAtual || pontuacao > registroAtual.score) {
+            melhoresPorNome.set(chaveNome, {
+              name: nome,
+              score: pontuacao
+            });
           }
         }
 
-        return [...bestByName.values()]
+        return [...melhoresPorNome.values()]
           .sort((a, b) => b.score - a.score)
           .slice(0, 5);
       }
 
-      onValue(leaderboardRef, (snapshot) => {
-        const cornerList = document.getElementById("cornerList");
-        cornerList.replaceChildren();
+      function mostrarRanking(data) {
+        const lista = document.getElementById("cornerList");
+        lista.replaceChildren();
 
-        const topPlayers = getTopUniquePlayers(snapshot.val());
+        const jogadores = obterTopCincoUnicos(data);
 
-        if (topPlayers.length === 0) {
-          const empty = document.createElement("div");
-          empty.textContent = "Sem pontuações";
-          empty.style.cssText = "text-align:center; opacity:0.6; font-size:11px;";
-          cornerList.appendChild(empty);
+        if (jogadores.length === 0) {
+          const vazio = document.createElement("div");
+          vazio.textContent = "Sem pontuações";
+          vazio.style.cssText =
+            "text-align:center; opacity:0.6; font-size:11px;";
+          lista.appendChild(vazio);
           return;
         }
 
-        topPlayers.forEach((item, index) => {
-          const row = document.createElement("div");
-          row.className = "corner-item";
+        jogadores.forEach((jogador, indice) => {
+          const linha = document.createElement("div");
+          linha.className = "corner-item";
 
-          const rank = document.createElement("span");
-          rank.className = "corner-rank";
-          rank.textContent = `#${index + 1}`;
+          const posicao = document.createElement("span");
+          posicao.className = "corner-rank";
+          posicao.textContent = `#${indice + 1}`;
 
-          const name = document.createElement("span");
-          name.className = "corner-name";
-          name.textContent = item.name;
+          const nome = document.createElement("span");
+          nome.className = "corner-name";
+          nome.textContent = jogador.name;
 
-          const score = document.createElement("span");
-          score.className = "corner-score";
-          score.textContent = String(item.score);
+          const pontos = document.createElement("span");
+          pontos.className = "corner-score";
+          pontos.textContent = String(jogador.score);
 
-          row.append(rank, name, score);
-          cornerList.appendChild(row);
+          linha.append(posicao, nome, pontos);
+          lista.appendChild(linha);
         });
-      });
+      }
+
+      onValue(
+        leaderboardRef,
+        snapshot => mostrarRanking(snapshot.val()),
+        error => {
+          console.error("Erro ao carregar ranking:", error);
+          document.getElementById("cornerList").textContent =
+            "Não foi possível carregar o ranking.";
+        }
+      );
+
+      async function salvarPontuacaoGlobal(nome, distancia, moedas) {
+        const nomeLimpo =
+          String(nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
+        const pontuacao = Math.floor(distancia) + moedas * 5;
+
+        if (pontuacao < PONTUACAO_MINIMA) {
+          toast(
+            `Pontuação baixa: precisa de ${PONTUACAO_MINIMA} pontos para entrar no ranking.`,
+            "aviso"
+          );
+          return;
+        }
+
+        try {
+          const snapshot = await get(leaderboardRef);
+          const dados = snapshot.val() || {};
+          const nomeProcurado = normalizarNome(nomeLimpo);
+
+          let melhorChave = null;
+          let melhorPontuacao = -1;
+
+          // Localiza o melhor registro antigo desse apelido, caso já exista.
+          for (const [chave, item] of Object.entries(dados)) {
+            if (!item || normalizarNome(item.name) !== nomeProcurado) continue;
+
+            const scoreAtual = Number(item.score) || 0;
+            if (scoreAtual > melhorPontuacao) {
+              melhorPontuacao = scoreAtual;
+              melhorChave = chave;
+            }
+          }
+
+          // Não substitui o recorde por uma pontuação menor ou igual.
+          if (melhorChave !== null && pontuacao <= melhorPontuacao) {
+            toast("Seu recorde anterior é maior. Ele foi mantido!", "aviso");
+            return;
+          }
+
+          const novaChave = melhorChave ||
+            `jogador_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+          await set(ref(db, `leaderboard/${novaChave}`), {
+            name: nomeLimpo,
+            score: pontuacao,
+            distance: Math.floor(distancia),
+            coins: moedas,
+            timestamp: Date.now()
+          });
+
+          toast(
+            melhorChave
+              ? "Novo recorde salvo no ranking!"
+              : "Pontuação salva no ranking global!",
+            "sucesso"
+          );
+        } catch (error) {
+          console.error("Erro ao salvar pontuação:", error);
+          toast("Erro ao salvar pontuação.", "erro");
+        }
+      }
+
+      // Apaga todo o ranking somente se esta função for chamada manualmente.
+      // Para usar: abra o console do navegador e digite limparRankingAtual().
+      // Não deixe a função ser chamada automaticamente ao iniciar o jogo.
+      async function limparRankingAtual() {
+        const confirmou = confirm(
+          "Isso apagará TODOS os jogadores e pontuações do ranking. Deseja continuar?"
+        );
+
+        if (!confirmou) return;
+
+        try {
+          await remove(leaderboardRef);
+          toast("Ranking apagado.", "sucesso");
+        } catch (error) {
+          console.error("Erro ao apagar ranking:", error);
+          toast("Não foi possível apagar o ranking.", "erro");
+        }
+      }
+
+      // Disponibiliza a limpeza manual no console do navegador.
+      window.limparRankingAtual = limparRankingAtual;
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1a0033);
@@ -458,7 +508,10 @@
 
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(12, 300),
-        new THREE.MeshStandardMaterial({ color: 0x2a1a44, roughness: 0.9 })
+        new THREE.MeshStandardMaterial({
+          color: 0x2a1a44,
+          roughness: 0.9
+        })
       );
       floor.rotation.x = -Math.PI / 2;
       floor.position.z = -140;
@@ -530,14 +583,13 @@
         const parts = [body, chest, head, brim, crown, armL, armR, legL, legR];
 
         parts.filter(Boolean).forEach(part => {
-          const shard = new THREE.Mesh(
-            part.geometry.clone(),
-            Array.isArray(part.material)
-              ? part.material.map(material => material.clone())
-              : part.material.clone()
-          );
+          const material = Array.isArray(part.material)
+            ? part.material.map(item => item.clone())
+            : part.material.clone();
 
+          const shard = new THREE.Mesh(part.geometry.clone(), material);
           const worldPosition = new THREE.Vector3();
+
           part.getWorldPosition(worldPosition);
           shard.position.copy(worldPosition);
 
@@ -596,7 +648,7 @@
           mainBox.receiveShadow = true;
           group.add(mainBox);
 
-          const stripeMat = new THREE.MeshStandardMaterial({
+          const stripeMaterial = new THREE.MeshStandardMaterial({
             color: 0xff0066,
             emissive: 0xff0066,
             emissiveIntensity: 0.8
@@ -605,7 +657,7 @@
           for (const y of [0.5, 1.1]) {
             const stripe = new THREE.Mesh(
               new THREE.BoxGeometry(2.26, 0.15, 2.06),
-              stripeMat
+              stripeMaterial
             );
             stripe.position.y = y;
             group.add(stripe);
@@ -626,14 +678,14 @@
           bar.castShadow = true;
           group.add(bar);
 
-          const legMat = new THREE.MeshStandardMaterial({
+          const legMaterial = new THREE.MeshStandardMaterial({
             color: 0x333333,
             metalness: 0.8
           });
 
           const legLeft = new THREE.Mesh(
             new THREE.BoxGeometry(0.15, 0.5, 0.6),
-            legMat
+            legMaterial
           );
           legLeft.position.set(-1.1, 0.25, 0);
           legLeft.castShadow = true;
@@ -645,11 +697,11 @@
 
           group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
         } else if (type === "highBar") {
-          const frameMat = new THREE.MeshStandardMaterial({
+          const frameMaterial = new THREE.MeshStandardMaterial({
             color: 0x112233,
             roughness: 0.5
           });
-          const neonMat = new THREE.MeshStandardMaterial({
+          const neonMaterial = new THREE.MeshStandardMaterial({
             color: 0x00ffcc,
             emissive: 0x00ffcc,
             emissiveIntensity: 0.9
@@ -657,7 +709,7 @@
 
           const bar = new THREE.Mesh(
             new THREE.BoxGeometry(2.7, 0.4, 0.6),
-            neonMat
+            neonMaterial
           );
           bar.position.y = 1.9;
           bar.castShadow = true;
@@ -665,7 +717,7 @@
 
           const pillarLeft = new THREE.Mesh(
             new THREE.CylinderGeometry(0.1, 0.1, 2.1, 12),
-            frameMat
+            frameMaterial
           );
           pillarLeft.position.set(-1.25, 1.05, 0);
           pillarLeft.castShadow = true;
@@ -766,7 +818,10 @@
           G.targetLane++;
           event.preventDefault();
         } else if (
-          key === "arrowup" || key === "w" || key === " " || key === "spacebar"
+          key === "arrowup" ||
+          key === "w" ||
+          key === " " ||
+          key === "spacebar"
         ) {
           jumpPressed = true;
           event.preventDefault();
@@ -865,6 +920,7 @@
       }
 
       function gameOver() {
+        // Evita salvar várias vezes se houver mais de uma colisão no mesmo frame.
         if (!G.running) return;
 
         G.running = false;
@@ -897,7 +953,8 @@
           G.speed = Math.min(G.speed + 0.000004 * dt, G.maxSpeed);
           G.distance += G.speed * dt * 1.8;
 
-          document.getElementById("dist").textContent = Math.floor(G.distance);
+          document.getElementById("dist").textContent =
+            Math.floor(G.distance);
           document.getElementById("score").textContent = G.coins;
 
           G.currentLane += (G.targetLane - G.currentLane) * 0.40 * dt;
@@ -949,6 +1006,7 @@
             player.position.y = 0.25;
           } else if (G.isJumping) {
             const velocityRatio = G.jumpVel / G.jumpPower;
+
             if (velocityRatio > 0) {
               sy = 1 + velocityRatio * 0.15;
               sx = 1 - velocityRatio * 0.1;
@@ -1043,7 +1101,7 @@
                 obstacle.userData.type === "low" &&
                 playerBottom > height - 0.1
               ) {
-                // Pulou por cima do obstáculo baixo.
+                // O jogador pulou por cima do obstáculo baixo.
               } else if (obstacle.userData.type === "tall") {
                 if (playerBottom < height - 0.8) gameOver();
               } else {
@@ -1052,34 +1110,37 @@
             }
           }
 
-          for (let i = coins.length - 1; i >= 0; i--) {
-            const coin = coins[i];
-            coin.position.z += G.speed * dt * 15;
-            coin.rotation.z += 0.12 * dt;
-            coin.position.y =
-              coin.userData.baseY + Math.sin(now * 0.003 + i) * 0.1;
+          if (G.running) {
+            for (let i = coins.length - 1; i >= 0; i--) {
+              const coin = coins[i];
+              coin.position.z += G.speed * dt * 15;
+              coin.rotation.z += 0.12 * dt;
+              coin.position.y =
+                coin.userData.baseY + Math.sin(now * 0.003 + i) * 0.1;
 
-            if (coin.position.z > 15) {
-              scene.remove(coin);
-              coins.splice(i, 1);
-              continue;
-            }
+              if (coin.position.z > 15) {
+                scene.remove(coin);
+                coins.splice(i, 1);
+                continue;
+              }
 
-            const dx = Math.abs(player.position.x - coin.position.x);
-            const dz = Math.abs(player.position.z - coin.position.z);
-            const dy = Math.abs(player.position.y - coin.position.y);
+              const dx = Math.abs(player.position.x - coin.position.x);
+              const dz = Math.abs(player.position.z - coin.position.z);
+              const dy = Math.abs(player.position.y - coin.position.y);
 
-            if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
-              G.coins++;
-              document.getElementById("score").textContent = G.coins;
-              scene.remove(coin);
-              coins.splice(i, 1);
+              if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
+                G.coins++;
+                document.getElementById("score").textContent = G.coins;
+                scene.remove(coin);
+                coins.splice(i, 1);
+              }
             }
           }
         }
 
         for (let i = deathShards.length - 1; i >= 0; i--) {
           const shard = deathShards[i];
+
           shard.position.addScaledVector(shard.userData.vel, dt);
           shard.rotation.x += shard.userData.rotVel.x * dt;
           shard.rotation.y += shard.userData.rotVel.y * dt;
