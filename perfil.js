@@ -26,7 +26,7 @@ $("profile-form").addEventListener("submit",async event=>{
  event.preventDefault();if(!souDono)return;
  const displayName=$("display-name").value.trim(),bio=$("bio-input").value.trim(),avatarUrl=$("avatar-url").value.trim();
  if(displayName.length<2)return mensagem("O nome precisa ter pelo menos 2 caracteres.",true);
- if(avatarUrl&&!/^https?:\/\/i.test(avatarUrl))return mensagem("A URL precisa começar com http:// ou https://.",true);
+ if(avatarUrl&&!/^https?:\/\//i.test(avatarUrl))return mensagem("A URL precisa começar com http:// ou https://.",true);
  const button=$("save-profile");button.disabled=true;button.textContent="Salvando...";
  try{
   const caminho=ref(db,"profiles/"+profileKey(nickLogado));const atual=await get(caminho);const dadosAtuais=atual.exists()?atual.val():{};
