@@ -7,8 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-body{background:#090914;color:#f4f2ff} .panel{background:#151426;border:1px solid #302b4b}
+body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid #302b4b}
 .input{background:#0d0c19;border:1px solid #393451;color:white}
+.user-card{background:#0e0d1c;border:1px solid #302b4b;border-radius:16px;padding:16px;display:grid;gap:12px}
+.user-card select{width:100%;min-height:44px}.save-btn{min-height:44px}
+#user-filter{min-height:48px}
 </style>
 </head>
 <body class="min-h-screen">
@@ -31,17 +34,13 @@ body{background:#090914;color:#f4f2ff} .panel{background:#151426;border:1px soli
  </div>
  <section class="panel rounded-2xl p-5">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">Consulte os nicknames cadastrados.</p></div>
-   <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-2 font-bold">Atualizar lista</button>
+   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">1. Pesquise a pessoa. 2. Escolha o cargo. 3. Toque em salvar.</p></div>
+   <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-3 font-bold">↻ Atualizar lista</button>
   </div>
-  <input id="user-filter" class="input w-full rounded-xl px-4 py-3 mb-4 outline-none focus:ring-2 focus:ring-violet-500" placeholder="Pesquisar por nickname..." autocomplete="off">
-  <p id="admin-status" class="text-sm text-slate-400 mb-3" role="status">Carregando contas...</p>
-  <div class="overflow-x-auto">
-   <table class="w-full text-left text-sm">
-    <thead class="text-slate-400 border-b border-violet-950"><tr><th class="py-3 pr-4">Usuário</th><th class="py-3 pr-4">Nome de exibição</th><th class="py-3 pr-4">Cargo</th><th class="py-3 pr-4">Perfil</th><th class="py-3">Ação</th></tr></thead>
-    <tbody id="users-table"></tbody>
-   </table>
-  </div>
+  <label for="user-filter" class="block text-sm font-bold mb-2">Buscar usuário</label>
+  <input id="user-filter" class="input w-full rounded-xl px-4 py-3 mb-4 outline-none focus:ring-2 focus:ring-violet-500" placeholder="Digite o nickname ou nome..." autocomplete="off">
+  <p id="admin-status" class="text-sm text-slate-400 mb-4" role="status" aria-live="polite">Carregando contas...</p>
+  <div id="users-list" class="grid sm:grid-cols-2 gap-3"></div>
  </section>
  <p class="text-xs text-slate-500 mt-6">Acesso visual restrito por nickname nesta página. A proteção real dos dados também depende das regras de segurança do Firebase.</p>
 </main>
@@ -59,43 +58,77 @@ if (!allowed) {
 } else {
   document.getElementById("denied").classList.add("hidden");
   document.getElementById("admin-app").classList.remove("hidden");
-  const tbody = document.getElementById("users-table");
+  const list = document.getElementById("users-list");
   const status = document.getElementById("admin-status");
   let rows = [];
 
   function render() {
     const term = document.getElementById("user-filter").value.trim().toLowerCase();
-    tbody.replaceChildren();
+    list.replaceChildren();
     const filtered = rows.filter(u => u.username.toLowerCase().includes(term) || u.displayName.toLowerCase().includes(term));
     if (!filtered.length) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = 5; td.className = "py-6 text-slate-400"; td.textContent = "Nenhuma conta encontrada.";
-      tr.appendChild(td); tbody.appendChild(tr); return;
+      const empty = document.createElement("p");
+      empty.className = "text-slate-400 py-8 text-center sm:col-span-2";
+      empty.textContent = term ? "Nenhum usuário corresponde à busca." : "Nenhuma conta encontrada no Firebase.";
+      list.appendChild(empty);
+      return;
     }
     for (const user of filtered) {
-      const tr = document.createElement("tr"); tr.className = "border-b border-violet-950/70";
-      const name = document.createElement("td"); name.className = "py-4 pr-4 font-bold"; name.textContent = user.username;
-      const display = document.createElement("td"); display.className = "py-4 pr-4 text-slate-300"; display.textContent = user.displayName || "—";
-      const roleCell = document.createElement("td"); roleCell.className = "py-4 pr-4";
-      const select = document.createElement("select"); select.className = "input rounded-lg px-2 py-2";
-      for (const [value,label] of [["none","Sem cargo"],["verified","Verificado"],["influencer","Influenciador"]]) { const option=document.createElement("option"); option.value=value; option.textContent=label; select.appendChild(option); }
+      const card = document.createElement("article");
+      card.className = "user-card";
+      const heading = document.createElement("div");
+      heading.innerHTML = "";
+      const nick = document.createElement("p");
+      nick.className = "font-black text-lg break-all";
+      nick.textContent = "@" + user.username;
+      const display = document.createElement("p");
+      display.className = "text-sm text-slate-400";
+      display.textContent = user.displayName || "Sem nome de exibição";
+      heading.append(nick, display);
+      const label = document.createElement("label");
+      label.className = "text-sm font-bold";
+      label.textContent = "Cargo desta conta";
+      const select = document.createElement("select");
+      select.className = "input rounded-xl px-3 py-3";
+      select.setAttribute("aria-label", "Cargo de " + user.username);
+      for (const [value,text] of [["none","Sem cargo"],["verified","✓ Verificado"],["influencer","★ Influenciador"]]) {
+        const option = document.createElement("option");
+        option.value = value; option.textContent = text; select.appendChild(option);
+      }
       select.value = user.role || "none";
-      const profile = document.createElement("td"); profile.className = "py-4 pr-4";
-      const link = document.createElement("a"); link.href = "perfil.html?user=" + encodeURIComponent(user.username); link.textContent = "Ver perfil"; link.className = "text-violet-300 hover:underline"; profile.appendChild(link);
-      const actionCell = document.createElement("td"); actionCell.className = "py-4";
-      const save = document.createElement("button"); save.type="button"; save.textContent="Salvar cargo"; save.className="bg-violet-600 hover:bg-violet-500 rounded-lg px-3 py-2 font-bold text-xs";
+      const actions = document.createElement("div");
+      actions.className = "flex gap-2";
+      const profile = document.createElement("a");
+      profile.href = "perfil.html?user=" + encodeURIComponent(user.username);
+      profile.textContent = "Ver perfil";
+      profile.className = "flex-1 text-center rounded-xl border border-violet-800 px-3 py-3 text-violet-200 font-bold";
+      const save = document.createElement("button");
+      save.type = "button"; save.textContent = "Salvar cargo";
+      save.className = "save-btn flex-1 bg-violet-600 hover:bg-violet-500 rounded-xl px-3 py-3 font-bold";
       save.addEventListener("click", async () => {
-        save.disabled=true; save.textContent="Salvando...";
+        save.disabled = true; save.textContent = "Salvando...";
         try {
-          const roleRef=ref(db,"profiles/"+user.key); const snap=await get(roleRef); const current=snap.exists()?snap.val():{};
-          if(select.value==="none") delete current.role; else current.role=select.value;
-          current.updatedAt=Date.now(); await set(roleRef,current); user.role=select.value;
-          status.textContent="Cargo de @"+user.username+" atualizado."; save.textContent="Salvo";
-        } catch(error) { console.error(error); status.textContent="Erro ao salvar cargo. Verifique as regras do Firebase."; save.textContent="Tentar novamente"; }
-        finally { save.disabled=false; }
+          const roleRef = ref(db, "profiles/" + user.key);
+          const snap = await get(roleRef);
+          const current = snap.exists() ? snap.val() : {};
+          if (select.value === "none") delete current.role;
+          else current.role = select.value;
+          current.updatedAt = Date.now();
+          await set(roleRef, current);
+          user.role = select.value;
+          status.textContent = "✓ Cargo de @" + user.username + " salvo com sucesso.";
+          save.textContent = "✓ Salvo";
+        } catch (error) {
+          console.error(error);
+          status.textContent = "Não foi possível salvar. Confira as regras do Firebase.";
+          save.textContent = "Tentar novamente";
+        } finally {
+          save.disabled = false;
+        }
       });
-      actionCell.appendChild(save); tr.append(name,display,roleCell,profile,actionCell); tbody.appendChild(tr);
+      actions.append(profile, save);
+      card.append(heading, label, select, actions);
+      list.appendChild(card);
     }
   }
 
