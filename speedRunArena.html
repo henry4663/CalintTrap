@@ -19,39 +19,33 @@
 
     canvas { display: block; }
 
-    #distance, #hud {
+    #distance, #pointsHud, #coinHud {
       position: absolute;
-      top: 20px;
       color: white;
       font-weight: bold;
       text-shadow: 0 0 10px #000;
       z-index: 10;
       pointer-events: none;
-      font-size: 26px;
+      font-size: 24px;
     }
 
-    #distance { left: 20px; }
-
-    /* Contador de moedas no lado oposto da distância */
-    #hud {
-      top: 190px;
-      right: 20px;
-    }
-
-    #score { color: #ffdd00; }
+    #distance { top: 20px; left: 20px; }
+    #pointsHud { top: 58px; left: 20px; color: #ffdd00; }
+    #coinHud { top: 190px; right: 20px; }
+    #coinCount { color: #ffdd00; }
 
     #globalLeaderboardCorner {
       position: absolute;
       top: 20px;
       right: 20px;
       width: 240px;
-      background: linear-gradient(135deg, rgba(26, 0, 51, 0.9), rgba(42, 26, 68, 0.9));
-      border: 2px solid rgba(0, 198, 255, 0.4);
-      border-radius: 14px;
       padding: 12px;
       z-index: 50;
       color: white;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 0, 204, 0.15);
+      background: linear-gradient(135deg, rgba(26, 0, 51, .9), rgba(42, 26, 68, .9));
+      border: 2px solid rgba(0, 198, 255, .4);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .6), inset 0 0 15px rgba(255, 0, 204, .15);
       transform: perspective(600px) rotateY(-5deg) rotateX(3deg);
       transform-origin: top right;
       pointer-events: none;
@@ -59,142 +53,117 @@
     }
 
     .corner-title {
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      color: #00c6ff;
+      border-bottom: 1px solid rgba(255, 255, 255, .15);
       font-size: 14px;
       font-weight: bold;
-      color: #00c6ff;
-      margin-bottom: 8px;
-      text-transform: uppercase;
       text-align: center;
-      text-shadow: 0 0 8px rgba(0, 198, 255, 0.6);
+      text-transform: uppercase;
       letter-spacing: 1px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-      padding-bottom: 4px;
+      text-shadow: 0 0 8px rgba(0, 198, 255, .6);
     }
 
     .corner-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 12px;
-      padding: 4px 6px;
+      justify-content: space-between;
       margin-bottom: 3px;
-      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 6px;
+      background: rgba(255, 255, 255, .04);
       border-radius: 6px;
+      font-size: 12px;
     }
 
     .corner-item:nth-child(1) { border-left: 3px solid #ffdd00; }
     .corner-item:nth-child(2) { border-left: 3px solid #c0c0c0; }
     .corner-item:nth-child(3) { border-left: 3px solid #cd7f32; }
 
-    .corner-rank {
-      font-weight: bold;
-      color: #ffdd00;
-      width: 24px;
-    }
-
+    .corner-rank { width: 24px; color: #ffdd00; font-weight: bold; }
     .corner-name {
       flex-grow: 1;
       overflow: hidden;
+      margin: 0 4px;
+      opacity: .9;
       text-overflow: ellipsis;
       white-space: nowrap;
-      opacity: 0.9;
-      margin: 0 4px;
     }
-
-    .corner-score {
-      font-weight: bold;
-      color: #00ffcc;
-    }
+    .corner-score { color: #00ffcc; font-weight: bold; }
 
     .screen {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.78);
+      z-index: 100;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      color: white;
-      text-align: center;
       padding: 20px;
+      color: white;
+      background: rgba(0, 0, 0, .78);
+      text-align: center;
     }
 
     .screen h1 {
-      font-size: 48px;
       margin-bottom: 15px;
       background: linear-gradient(45deg, #00c6ff, #ff00cc);
+      background-clip: text;
+      color: transparent;
+      font-size: 48px;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
-    .screen p {
-      font-size: 18px;
-      margin: 8px 0;
-      opacity: 0.9;
-    }
+    .screen p { margin: 8px 0; opacity: .9; font-size: 18px; }
 
     .screen .key {
       display: inline-block;
-      background: #fff;
-      color: #000;
+      margin: 0 4px;
       padding: 4px 12px;
+      color: #000;
+      background: #fff;
       border-radius: 6px;
       font-weight: bold;
-      margin: 0 4px;
     }
 
     .screen button {
       margin-top: 25px;
       padding: 16px 55px;
+      color: white;
+      background: linear-gradient(45deg, #00c6ff, #ff00cc);
+      border: 0;
+      border-radius: 50px;
+      box-shadow: 0 0 40px rgba(255, 0, 204, .5);
       font-size: 24px;
       font-weight: bold;
-      background: linear-gradient(45deg, #00c6ff, #ff00cc);
-      color: white;
-      border: none;
-      border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(255, 0, 204, 0.5);
     }
 
-    .screen button:active { transform: scale(0.96); }
-
-    .welcome-nick {
-      color: #00ffcc;
-      font-weight: bold;
-    }
-
+    .screen button:active { transform: scale(.96); }
+    .welcome-nick { color: #00ffcc; font-weight: bold; }
     #gameOver { display: none; }
 
     #gameOver h1 {
-      font-size: 56px;
-      color: #ff3366;
       background: none;
+      color: #ff3366;
+      font-size: 56px;
       -webkit-text-fill-color: #ff3366;
     }
 
-    #finalScore {
-      font-size: 34px;
-      color: #ffdd00;
-      margin: 15px 0;
-    }
-
-    #finalCoins {
-      font-size: 20px;
-      opacity: 0.85;
-    }
+    #finalScore { margin: 12px 0; color: #ffdd00; font-size: 34px; }
+    #finalDistance, #finalCoins { margin: 4px 0; font-size: 20px; opacity: .9; }
 
     #hint {
       position: absolute;
       bottom: 25px;
       left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255, 255, 255, 0.65);
-      font-size: 15px;
       z-index: 10;
+      color: rgba(255, 255, 255, .65);
+      font-size: 15px;
       pointer-events: none;
       text-shadow: 0 0 8px #000;
+      transform: translateX(-50%);
       white-space: nowrap;
     }
 
@@ -202,42 +171,30 @@
       position: absolute;
       bottom: -60px;
       left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
+      z-index: 1000;
+      max-width: calc(100vw - 32px);
       padding: 10px 20px;
+      color: white;
+      background: rgba(0, 0, 0, .9);
+      border: 1px solid #00c6ff;
       border-radius: 8px;
       font-weight: bold;
-      border: 1px solid #00c6ff;
-      transition: bottom 0.3s ease;
-      z-index: 1000;
       pointer-events: none;
       text-align: center;
-      max-width: calc(100vw - 32px);
+      transform: translateX(-50%);
+      transition: bottom .3s ease;
     }
 
     .toast.show { bottom: 70px; }
-    .toast.success { border-color: #00ffcc; color: #00ffcc; }
-    .toast.error { border-color: #ff3366; color: #ff3366; }
+    .toast.success { color: #00ffcc; border-color: #00ffcc; }
+    .toast.error { color: #ff3366; border-color: #ff3366; }
 
     @media (max-width: 600px) {
-      #globalLeaderboardCorner {
-        width: 190px;
-        padding: 8px;
-      }
-
-      #distance {
-        left: 12px;
-        top: 16px;
-        font-size: 21px;
-      }
-
-      #hud {
-        top: 165px;
-        right: 12px;
-        font-size: 21px;
-      }
-
+      #globalLeaderboardCorner { width: 190px; padding: 8px; }
+      #distance, #pointsHud { left: 12px; font-size: 20px; }
+      #distance { top: 16px; }
+      #pointsHud { top: 48px; }
+      #coinHud { top: 165px; right: 12px; font-size: 20px; }
       .screen h1 { font-size: 38px; }
       .screen p { font-size: 15px; }
       .screen button { padding: 14px 36px; font-size: 20px; }
@@ -248,7 +205,8 @@
 
 <body>
   <div id="distance">📍 <span id="dist">0</span>m</div>
-  <div id="hud">🪙 <span id="score">0</span></div>
+  <div id="pointsHud">🏆 <span id="points">0</span> pontos</div>
+  <div id="coinHud">🪙 <span id="coinCount">0</span></div>
 
   <div id="globalLeaderboardCorner">
     <div class="corner-title">🏆 Top Global</div>
@@ -260,7 +218,7 @@
   <div id="startScreen" class="screen">
     <h1>ENDLESS RUNNER</h1>
     <p>Jogando como: <span id="displayNick" class="welcome-nick">Carregando...</span></p>
-    <p style="margin-top: 18px;">
+    <p style="margin-top:18px">
       <span class="key">←</span><span class="key">→</span>
       ou <span class="key">A</span><span class="key">D</span> para desviar
     </p>
@@ -271,7 +229,8 @@
 
   <div id="gameOver" class="screen">
     <h1>GAME OVER</h1>
-    <div id="finalScore">0m</div>
+    <div id="finalScore">0 pontos</div>
+    <div id="finalDistance">📍 0m</div>
     <div id="finalCoins">🪙 0 moedas</div>
     <button id="restartBtn">JOGAR NOVAMENTE</button>
   </div>
@@ -282,18 +241,10 @@
 
   <script type="module">
     import { criarPersonagem } from "./personagem.js";
-    import {
-      db,
-      ref,
-      set,
-      get,
-      onValue,
-      remove,
-      toast
-    } from "./firebase.js";
+    import { db, ref, set, get, onValue, toast } from "./firebase.js";
     import { getCurrentNick } from "./authLocal.js";
 
-    (function () {
+    (() => {
       "use strict";
 
       const playerNick = getCurrentNick() || "Anônimo";
@@ -302,6 +253,12 @@
 
       document.getElementById("displayNick").textContent = playerNick;
 
+      // Fórmula única para HUD, tela final e Firebase:
+      // 1 ponto por metro + 5 pontos por moeda.
+      function calcularPontuacao(distancia, moedas) {
+        return Math.floor(distancia) + Number(moedas || 0) * 5;
+      }
+
       function normalizarNome(nome) {
         return String(nome || "Anônimo")
           .trim()
@@ -309,7 +266,7 @@
           .toLocaleLowerCase("pt-BR") || "anônimo";
       }
 
-      function obterTopCincoUnicos(data) {
+      function obterTopCinco(data) {
         const melhoresPorNome = new Map();
 
         if (!data) return [];
@@ -317,17 +274,13 @@
         for (const item of Object.values(data)) {
           if (!item) continue;
 
-          const nome =
-            String(item.name || "Anônimo").trim().substring(0, 12) || "Anônimo";
+          const nome = String(item.name || "Anônimo").trim().substring(0, 12) || "Anônimo";
+          const score = Number(item.score) || 0;
           const chaveNome = normalizarNome(nome);
-          const pontuacao = Number(item.score) || 0;
-          const registroAtual = melhoresPorNome.get(chaveNome);
+          const anterior = melhoresPorNome.get(chaveNome);
 
-          if (!registroAtual || pontuacao > registroAtual.score) {
-            melhoresPorNome.set(chaveNome, {
-              name: nome,
-              score: pontuacao
-            });
+          if (!anterior || score > anterior.score) {
+            melhoresPorNome.set(chaveNome, { name: nome, score });
           }
         }
 
@@ -336,17 +289,16 @@
           .slice(0, 5);
       }
 
-      function mostrarRanking(data) {
+      function renderizarRanking(data) {
         const lista = document.getElementById("cornerList");
         lista.replaceChildren();
 
-        const jogadores = obterTopCincoUnicos(data);
+        const jogadores = obterTopCinco(data);
 
         if (jogadores.length === 0) {
           const vazio = document.createElement("div");
           vazio.textContent = "Sem pontuações";
-          vazio.style.cssText =
-            "text-align:center; opacity:0.6; font-size:11px;";
+          vazio.style.cssText = "text-align:center;opacity:.6;font-size:11px";
           lista.appendChild(vazio);
           return;
         }
@@ -374,7 +326,7 @@
 
       onValue(
         leaderboardRef,
-        snapshot => mostrarRanking(snapshot.val()),
+        snapshot => renderizarRanking(snapshot.val()),
         error => {
           console.error("Erro ao carregar ranking:", error);
           document.getElementById("cornerList").textContent =
@@ -383,29 +335,25 @@
       );
 
       async function salvarPontuacaoGlobal(nome, distancia, moedas) {
-        const nomeLimpo =
-          String(nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
-        const pontuacao = Math.floor(distancia) + moedas * 5;
+        const nomeLimpo = String(nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
+        const pontuacao = calcularPontuacao(distancia, moedas);
 
         if (pontuacao < PONTUACAO_MINIMA) {
-          toast(
-            `Pontuação baixa: precisa de ${PONTUACAO_MINIMA} pontos para entrar no ranking.`,
-            "aviso"
-          );
+          toast(`Pontuação baixa: mínimo de ${PONTUACAO_MINIMA} pontos para entrar no ranking.`, "aviso");
           return;
         }
 
         try {
           const snapshot = await get(leaderboardRef);
           const dados = snapshot.val() || {};
-          const nomeProcurado = normalizarNome(nomeLimpo);
+          const nomeBusca = normalizarNome(nomeLimpo);
 
           let melhorChave = null;
           let melhorPontuacao = -1;
 
-          // Localiza o melhor registro antigo desse apelido, caso já exista.
+          // Procura o melhor registro existente para esse apelido.
           for (const [chave, item] of Object.entries(dados)) {
-            if (!item || normalizarNome(item.name) !== nomeProcurado) continue;
+            if (!item || normalizarNome(item.name) !== nomeBusca) continue;
 
             const scoreAtual = Number(item.score) || 0;
             if (scoreAtual > melhorPontuacao) {
@@ -414,16 +362,15 @@
             }
           }
 
-          // Não substitui o recorde por uma pontuação menor ou igual.
           if (melhorChave !== null && pontuacao <= melhorPontuacao) {
             toast("Seu recorde anterior é maior. Ele foi mantido!", "aviso");
             return;
           }
 
-          const novaChave = melhorChave ||
+          const chave = melhorChave ||
             `jogador_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-          await set(ref(db, `leaderboard/${novaChave}`), {
+          await set(ref(db, `leaderboard/${chave}`), {
             name: nomeLimpo,
             score: pontuacao,
             distance: Math.floor(distancia),
@@ -443,28 +390,7 @@
         }
       }
 
-      // Apaga todo o ranking somente se esta função for chamada manualmente.
-      // Para usar: abra o console do navegador e digite limparRankingAtual().
-      // Não deixe a função ser chamada automaticamente ao iniciar o jogo.
-      async function limparRankingAtual() {
-        const confirmou = confirm(
-          "Isso apagará TODOS os jogadores e pontuações do ranking. Deseja continuar?"
-        );
-
-        if (!confirmou) return;
-
-        try {
-          await remove(leaderboardRef);
-          toast("Ranking apagado.", "sucesso");
-        } catch (error) {
-          console.error("Erro ao apagar ranking:", error);
-          toast("Não foi possível apagar o ranking.", "erro");
-        }
-      }
-
-      // Disponibiliza a limpeza manual no console do navegador.
-      window.limparRankingAtual = limparRankingAtual;
-
+      // Cena Three.js
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1a0033);
       scene.fog = new THREE.Fog(0x1a0033, 40, 100);
@@ -495,8 +421,7 @@
       const sun = new THREE.DirectionalLight(0xffffff, 1);
       sun.position.set(8, 15, 8);
       sun.castShadow = true;
-      sun.shadow.mapSize.width = 1024;
-      sun.shadow.mapSize.height = 1024;
+      sun.shadow.mapSize.set(1024, 1024);
       sun.shadow.camera.left = -15;
       sun.shadow.camera.right = 15;
       sun.shadow.camera.top = 15;
@@ -508,17 +433,14 @@
 
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(12, 300),
-        new THREE.MeshStandardMaterial({
-          color: 0x2a1a44,
-          roughness: 0.9
-        })
+        new THREE.MeshStandardMaterial({ color: 0x2a1a44, roughness: 0.9 })
       );
       floor.rotation.x = -Math.PI / 2;
       floor.position.z = -140;
       floor.receiveShadow = true;
       scene.add(floor);
 
-      for (let i = 0; i < 3; i++) {
+      for (const laneX of LANES) {
         const line = new THREE.Mesh(
           new THREE.PlaneGeometry(0.08, 300),
           new THREE.MeshBasicMaterial({
@@ -528,7 +450,7 @@
           })
         );
         line.rotation.x = -Math.PI / 2;
-        line.position.set(LANES[i], 0.01, -140);
+        line.position.set(laneX, 0.01, -140);
         scene.add(line);
       }
 
@@ -549,14 +471,11 @@
       scene.add(player);
 
       const body = player.getObjectByName("body");
-      const chest = player.getObjectByName("chest");
-      const head = player.getObjectByName("head");
-      const brim = player.getObjectByName("brim");
-      const crown = player.getObjectByName("crown");
-      const armL = player.getObjectByName("armL");
-      const armR = player.getObjectByName("armR");
-      const legL = player.getObjectByName("legL");
-      const legR = player.getObjectByName("legR");
+      const parts = [
+        "body", "chest", "head", "brim", "crown",
+        "armL", "armR", "legL", "legR"
+      ].map(name => player.getObjectByName(name)).filter(Boolean);
+
       const armPivotL = player.getObjectByName("armPivotL");
       const armPivotR = player.getObjectByName("armPivotR");
       const legPivotL = player.getObjectByName("legPivotL");
@@ -580,16 +499,13 @@
         player.visible = false;
         playerShadow.visible = false;
 
-        const parts = [body, chest, head, brim, crown, armL, armR, legL, legR];
-
-        parts.filter(Boolean).forEach(part => {
+        for (const part of parts) {
           const material = Array.isArray(part.material)
             ? part.material.map(item => item.clone())
             : part.material.clone();
 
           const shard = new THREE.Mesh(part.geometry.clone(), material);
           const worldPosition = new THREE.Vector3();
-
           part.getWorldPosition(worldPosition);
           shard.position.copy(worldPosition);
 
@@ -608,11 +524,11 @@
 
           scene.add(shard);
           deathShards.push(shard);
-        });
+        }
       }
 
       function clearShards() {
-        deathShards.forEach(shard => {
+        for (const shard of deathShards) {
           scene.remove(shard);
           shard.geometry.dispose();
 
@@ -621,8 +537,7 @@
           } else {
             shard.material.dispose();
           }
-        });
-
+        }
         deathShards.length = 0;
       }
 
@@ -635,18 +550,18 @@
         group.position.set(LANES[lane], 0, z);
 
         if (type === "block") {
-          const mainBox = new THREE.Mesh(
-            new THREE.BoxGeometry(2.2, 1.6, 2.0),
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(2.2, 1.6, 2),
             new THREE.MeshStandardMaterial({
               color: 0x1f1a24,
               roughness: 0.4,
               metalness: 0.6
             })
           );
-          mainBox.position.y = 0.8;
-          mainBox.castShadow = true;
-          mainBox.receiveShadow = true;
-          group.add(mainBox);
+          box.position.y = 0.8;
+          box.castShadow = true;
+          box.receiveShadow = true;
+          group.add(box);
 
           const stripeMaterial = new THREE.MeshStandardMaterial({
             color: 0xff0066,
@@ -663,7 +578,7 @@
             group.add(stripe);
           }
 
-          group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
+          group.userData = { type, width: 2.2, height: 1.6 };
         } else if (type === "low") {
           const bar = new THREE.Mesh(
             new THREE.BoxGeometry(2.5, 0.25, 0.4),
@@ -688,19 +603,15 @@
             legMaterial
           );
           legLeft.position.set(-1.1, 0.25, 0);
-          legLeft.castShadow = true;
           group.add(legLeft);
 
           const legRight = legLeft.clone();
           legRight.position.x = 1.1;
           group.add(legRight);
 
-          group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
+          group.userData = { type, width: 2.5, height: 0.65 };
         } else if (type === "highBar") {
-          const frameMaterial = new THREE.MeshStandardMaterial({
-            color: 0x112233,
-            roughness: 0.5
-          });
+          const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x112233 });
           const neonMaterial = new THREE.MeshStandardMaterial({
             color: 0x00ffcc,
             emissive: 0x00ffcc,
@@ -712,7 +623,6 @@
             neonMaterial
           );
           bar.position.y = 1.9;
-          bar.castShadow = true;
           group.add(bar);
 
           const pillarLeft = new THREE.Mesh(
@@ -720,7 +630,6 @@
             frameMaterial
           );
           pillarLeft.position.set(-1.25, 1.05, 0);
-          pillarLeft.castShadow = true;
           group.add(pillarLeft);
 
           const pillarRight = pillarLeft.clone();
@@ -729,7 +638,7 @@
 
           group.userData = { type, width: 2.7, height: 2.2, minY: 1.4 };
         } else {
-          const mainPillar = new THREE.Mesh(
+          const pillar = new THREE.Mesh(
             new THREE.CylinderGeometry(1.1, 1.25, 3.4, 6),
             new THREE.MeshStandardMaterial({
               color: 0x6600cc,
@@ -738,12 +647,11 @@
               roughness: 0.2
             })
           );
-          mainPillar.position.y = 1.7;
-          mainPillar.castShadow = true;
-          mainPillar.receiveShadow = true;
-          group.add(mainPillar);
+          pillar.position.y = 1.7;
+          pillar.castShadow = true;
+          group.add(pillar);
 
-          const topGlow = new THREE.Mesh(
+          const glow = new THREE.Mesh(
             new THREE.CylinderGeometry(1.12, 1.12, 0.2, 6),
             new THREE.MeshStandardMaterial({
               color: 0xcc00ff,
@@ -751,10 +659,10 @@
               emissiveIntensity: 0.9
             })
           );
-          topGlow.position.y = 3.3;
-          group.add(topGlow);
+          glow.position.y = 3.3;
+          group.add(glow);
 
-          group.userData = { type, width: 2.2, height: 3.4, minY: 0 };
+          group.userData = { type, width: 2.2, height: 3.4 };
         }
 
         scene.add(group);
@@ -772,16 +680,16 @@
           })
         );
         coin.rotation.x = Math.PI / 2;
-        coin.position.set(LANES[lane], 1.0, z);
+        coin.position.set(LANES[lane], 1, z);
         coin.castShadow = true;
-        coin.userData = { baseY: 1.0 };
+        coin.userData = { baseY: 1 };
         scene.add(coin);
         coins.push(coin);
       }
 
       const G = {
         running: false,
-        speed: 0.003,
+        speed: 0.035,
         baseSpeed: 0.035,
         maxSpeed: 0.22,
         distance: 0,
@@ -806,9 +714,15 @@
       let jumpPressed = false;
       let duckPressed = false;
 
+      function atualizarHUD() {
+        document.getElementById("dist").textContent = String(Math.floor(G.distance));
+        document.getElementById("coinCount").textContent = String(G.coins);
+        document.getElementById("points").textContent =
+          String(calcularPontuacao(G.distance, G.coins));
+      }
+
       function onKeyDown(event) {
         if (!G.running) return;
-
         const key = event.key.toLowerCase();
 
         if ((key === "arrowleft" || key === "a") && G.targetLane > 0) {
@@ -817,12 +731,7 @@
         } else if ((key === "arrowright" || key === "d") && G.targetLane < 2) {
           G.targetLane++;
           event.preventDefault();
-        } else if (
-          key === "arrowup" ||
-          key === "w" ||
-          key === " " ||
-          key === "spacebar"
-        ) {
+        } else if (["arrowup", "w", " ", "spacebar"].includes(key)) {
           jumpPressed = true;
           event.preventDefault();
         } else if (key === "arrowdown" || key === "s") {
@@ -859,15 +768,14 @@
       }, { passive: true });
 
       function spawnRow(z) {
-        const numberOfObstacles = Math.random() < 0.60 ? 2 : 1;
+        const obstacleCount = Math.random() < 0.6 ? 2 : 1;
         const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
 
-        lanes.slice(0, numberOfObstacles).forEach(lane => {
-          const type = TYPES[Math.floor(Math.random() * TYPES.length)];
-          createObstacle(lane, z, type);
+        lanes.slice(0, obstacleCount).forEach(lane => {
+          createObstacle(lane, z, TYPES[Math.floor(Math.random() * TYPES.length)]);
         });
 
-        lanes.slice(numberOfObstacles).forEach(lane => {
+        lanes.slice(obstacleCount).forEach(lane => {
           if (Math.random() < 0.75) {
             createCoin(lane, z);
             if (Math.random() < 0.5) createCoin(lane, z - 3.5);
@@ -878,10 +786,8 @@
       function reset() {
         obstacles.forEach(obstacle => scene.remove(obstacle));
         obstacles.length = 0;
-
         coins.forEach(coin => scene.remove(coin));
         coins.length = 0;
-
         clearShards();
 
         player.visible = true;
@@ -897,11 +803,11 @@
         G.currentLane = 1;
         G.targetLane = 1;
         G.isJumping = false;
-        G.isDucking = false;
-        G.duckTimer = 0;
         G.jumpVel = 0;
         G.jumpY = 0;
         G.visualJumpY = 0;
+        G.isDucking = false;
+        G.duckTimer = 0;
         G.spawnTimer = 0;
         G.animPhase = 0;
         G.lastTime = performance.now();
@@ -909,18 +815,14 @@
         jumpPressed = false;
         duckPressed = false;
 
-        document.getElementById("score").textContent = "0";
-        document.getElementById("dist").textContent = "0";
+        atualizarHUD();
         document.getElementById("startScreen").style.display = "none";
         document.getElementById("gameOver").style.display = "none";
 
-        for (let i = 0; i < 6; i++) {
-          spawnRow(-i * 18 - 25);
-        }
+        for (let i = 0; i < 6; i++) spawnRow(-i * 18 - 25);
       }
 
       function gameOver() {
-        // Evita salvar várias vezes se houver mais de uma colisão no mesmo frame.
         if (!G.running) return;
 
         G.running = false;
@@ -928,14 +830,18 @@
         duckPressed = false;
         shatterPlayer();
 
+        // Salva exatamente a mesma pontuação exibida na tela e no HUD.
+        const pontuacaoFinal = calcularPontuacao(G.distance, G.coins);
         salvarPontuacaoGlobal(playerNick, G.distance, G.coins);
 
         setTimeout(() => {
           document.getElementById("gameOver").style.display = "flex";
           document.getElementById("finalScore").textContent =
-            Math.floor(G.distance) + "m";
+            `${pontuacaoFinal} pontos`;
+          document.getElementById("finalDistance").textContent =
+            `📍 ${Math.floor(G.distance)}m`;
           document.getElementById("finalCoins").textContent =
-            "🪙 " + G.coins + " moedas";
+            `🪙 ${G.coins} moedas`;
         }, 600);
       }
 
@@ -952,12 +858,7 @@
         if (G.running) {
           G.speed = Math.min(G.speed + 0.000004 * dt, G.maxSpeed);
           G.distance += G.speed * dt * 1.8;
-
-          document.getElementById("dist").textContent =
-            Math.floor(G.distance);
-          document.getElementById("score").textContent = G.coins;
-
-          G.currentLane += (G.targetLane - G.currentLane) * 0.40 * dt;
+          G.currentLane += (G.targetLane - G.currentLane) * 0.4 * dt;
           player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
 
           if (duckPressed) {
@@ -970,9 +871,8 @@
             duckPressed = false;
           }
 
-          if (G.isDucking) {
-            G.duckTimer -= dt;
-            if (G.duckTimer <= 0) G.isDucking = false;
+          if (G.isDucking && (G.duckTimer -= dt) <= 0) {
+            G.isDucking = false;
           }
 
           if (jumpPressed && !G.isJumping && !G.isDucking) {
@@ -993,71 +893,57 @@
           }
 
           G.visualJumpY += (G.jumpY - G.visualJumpY) * 0.35 * dt;
-          player.position.y = 0.5 + G.visualJumpY;
+          player.position.y = G.isDucking ? 0.25 : 0.5 + G.visualJumpY;
 
-          let sx = 1;
-          let sy = 1;
-          let sz = 1;
+          let sx = 1, sy = 1, sz = 1;
 
           if (G.isDucking) {
-            sy = 0.5;
             sx = 1.3;
+            sy = 0.5;
             sz = 1.3;
-            player.position.y = 0.25;
           } else if (G.isJumping) {
             const velocityRatio = G.jumpVel / G.jumpPower;
-
-            if (velocityRatio > 0) {
-              sy = 1 + velocityRatio * 0.15;
-              sx = 1 - velocityRatio * 0.1;
-            } else {
-              sy = 1 + velocityRatio * 0.1;
-              sx = 1 - velocityRatio * 0.05;
-            }
+            sy = velocityRatio > 0 ? 1 + velocityRatio * 0.15 : 1 + velocityRatio * 0.1;
+            sx = velocityRatio > 0 ? 1 - velocityRatio * 0.1 : 1 - velocityRatio * 0.05;
           } else {
             sy = 1 + Math.sin(now * 0.004) * 0.02;
             sx = 1 - Math.sin(now * 0.004) * 0.02;
           }
 
           player.scale.set(sx, sy, sz);
-
-          if (G.isJumping) {
-            player.rotation.x = G.visualJumpY * 0.35;
-          } else if (G.isDucking) {
-            player.rotation.x = 0.3;
-          } else {
-            player.rotation.x *= 0.9;
-          }
-
+          player.rotation.x = G.isJumping
+            ? G.visualJumpY * 0.35
+            : G.isDucking ? 0.3 : player.rotation.x * 0.9;
           player.rotation.z = (G.currentLane - 1) * 0.15;
+
           G.animPhase += dt * G.speed * 4.5;
           const cycle = G.animPhase;
 
-          if (!G.isJumping && !G.isDucking) {
-            const swing = Math.sin(cycle) * 0.9;
-            legPivotL.rotation.x = swing;
-            legPivotR.rotation.x = -swing;
-            armPivotL.rotation.x = -swing * 0.8;
-            armPivotR.rotation.x = swing * 0.8;
-            armPivotL.rotation.z = 0;
-            armPivotR.rotation.z = 0;
-
-            const bob = Math.abs(Math.sin(cycle)) * 0.05;
-            player.position.y = 0.5 + G.visualJumpY + bob;
-            body.rotation.z = Math.sin(cycle * 2) * 0.03;
-          } else if (G.isDucking) {
-            legPivotL.rotation.x = -1.2;
-            legPivotR.rotation.x = -1.2;
-            armPivotL.rotation.x = 0.8;
-            armPivotR.rotation.x = 0.8;
-          } else {
-            legPivotL.rotation.x = 0.7;
-            legPivotR.rotation.x = 0.4;
-            armPivotL.rotation.x = -1.5;
-            armPivotR.rotation.x = -1.5;
-            armPivotL.rotation.z = -0.3;
-            armPivotR.rotation.z = 0.3;
-            body.rotation.z = 0;
+          if (legPivotL && legPivotR && armPivotL && armPivotR) {
+            if (!G.isJumping && !G.isDucking) {
+              const swing = Math.sin(cycle) * 0.9;
+              legPivotL.rotation.x = swing;
+              legPivotR.rotation.x = -swing;
+              armPivotL.rotation.x = -swing * 0.8;
+              armPivotR.rotation.x = swing * 0.8;
+              armPivotL.rotation.z = 0;
+              armPivotR.rotation.z = 0;
+              player.position.y = 0.5 + G.visualJumpY + Math.abs(Math.sin(cycle)) * 0.05;
+              if (body) body.rotation.z = Math.sin(cycle * 2) * 0.03;
+            } else if (G.isDucking) {
+              legPivotL.rotation.x = -1.2;
+              legPivotR.rotation.x = -1.2;
+              armPivotL.rotation.x = 0.8;
+              armPivotR.rotation.x = 0.8;
+            } else {
+              legPivotL.rotation.x = 0.7;
+              legPivotR.rotation.x = 0.4;
+              armPivotL.rotation.x = -1.5;
+              armPivotR.rotation.x = -1.5;
+              armPivotL.rotation.z = -0.3;
+              armPivotR.rotation.z = 0.3;
+              if (body) body.rotation.z = 0;
+            }
           }
 
           playerShadow.position.set(player.position.x, 0.02, player.position.z);
@@ -1085,25 +971,18 @@
 
             const dx = Math.abs(player.position.x - obstacle.position.x);
             const dz = Math.abs(player.position.z - obstacle.position.z);
-            const width = obstacle.userData.width;
-            const height = obstacle.userData.height;
-            const minY = obstacle.userData.minY || 0;
 
-            if (dx < width * 0.5 + 0.35 && dz < 1.3) {
-              const playerBottom =
-                player.position.y - (G.isDucking ? 0.2 : 0.5);
-              const playerTop =
-                player.position.y + (G.isDucking ? 0.6 : 2.0);
+            if (dx < obstacle.userData.width * 0.5 + 0.35 && dz < 1.3) {
+              const bottom = player.position.y - (G.isDucking ? 0.2 : 0.5);
+              const top = player.position.y + (G.isDucking ? 0.6 : 2.0);
+              const type = obstacle.userData.type;
 
-              if (obstacle.userData.type === "highBar") {
-                if (playerTop > minY) gameOver();
-              } else if (
-                obstacle.userData.type === "low" &&
-                playerBottom > height - 0.1
-              ) {
-                // O jogador pulou por cima do obstáculo baixo.
-              } else if (obstacle.userData.type === "tall") {
-                if (playerBottom < height - 0.8) gameOver();
+              if (type === "highBar") {
+                if (top > (obstacle.userData.minY || 1.4)) gameOver();
+              } else if (type === "low") {
+                if (bottom <= obstacle.userData.height - 0.1) gameOver();
+              } else if (type === "tall") {
+                if (bottom < obstacle.userData.height - 0.8) gameOver();
               } else {
                 gameOver();
               }
@@ -1115,8 +994,7 @@
               const coin = coins[i];
               coin.position.z += G.speed * dt * 15;
               coin.rotation.z += 0.12 * dt;
-              coin.position.y =
-                coin.userData.baseY + Math.sin(now * 0.003 + i) * 0.1;
+              coin.position.y = coin.userData.baseY + Math.sin(now * 0.003 + i) * 0.1;
 
               if (coin.position.z > 15) {
                 scene.remove(coin);
@@ -1128,19 +1006,18 @@
               const dz = Math.abs(player.position.z - coin.position.z);
               const dy = Math.abs(player.position.y - coin.position.y);
 
-              if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
+              if (dx < 0.8 && dz < 1 && dy < 1.2) {
                 G.coins++;
-                document.getElementById("score").textContent = G.coins;
                 scene.remove(coin);
                 coins.splice(i, 1);
               }
             }
           }
+
+          atualizarHUD();
         }
 
-        for (let i = deathShards.length - 1; i >= 0; i--) {
-          const shard = deathShards[i];
-
+        for (const shard of deathShards) {
           shard.position.addScaledVector(shard.userData.vel, dt);
           shard.rotation.x += shard.userData.rotVel.x * dt;
           shard.rotation.y += shard.userData.rotVel.y * dt;
@@ -1152,6 +1029,7 @@
         renderer.render(scene, camera);
       }
 
+      atualizarHUD();
       animate();
     })();
   </script>
