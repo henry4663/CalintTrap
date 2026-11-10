@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Endless Runner 3D</title>
+<title>Endless Runner 3D - Top Global</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #1a0033; font-family: Arial, sans-serif; touch-action: none; }
@@ -17,8 +17,59 @@
     font-size: 26px;
   }
   #hud { left: 20px; }
-  #distance { right: 20px; }
+  #distance { right: 280px; } /* Ajustado para dar espaço ao placar 3D no canto */
   #score { color: #ffdd00; }
+
+  /* ============ TOP GLOBAL 3D NO CANTO ============ */
+  #globalLeaderboardCorner {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 240px;
+    background: linear-gradient(135deg, rgba(26, 0, 51, 0.85), rgba(42, 26, 68, 0.85));
+    border: 2px solid rgba(0, 198, 255, 0.4);
+    border-radius: 14px;
+    padding: 12px;
+    z-index: 50;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 0, 204, 0.15);
+    transform: perspective(600px) rotateY(-5deg) rotateX(3deg);
+    transform-origin: top right;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+  }
+
+  .corner-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #00c6ff;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(0, 198, 255, 0.6);
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 4px;
+  }
+
+  .corner-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px 6px;
+    margin-bottom: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+  }
+
+  .corner-item:nth-child(2) { border-left: 3px solid #ffdd00; }
+  .corner-item:nth-child(3) { border-left: 3px solid #c0c0c0; }
+  .corner-item:nth-child(4) { border-left: 3px solid #cd7f32; }
+
+  .corner-rank { font-weight: bold; color: #ffdd00; width: 24px; }
+  .corner-name { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.9; margin: 0 4px; }
+  .corner-score { font-weight: bold; color: #00ffcc; }
   
   .screen {
     position: absolute; inset: 0;
@@ -52,6 +103,19 @@
     box-shadow: 0 0 40px rgba(255,0,204,0.5);
   }
   .screen button:active { transform: scale(0.96); }
+
+  .input-name {
+    margin: 15px 0 5px 0;
+    padding: 12px 20px;
+    font-size: 20px;
+    border-radius: 10px;
+    border: 2px solid #00c6ff;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    text-align: center;
+    outline: none;
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+  }
   
   #gameOver { display: none; }
   #gameOver h1 { font-size: 56px; color: #ff3366; background: none; -webkit-text-fill-color: #ff3366; }
@@ -67,18 +131,46 @@
     text-shadow: 0 0 8px #000;
     white-space: nowrap;
   }
+
+  /* Toast de Notificação */
+  .toast {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    border: 1px solid #00c6ff;
+    transition: bottom 0.3s ease;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast.show { bottom: 70px; }
+  .toast.success { border-color: #00ffcc; color: #00ffcc; }
+  .toast.error { border-color: #ff3366; color: #ff3366; }
 </style>
 </head>
 <body>
 
 <div id="hud">🪙 <span id="score">0</span></div>
 <div id="distance">📍 <span id="dist">0</span>m</div>
+
+<!-- Placar Top Global no Canto Superior Direito -->
+<div id="globalLeaderboardCorner">
+  <div class="corner-title">🏆 Top Global</div>
+  <div id="cornerList">Carregando...</div>
+</div>
+
 <div id="hint">← → mover | ↑ pular | ↓ abaixar</div>
 
 <div id="startScreen" class="screen">
   <h1>ENDLESS RUNNER</h1>
   <p>Corra o mais longe possível!</p>
-  <p style="margin-top:18px;">
+  <input type="text" id="playerName" class="input-name" placeholder="Seu Nome / Apelido" maxlength="12" value="Jogador">
+  <p style="margin-top:10px;">
     <span class="key">←</span><span class="key">→</span> ou <span class="key">A</span><span class="key">D</span> para desviar
   </p>
   <p><span class="key">↑</span> / <span class="key">W</span> / <span class="key">ESPAÇO</span> para pular</p>
@@ -93,14 +185,64 @@
   <button id="restartBtn">JOGAR NOVAMENTE</button>
 </div>
 
+<div id="toast" class="toast"></div>
+
 <!-- Three.js CDN -->
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 
 <script type="module">
 import { criarPersonagem } from "./personagem.js";
+import { db, ref, set, get, update, onValue, remove, toast } from "./firebase.js";
+
 (function() {
   'use strict';
   
+  // ============ SINCRONIZAÇÃO RANKING GLOBAL FIREBASE ============
+  const leaderboardRef = ref(db, 'leaderboard');
+
+  function salvarPontuacaoGlobal(nome, distancia, moedas) {
+    const pontuacaoTotal = Math.floor(distancia) + (moedas * 5);
+    const nomeLimpo = (nome || "Anônimo").trim().substring(0, 12);
+    
+    const novaPontuacaoRef = ref(db, 'leaderboard/' + Date.now());
+    set(novaPontuacaoRef, {
+      name: nomeLimpo,
+      score: pontuacaoTotal,
+      distance: Math.floor(distancia),
+      coins: moedas,
+      timestamp: Date.now()
+    }).then(() => {
+      toast("Pontuação salva no ranking global!", "sucesso");
+    }).catch((err) => {
+      console.error("Erro ao salvar no Firebase:", err);
+      toast("Erro ao salvar pontuação.", "erro");
+    });
+  }
+
+  // Ouve atualizações em tempo real do ranking global
+  onValue(leaderboardRef, (snapshot) => {
+    const data = snapshot.val();
+    const cornerList = document.getElementById('cornerList');
+    
+    if (!data) {
+      cornerList.innerHTML = '<div style="text-align:center; opacity:0.6; font-size:11px;">Sem pontuações</div>';
+      return;
+    }
+
+    // Converte objeto do Realtime Database em Array e ordena por score decrescente
+    const entries = Object.values(data);
+    entries.sort((a, b) => b.score - a.score);
+    const top5 = entries.slice(0, 5);
+
+    cornerList.innerHTML = top5.map((item, index) => `
+      <div class="corner-item">
+        <span class="corner-rank">#${index + 1}</span>
+        <span class="corner-name">${item.name}</span>
+        <span class="corner-score">${item.score}</span>
+      </div>
+    `).join('');
+  });
+
   // ============ SETUP CENA E CÂMERA ============
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a0033);
@@ -165,7 +307,7 @@ import { criarPersonagem } from "./personagem.js";
     scene.add(rail);
   }
   
-  // ============ PERSONAGEM OLHANDO PARA FRENTE ============
+  // ============ PERSONAGEM ============
   const player = criarPersonagem('Jogador');
   scene.add(player);
   const body = player.getObjectByName('body');
@@ -227,7 +369,7 @@ import { criarPersonagem } from "./personagem.js";
     deathShards.length = 0;
   }
 
-  // ============ SISTEMA DE OBSTÁCULOS MELHORADO ============
+  // ============ OBSTÁCULOS E ITENS ============
   const obstacles = [];
   const coins = [];
   const TYPES = ['block', 'low', 'tall', 'highBar'];
@@ -237,7 +379,6 @@ import { criarPersonagem } from "./personagem.js";
     group.position.set(LANES[lane], 0, z);
     
     if (type === 'block') {
-      // CAIXA METÁLICA FUTURISTA NEON ROSA
       const mainBox = new THREE.Mesh(
         new THREE.BoxGeometry(2.2, 1.6, 2.0),
         new THREE.MeshStandardMaterial({ color: 0x1f1a24, roughness: 0.4, metalness: 0.6 })
@@ -255,7 +396,6 @@ import { criarPersonagem } from "./personagem.js";
       group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
     } 
     else if (type === 'low') {
-      // BARREIRA DE ATLETISMO AMARELA/LARANJA NEON (PULÁVEL)
       const matMain = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 0.5, roughness: 0.3 });
       const bar = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.25, 0.4), matMain);
       bar.position.y = 0.5; bar.castShadow = true;
@@ -273,7 +413,6 @@ import { criarPersonagem } from "./personagem.js";
       group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
     }
     else if (type === 'highBar') {
-      // TRAVE ALTA NEON AZUL/TURQUESA (ABAIXÁVEL)
       const frameMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
       const neonMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x00ffcc, emissiveIntensity: 0.9 });
       
@@ -292,7 +431,6 @@ import { criarPersonagem } from "./personagem.js";
       group.userData = { type, width: 2.7, height: 2.2, minY: 1.4 };
     }
     else {
-      // TORRE MONOLÍTICA ROXA CRISTALINA
       const mainPillar = new THREE.Mesh(
         new THREE.CylinderGeometry(1.1, 1.25, 3.4, 6),
         new THREE.MeshStandardMaterial({ color: 0x6600cc, emissive: 0x330066, emissiveIntensity: 0.6, roughness: 0.2 })
@@ -378,7 +516,7 @@ import { criarPersonagem } from "./personagem.js";
   let tStartX = 0, tStartY = 0;
   window.addEventListener('touchstart', (e) => {
     tStartX = e.touches[0].clientX;
-    tStartY = e.touches[0].clientY;
+    startY = e.touches[0].clientY;
   }, { passive: true });
   window.addEventListener('touchend', (e) => {
     if (!G.running) return;
@@ -454,6 +592,9 @@ import { criarPersonagem } from "./personagem.js";
   function gameOver() {
     G.running = false;
     shatterPlayer();
+    
+    const playerName = document.getElementById('playerName').value;
+    salvarPontuacaoGlobal(playerName, G.distance, G.coins);
     
     setTimeout(() => {
       document.getElementById('gameOver').style.display = 'flex';
@@ -607,7 +748,7 @@ import { criarPersonagem } from "./personagem.js";
               gameOver();
             }
           } else if (obs.userData.type === 'low' && pBottom > h - 0.1) {
-            // Pulo limpo sobre barreira baixa
+            // Pulo limpo
           } else if (obs.userData.type === 'tall') {
             if (pBottom < h - 0.8) { gameOver(); }
           } else {
@@ -648,12 +789,7 @@ import { criarPersonagem } from "./personagem.js";
       s.rotation.z += s.userData.rotVel.z * dt;
       s.userData.vel.y -= 0.015 * dt;
       
-      if (s.position.y < 0) {
-        s.position.y = 0;
-        s.userData.vel.y *= -0.3;
-        s.userData.vel.x *= 0.8;
-        s.userData.vel.z *= 0.8;
-      }
+      s.position.y = Math.max(0, s.position.y);
     }
     
     renderer.render(scene, camera);
