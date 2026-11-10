@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const nickLogado = getCurrentNick();
 const nickAlvo = (new URLSearchParams(location.search).get("user") || nickLogado || "").trim();
 const souDono = Boolean(nickLogado && nickAlvo && nickLogado.toLowerCase() === nickAlvo.toLowerCase());
-function profileKey(username){return encodeURIComponent(String(username).trim().toLowerCase()).replace(/\\./g,"%2E");}
+function profileKey(username){return encodeURIComponent(String(username).trim().toLowerCase()).replace(/\./g,"%2E");}
 function avatarPadrao(username){return "https://api.dicebear.com/7.x/bottts/svg?seed="+encodeURIComponent(username);}
 function mensagem(texto,erro=false){$("profile-message").textContent=texto;$("profile-message").classList.toggle("error",erro);}
 function imagemSegura(url,username){const valor=String(url||"").trim();if(!valor)return avatarPadrao(username);try{const parsed=new URL(valor);return ["https:","http:"].includes(parsed.protocol)?parsed.href:avatarPadrao(username);}catch{return avatarPadrao(username);}}
@@ -26,7 +26,7 @@ $("profile-form").addEventListener("submit",async event=>{
  event.preventDefault();if(!souDono)return;
  const displayName=$("display-name").value.trim(),bio=$("bio-input").value.trim(),avatarUrl=$("avatar-url").value.trim();
  if(displayName.length<2)return mensagem("O nome precisa ter pelo menos 2 caracteres.",true);
- if(avatarUrl&&!/^https?:\\/\\//i.test(avatarUrl))return mensagem("A URL precisa começar com http:// ou https://.",true);
+ if(avatarUrl&&!/^https?:\/\/i.test(avatarUrl))return mensagem("A URL precisa começar com http:// ou https://.",true);
  const button=$("save-profile");button.disabled=true;button.textContent="Salvando...";
  try{
   const caminho=ref(db,"profiles/"+profileKey(nickLogado));const atual=await get(caminho);const dadosAtuais=atual.exists()?atual.val():{};
