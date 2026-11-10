@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goblox | Central ADM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+body{background:#090914;color:#f4f2ff} .panel{background:#151426;border:1px solid #302b4b}
+.input{background:#0d0c19;border:1px solid #393451;color:white}
+</style>
+</head>
+<body class="min-h-screen">
+<header class="border-b border-violet-950 bg-[#111020]">
+ <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+  <a href="lobby.html" class="font-black text-xl text-violet-300">GOBLOX <span class="text-white">/ ADM</span></a>
+  <span class="text-xs font-bold tracking-widest text-violet-300 border border-violet-800 rounded-full px-3 py-2">ADMINISTRADOR</span>
+ </div>
+</header>
+<main id="admin-app" class="max-w-7xl mx-auto p-5 md:p-8 hidden">
+ <div class="mb-8">
+  <p class="text-violet-300 text-sm font-bold tracking-widest">CENTRAL DE CONTROLE</p>
+  <h1 class="text-3xl md:text-4xl font-black mt-2">Painel administrativo</h1>
+  <p class="text-slate-400 mt-2">Bem-vindo, henryDEV77. Visão geral das contas cadastradas no Goblox.</p>
+ </div>
+ <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Contas cadastradas</p><p id="stat-users" class="text-3xl font-black mt-2">—</p></section>
+  <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Perfis públicos</p><p id="stat-profiles" class="text-3xl font-black mt-2">—</p></section>
+  <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Status do painel</p><p class="text-xl font-bold text-emerald-300 mt-3">Conectado ao Firebase</p></section>
+ </div>
+ <section class="panel rounded-2xl p-5">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">Consulte os nicknames cadastrados.</p></div>
+   <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-2 font-bold">Atualizar lista</button>
+  </div>
+  <input id="user-filter" class="input w-full rounded-xl px-4 py-3 mb-4 outline-none focus:ring-2 focus:ring-violet-500" placeholder="Pesquisar por nickname..." autocomplete="off">
+  <p id="admin-status" class="text-sm text-slate-400 mb-3" role="status">Carregando contas...</p>
+  <div class="overflow-x-auto">
+   <table class="w-full text-left text-sm">
+    <thead class="text-slate-400 border-b border-violet-950"><tr><th class="py-3 pr-4">Usuário</th><th class="py-3 pr-4">Nome de exibição</th><th class="py-3">Perfil</th></tr></thead>
+    <tbody id="users-table"></tbody>
+   </table>
+  </div>
+ </section>
+ <p class="text-xs text-slate-500 mt-6">Acesso visual restrito por nickname nesta página. A proteção real dos dados também depende das regras de segurança do Firebase.</p>
+</main>
+<div id="denied" class="min-h-[70vh] flex items-center justify-center p-6">
+ <div class="panel rounded-2xl p-8 max-w-md text-center"><div class="text-4xl mb-4">🔒</div><h1 class="text-2xl font-black">Acesso restrito</h1><p class="text-slate-400 mt-2">Esta área está disponível somente para a conta henryDEV77.</p><a href="lobby.html" class="inline-block mt-6 bg-violet-600 hover:bg-violet-500 rounded-xl px-5 py-3 font-bold">Voltar ao Goblox</a></div>
+</div>
+<script type="module">
+import { getCurrentNick } from "./authLocal.js";
+import { db, ref, get } from "./firebase.js";
+
+const nick = getCurrentNick();
+const allowed = String(nick || "").trim().toLowerCase() === "henrydev77";
+if (!allowed) {
+  document.getElementById("admin-app").classList.add("hidden");
+} else {
+  document.getElementById("denied").classList.add("hidden");
+  document.getElementById("admin-app").classList.remove("hidden");
+  const tbody = document.getElementById("users-table");
+  const status = document.getElementById("admin-status");
+  let rows = [];
+
+  function render() {
+    const term = document.getElementById("user-filter").value.trim().toLowerCase();
+    tbody.replaceChildren();
+    const filtered = rows.filter(u => u.username.toLowerCase().includes(term) || u.displayName.toLowerCase().includes(term));
+    if (!filtered.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 3; td.className = "py-6 text-slate-400"; td.textContent = "Nenhuma conta encontrada.";
+      tr.appendChild(td); tbody.appendChild(tr); return;
+    }
+    for (const user of filtered) {
+      const tr = document.createElement("tr"); tr.className = "border-b border-violet-950/70";
+      const name = document.createElement("td"); name.className = "py-4 pr-4 font-bold"; name.textContent = user.username;
+      const display = document.createElement("td"); display.className = "py-4 pr-4 text-slate-300"; display.textContent = user.displayName || "—";
+      const profile = document.createElement("td"); profile.className = "py-4";
+      const link = document.createElement("a"); link.href = "perfil.html?user=" + encodeURIComponent(user.username); link.textContent = "Ver perfil"; link.className = "text-violet-300 hover:underline";
+      profile.appendChild(link); tr.append(name,display,profile); tbody.appendChild(tr);
+    }
+  }
+
+  async function loadUsers() {
+    status.textContent = "Consultando o Firebase...";
+    document.getElementById("refresh-users").disabled = true;
+    try {
+      const [usersSnap, profilesSnap] = await Promise.all([
+        get(ref(db, "users")),
+        get(ref(db, "profiles"))
+      ]);
+      const users = usersSnap.exists() ? usersSnap.val() : {};
+      const profiles = profilesSnap.exists() ? profilesSnap.val() : {};
+      rows = Object.entries(users).map(([username]) => {
+        const key = encodeURIComponent(username.trim().toLowerCase()).replace(/\./g, "%2E");
+        const profile = profiles[key] || {};
+        return { username, displayName: String(profile.displayName || "") };
+      }).sort((a,b) => a.username.localeCompare(b.username));
+      document.getElementById("stat-users").textContent = rows.length;
+      document.getElementById("stat-profiles").textContent = Object.keys(profiles).length;
+      status.textContent = rows.length + " conta(s) encontrada(s).";
+      render();
+    } catch (error) {
+      console.error(error);
+      status.textContent = "Não foi possível ler os dados. Verifique as regras do Firebase.";
+    } finally {
+      document.getElementById("refresh-users").disabled = false;
+    }
+  }
+  document.getElementById("refresh-users").addEventListener("click", loadUsers);
+  document.getElementById("user-filter").addEventListener("input", render);
+  loadUsers();
+}
+lucide.createIcons();
+</script>
+</body>
+</html>
