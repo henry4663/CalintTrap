@@ -188,30 +188,61 @@ import { getCurrentNick } from "./authLocal.js";
 (function() {
   'use strict';
   
-  // Pega o nick real da conta vindo do lobby
   const playerNick = getCurrentNick();
   document.getElementById('displayNick').textContent = playerNick;
 
-  // ============ SINCRONIZAÇÃO RANKING GLOBAL FIREBASE ============
+  // ============ SINCRONIZAÇÃO RANKING GLOBAL FIREBASE (COM VERIFICAÇÃO DE RECORDE) ============
   const leaderboardRef = ref(db, 'leaderboard');
 
-  function salvarPontuacaoGlobal(nome, distancia, moedas) {
+  async function salvarPontuacaoGlobal(nome, distancia, moedas) {
     const pontuacaoTotal = Math.floor(distancia) + (moedas * 5);
     const nomeLimpo = (nome || "Anônimo").trim().substring(0, 12);
     
-    const novaPontuacaoRef = ref(db, 'leaderboard/' + Date.now());
-    set(novaPontuacaoRef, {
-      name: nomeLimpo,
-      score: pontuacaoTotal,
-      distance: Math.floor(distancia),
-      coins: moedas,
-      timestamp: Date.now()
-    }).then(() => {
-      toast("Pontuação salva no ranking global!", "sucesso");
-    }).catch((err) => {
+    try {
+      // Busca todos os registros atuais para verificar se o usuário já existe
+      const snapshot = await get(leaderboardRef);
+      const data = snapshot.val();
+      
+      let existingKey = null;
+      let existingScore = -1;
+
+      if (data) {
+        for (const [key, val] of Object.entries(data)) {
+          if (val.name && val.name.toLowerCase() === nomeLimpo.toLowerCase()) {
+            existingKey = key;
+            existingScore = val.score || 0;
+            break;
+          }
+        }
+      }
+
+      // Se já existe e a pontuação nova for menor ou igual, não substitui
+      if (existingKey !== null && pontuacaoTotal <= existingScore) {
+        toast("Sua pontuação anterior era maior. Recorde mantido!", "aviso");
+        return;
+      }
+
+      // Se já existe mas a pontuação nova é maior, atualiza o registro antigo
+      const targetRef = existingKey ? ref(db, 'leaderboard/' + existingKey) : ref(db, 'leaderboard/' + Date.now());
+
+      await set(targetRef, {
+        name: nomeLimpo,
+        score: pontuacaoTotal,
+        distance: Math.floor(distancia),
+        coins: moedas,
+        timestamp: Date.now()
+      });
+
+      if (existingKey) {
+        toast("Novo recorde pessoal salvo no ranking!", "sucesso");
+      } else {
+        toast("Pontuação salva no ranking global!", "sucesso");
+      }
+
+    } catch (err) {
       console.error("Erro ao salvar no Firebase:", err);
       toast("Erro ao salvar pontuação.", "erro");
-    });
+    }
   }
 
   onValue(leaderboardRef, (snapshot) => {
@@ -582,7 +613,7 @@ import { getCurrentNick } from "./authLocal.js";
     G.running = false;
     shatterPlayer();
     
-    // Salva a pontuação direto com o nick da conta logada
+    // Envia a pontuação para verificar com o registro anterior no Firebase
     salvarPontuacaoGlobal(playerNick, G.distance, G.coins);
     
     setTimeout(() => {
