@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Perfil - Goblox</title><link rel="stylesheet" href="perfil.css"></head>
+<body>
+<header class="topbar"><a class="brand" href="lobby.html">GOBLOX</a><a href="lobby.html">Voltar ao lobby</a></header>
+<main class="profile-layout">
+<section class="profile-card"><div class="cover"></div><div class="identity"><img id="profile-avatar" class="avatar" src="" alt="Avatar do jogador"><div><p class="eyebrow">PERFIL GOBLOX</p><h1 id="profile-title">Carregando perfil...</h1><p id="profile-username" class="muted"></p></div></div><p id="profile-bio" class="bio">Carregando biografia...</p><div class="stats"><div><strong id="profile-created">—</strong><span>Entrou no Goblox</span></div><div><strong id="profile-status">Online</strong><span>Status</span></div></div><p id="profile-message" class="message" role="status"></p></section>
+<section id="edit-panel" class="edit-card"><div class="section-heading"><div><p class="eyebrow">PERSONALIZAÇÃO</p><h2>Editar perfil</h2></div><span class="edit-tag">SEU PERFIL</span></div>
+<form id="profile-form"><label for="display-name">Nome de exibição</label><input id="display-name" maxlength="24" placeholder="Como querem te chamar">
+<label for="bio-input">Biografia</label><textarea id="bio-input" maxlength="160" rows="4" placeholder="Conte um pouco sobre você..."></textarea><small class="counter"><span id="bio-count">0</span>/160</small>
+<label for="avatar-url">URL da foto de perfil</label><input id="avatar-url" type="url" maxlength="500" placeholder="https://..."><small>Use um endereço público de imagem. Se deixar vazio, será usado um avatar padrão.</small><button id="save-profile" type="submit">Salvar alterações</button></form></section>
+</main><script type="module" src="perfil.js"></script></body></html>
