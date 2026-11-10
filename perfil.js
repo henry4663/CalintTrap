@@ -14,6 +14,13 @@ async function carregarPerfil(){
  try{
   const snapshot=await get(ref(db,"profiles/"+profileKey(nickAlvo)));const dados=snapshot.exists()?snapshot.val():{};
   $("profile-title").textContent=String(dados.displayName||nickAlvo).slice(0,24);
+  const oldBadge=$("profile-role-badge"); if(oldBadge) oldBadge.remove();
+  if(dados.role==="verified" || dados.role==="influencer"){
+   const badge=document.createElement("span"); badge.id="profile-role-badge";
+   badge.textContent=dados.role==="verified"?"✓ Verificado":"★ Influenciador";
+   badge.style.cssText="display:inline-block;margin:8px 0 0 10px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;background:"+(dados.role==="verified"?"#dbeafe":"#f3e8ff")+";color:"+(dados.role==="verified"?"#1d4ed8":"#7e22ce");
+   $("profile-title").after(badge);
+  }
   $("profile-bio").textContent=String(dados.bio||"Este jogador ainda não escreveu uma biografia.");
   $("profile-avatar").src=imagemSegura(dados.avatarUrl,nickAlvo);
   $("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
@@ -30,7 +37,7 @@ $("profile-form").addEventListener("submit",async event=>{
  const button=$("save-profile");button.disabled=true;button.textContent="Salvando...";
  try{
   const caminho=ref(db,"profiles/"+profileKey(nickLogado));const atual=await get(caminho);const dadosAtuais=atual.exists()?atual.val():{};
-  await set(caminho,{displayName:displayName.slice(0,24),bio:bio.slice(0,160),avatarUrl:avatarUrl.slice(0,500),createdAt:dadosAtuais.createdAt||Date.now(),updatedAt:Date.now()});
+  await set(caminho,{...dadosAtuais,displayName:displayName.slice(0,24),bio:bio.slice(0,160),avatarUrl:avatarUrl.slice(0,500),createdAt:dadosAtuais.createdAt||Date.now(),updatedAt:Date.now()});
   $("profile-title").textContent=displayName;$("profile-bio").textContent=bio||"Este jogador ainda não escreveu uma biografia.";$("profile-avatar").src=imagemSegura(avatarUrl,nickLogado);$("profile-created").textContent=new Date(dadosAtuais.createdAt||Date.now()).toLocaleDateString("pt-BR");mensagem("Perfil salvo com sucesso!");
  }catch(error){console.error(error);mensagem("Não foi possível salvar. Verifique as regras do Firebase.",true);}
  finally{button.disabled=false;button.textContent="Salvar alterações";}
