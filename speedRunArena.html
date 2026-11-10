@@ -19,7 +19,7 @@
 
     canvas { display: block; }
 
-    #hud, #distance {
+    #distance, #hud {
       position: absolute;
       top: 20px;
       color: white;
@@ -30,12 +30,12 @@
       font-size: 26px;
     }
 
-    /* Distância à esquerda; moedas no lado oposto, abaixo do placar. */
     #distance { left: 20px; }
 
+    /* Contador de moedas no lado oposto da distância */
     #hud {
-      right: 20px;
       top: 190px;
+      right: 20px;
     }
 
     #score { color: #ffdd00; }
@@ -45,7 +45,7 @@
       top: 20px;
       right: 20px;
       width: 240px;
-      background: linear-gradient(135deg, rgba(26, 0, 51, 0.85), rgba(42, 26, 68, 0.85));
+      background: linear-gradient(135deg, rgba(26, 0, 51, 0.9), rgba(42, 26, 68, 0.9));
       border: 2px solid rgba(0, 198, 255, 0.4);
       border-radius: 14px;
       padding: 12px;
@@ -82,9 +82,9 @@
       border-radius: 6px;
     }
 
-    .corner-item:nth-child(2) { border-left: 3px solid #ffdd00; }
-    .corner-item:nth-child(3) { border-left: 3px solid #c0c0c0; }
-    .corner-item:nth-child(4) { border-left: 3px solid #cd7f32; }
+    .corner-item:nth-child(1) { border-left: 3px solid #ffdd00; }
+    .corner-item:nth-child(2) { border-left: 3px solid #c0c0c0; }
+    .corner-item:nth-child(3) { border-left: 3px solid #cd7f32; }
 
     .corner-rank {
       font-weight: bold;
@@ -226,15 +226,15 @@
         padding: 8px;
       }
 
-      #hud {
-        top: 165px;
-        right: 12px;
-        font-size: 21px;
-      }
-
       #distance {
         left: 12px;
         top: 16px;
+        font-size: 21px;
+      }
+
+      #hud {
+        top: 165px;
+        right: 12px;
         font-size: 21px;
       }
 
@@ -289,53 +289,55 @@
       'use strict';
 
       const playerNick = getCurrentNick() || "Anônimo";
-      document.getElementById('displayNick').textContent = playerNick;
-
       const MIN_SCORE = 10;
-      const leaderboardRef = ref(db, 'leaderboard');
+      const leaderboardRef = ref(db, "leaderboard");
+
+      document.getElementById("displayNick").textContent = playerNick;
+
+      function normalizeName(name) {
+        return String(name || "Anônimo")
+          .trim()
+          .substring(0, 12)
+          .toLowerCase();
+      }
 
       async function salvarPontuacaoGlobal(nome, distancia, moedas) {
         const pontuacaoTotal = Math.floor(distancia) + moedas * 5;
-        const nomeLimpo = (nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
+        const nomeLimpo = String(nome || "Anônimo").trim().substring(0, 12) || "Anônimo";
 
         if (pontuacaoTotal < MIN_SCORE) {
-          toast(`Pontuação baixa. Você precisa de ${MIN_SCORE} pontos para entrar no ranking.`, "aviso");
+          toast(`Pontuação baixa. São necessários ${MIN_SCORE} pontos para entrar no ranking.`, "aviso");
           return;
         }
 
         try {
           const snapshot = await get(leaderboardRef);
-          const data = snapshot.val();
+          const data = snapshot.val() || {};
+          const nomeProcurado = normalizeName(nomeLimpo);
 
-          let existingKey = null;
-          let existingScore = -1;
+          let melhorRegistroKey = null;
+          let melhorPontuacao = -1;
 
-          if (data) {
-            for (const [key, val] of Object.entries(data)) {
-              if (
-                val &&
-                typeof val.name === 'string' &&
-                val.name.toLowerCase() === nomeLimpo.toLowerCase()
-              ) {
-                existingKey = key;
-                existingScore = Number(val.score) || 0;
-                break;
-              }
+          // Procura o melhor registro existente para este apelido.
+          for (const [key, item] of Object.entries(data)) {
+            if (!item || normalizeName(item.name) !== nomeProcurado) continue;
+
+            const score = Number(item.score) || 0;
+            if (score > melhorPontuacao) {
+              melhorPontuacao = score;
+              melhorRegistroKey = key;
             }
           }
 
-          // Mantém o recorde existente. Não apaga nem substitui por uma pontuação menor.
-          if (existingKey !== null && pontuacaoTotal <= existingScore) {
+          if (melhorRegistroKey !== null && pontuacaoTotal <= melhorPontuacao) {
             toast("Sua pontuação anterior era maior. Recorde mantido!", "aviso");
             return;
           }
 
-          // Se já existe um registro com esse apelido, atualiza somente quando bater o recorde.
-          // Se não existe, cria uma chave nova.
-          const newKey = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          const targetRef = ref(db, 'leaderboard/' + (existingKey || newKey));
+          const key = melhorRegistroKey ||
+            `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-          await set(targetRef, {
+          await set(ref(db, "leaderboard/" + key), {
             name: nomeLimpo,
             score: pontuacaoTotal,
             distance: Math.floor(distancia),
@@ -344,50 +346,68 @@
           });
 
           toast(
-            existingKey
-              ? "Novo recorde pessoal salvo no ranking!"
+            melhorRegistroKey
+              ? "Novo recorde salvo no ranking!"
               : "Pontuação salva no ranking global!",
             "sucesso"
           );
-        } catch (err) {
-          console.error("Erro ao salvar no Firebase:", err);
+        } catch (error) {
+          console.error("Erro ao salvar no Firebase:", error);
           toast("Erro ao salvar pontuação.", "erro");
         }
       }
 
-      // Monta os nomes com textContent para evitar inserir HTML vindo do placar.
+      function getTopUniquePlayers(data) {
+        const bestByName = new Map();
+
+        if (!data) return [];
+
+        for (const item of Object.values(data)) {
+          if (!item) continue;
+
+          const name = String(item.name || "Anônimo").trim().substring(0, 12) || "Anônimo";
+          const normalized = normalizeName(name);
+          const score = Number(item.score) || 0;
+          const previous = bestByName.get(normalized);
+
+          if (!previous || score > previous.score) {
+            bestByName.set(normalized, { name, score });
+          }
+        }
+
+        return [...bestByName.values()]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+      }
+
       onValue(leaderboardRef, (snapshot) => {
-        const data = snapshot.val();
-        const cornerList = document.getElementById('cornerList');
+        const cornerList = document.getElementById("cornerList");
         cornerList.replaceChildren();
 
-        if (!data) {
-          const empty = document.createElement('div');
-          empty.textContent = 'Sem pontuações';
-          empty.style.cssText = 'text-align:center; opacity:0.6; font-size:11px;';
+        const topPlayers = getTopUniquePlayers(snapshot.val());
+
+        if (topPlayers.length === 0) {
+          const empty = document.createElement("div");
+          empty.textContent = "Sem pontuações";
+          empty.style.cssText = "text-align:center; opacity:0.6; font-size:11px;";
           cornerList.appendChild(empty);
           return;
         }
 
-        const entries = Object.values(data)
-          .filter(item => item && Number.isFinite(Number(item.score)))
-          .sort((a, b) => Number(b.score) - Number(a.score))
-          .slice(0, 5);
+        topPlayers.forEach((item, index) => {
+          const row = document.createElement("div");
+          row.className = "corner-item";
 
-        entries.forEach((item, index) => {
-          const row = document.createElement('div');
-          row.className = 'corner-item';
-
-          const rank = document.createElement('span');
-          rank.className = 'corner-rank';
+          const rank = document.createElement("span");
+          rank.className = "corner-rank";
           rank.textContent = `#${index + 1}`;
 
-          const name = document.createElement('span');
-          name.className = 'corner-name';
-          name.textContent = item.name || 'Anônimo';
+          const name = document.createElement("span");
+          name.className = "corner-name";
+          name.textContent = item.name;
 
-          const score = document.createElement('span');
-          score.className = 'corner-score';
+          const score = document.createElement("span");
+          score.className = "corner-score";
           score.textContent = String(item.score);
 
           row.append(rank, name, score);
@@ -414,7 +434,7 @@
       renderer.shadowMap.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      window.addEventListener('resize', () => {
+      window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -436,12 +456,10 @@
       const LANE_WIDTH = 3;
       const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
 
-      const floorGeo = new THREE.PlaneGeometry(12, 300);
-      const floorMat = new THREE.MeshStandardMaterial({
-        color: 0x2a1a44,
-        roughness: 0.9
-      });
-      const floor = new THREE.Mesh(floorGeo, floorMat);
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(12, 300),
+        new THREE.MeshStandardMaterial({ color: 0x2a1a44, roughness: 0.9 })
+      );
       floor.rotation.x = -Math.PI / 2;
       floor.position.z = -140;
       floor.receiveShadow = true;
@@ -474,22 +492,22 @@
         scene.add(rail);
       }
 
-      const player = criarPersonagem('Jogador');
+      const player = criarPersonagem("Jogador");
       scene.add(player);
 
-      const body = player.getObjectByName('body');
-      const chest = player.getObjectByName('chest');
-      const head = player.getObjectByName('head');
-      const brim = player.getObjectByName('brim');
-      const crown = player.getObjectByName('crown');
-      const armL = player.getObjectByName('armL');
-      const armR = player.getObjectByName('armR');
-      const legL = player.getObjectByName('legL');
-      const legR = player.getObjectByName('legR');
-      const armPivotL = player.getObjectByName('armPivotL');
-      const armPivotR = player.getObjectByName('armPivotR');
-      const legPivotL = player.getObjectByName('legPivotL');
-      const legPivotR = player.getObjectByName('legPivotR');
+      const body = player.getObjectByName("body");
+      const chest = player.getObjectByName("chest");
+      const head = player.getObjectByName("head");
+      const brim = player.getObjectByName("brim");
+      const crown = player.getObjectByName("crown");
+      const armL = player.getObjectByName("armL");
+      const armR = player.getObjectByName("armR");
+      const legL = player.getObjectByName("legL");
+      const legR = player.getObjectByName("legR");
+      const armPivotL = player.getObjectByName("armPivotL");
+      const armPivotR = player.getObjectByName("armPivotR");
+      const legPivotL = player.getObjectByName("legPivotL");
+      const legPivotR = player.getObjectByName("legPivotR");
 
       const playerShadow = new THREE.Mesh(
         new THREE.CircleGeometry(0.55, 16),
@@ -514,12 +532,14 @@
         parts.filter(Boolean).forEach(part => {
           const shard = new THREE.Mesh(
             part.geometry.clone(),
-            part.material.clone()
+            Array.isArray(part.material)
+              ? part.material.map(material => material.clone())
+              : part.material.clone()
           );
 
-          const worldPos = new THREE.Vector3();
-          part.getWorldPosition(worldPos);
-          shard.position.copy(worldPos);
+          const worldPosition = new THREE.Vector3();
+          part.getWorldPosition(worldPosition);
+          shard.position.copy(worldPosition);
 
           shard.userData = {
             vel: new THREE.Vector3(
@@ -543,24 +563,26 @@
         deathShards.forEach(shard => {
           scene.remove(shard);
           shard.geometry.dispose();
+
           if (Array.isArray(shard.material)) {
             shard.material.forEach(material => material.dispose());
           } else {
             shard.material.dispose();
           }
         });
+
         deathShards.length = 0;
       }
 
       const obstacles = [];
       const coins = [];
-      const TYPES = ['block', 'low', 'tall', 'highBar'];
+      const TYPES = ["block", "low", "tall", "highBar"];
 
       function createObstacle(lane, z, type) {
         const group = new THREE.Group();
         group.position.set(LANES[lane], 0, z);
 
-        if (type === 'block') {
+        if (type === "block") {
           const mainBox = new THREE.Mesh(
             new THREE.BoxGeometry(2.2, 1.6, 2.0),
             new THREE.MeshStandardMaterial({
@@ -590,7 +612,7 @@
           }
 
           group.userData = { type, width: 2.2, height: 1.6, minY: 0 };
-        } else if (type === 'low') {
+        } else if (type === "low") {
           const bar = new THREE.Mesh(
             new THREE.BoxGeometry(2.5, 0.25, 0.4),
             new THREE.MeshStandardMaterial({
@@ -622,7 +644,7 @@
           group.add(legRight);
 
           group.userData = { type, width: 2.5, height: 0.65, minY: 0 };
-        } else if (type === 'highBar') {
+        } else if (type === "highBar") {
           const frameMat = new THREE.MeshStandardMaterial({
             color: 0x112233,
             roughness: 0.5
@@ -732,47 +754,44 @@
       let jumpPressed = false;
       let duckPressed = false;
 
-      function onKeyDown(e) {
+      function onKeyDown(event) {
         if (!G.running) return;
 
-        const key = e.key.toLowerCase();
+        const key = event.key.toLowerCase();
 
-        if ((key === 'arrowleft' || key === 'a') && G.targetLane > 0) {
+        if ((key === "arrowleft" || key === "a") && G.targetLane > 0) {
           G.targetLane--;
-          e.preventDefault();
-        } else if ((key === 'arrowright' || key === 'd') && G.targetLane < 2) {
+          event.preventDefault();
+        } else if ((key === "arrowright" || key === "d") && G.targetLane < 2) {
           G.targetLane++;
-          e.preventDefault();
+          event.preventDefault();
         } else if (
-          key === 'arrowup' ||
-          key === 'w' ||
-          key === ' ' ||
-          key === 'spacebar'
+          key === "arrowup" || key === "w" || key === " " || key === "spacebar"
         ) {
           jumpPressed = true;
-          e.preventDefault();
-        } else if (key === 'arrowdown' || key === 's') {
+          event.preventDefault();
+        } else if (key === "arrowdown" || key === "s") {
           duckPressed = true;
-          e.preventDefault();
+          event.preventDefault();
         }
       }
 
-      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener("keydown", onKeyDown);
 
-      let tStartX = 0;
-      let tStartY = 0;
+      let touchStartX = 0;
+      let touchStartY = 0;
 
-      window.addEventListener('touchstart', (e) => {
-        if (!e.touches.length) return;
-        tStartX = e.touches[0].clientX;
-        tStartY = e.touches[0].clientY;
+      window.addEventListener("touchstart", event => {
+        if (!event.touches.length) return;
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
       }, { passive: true });
 
-      window.addEventListener('touchend', (e) => {
-        if (!G.running || !e.changedTouches.length) return;
+      window.addEventListener("touchend", event => {
+        if (!G.running || !event.changedTouches.length) return;
 
-        const dx = e.changedTouches[0].clientX - tStartX;
-        const dy = e.changedTouches[0].clientY - tStartY;
+        const dx = event.changedTouches[0].clientX - touchStartX;
+        const dy = event.changedTouches[0].clientY - touchStartY;
 
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
           if (dx < 0 && G.targetLane > 0) G.targetLane--;
@@ -785,16 +804,15 @@
       }, { passive: true });
 
       function spawnRow(z) {
-        const num = Math.random() < 0.60 ? 2 : 1;
+        const numberOfObstacles = Math.random() < 0.60 ? 2 : 1;
         const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
-        const chosen = lanes.slice(0, num);
 
-        chosen.forEach(lane => {
+        lanes.slice(0, numberOfObstacles).forEach(lane => {
           const type = TYPES[Math.floor(Math.random() * TYPES.length)];
           createObstacle(lane, z, type);
         });
 
-        lanes.slice(num).forEach(lane => {
+        lanes.slice(numberOfObstacles).forEach(lane => {
           if (Math.random() < 0.75) {
             createCoin(lane, z);
             if (Math.random() < 0.5) createCoin(lane, z - 3.5);
@@ -836,10 +854,10 @@
         jumpPressed = false;
         duckPressed = false;
 
-        document.getElementById('score').textContent = '0';
-        document.getElementById('dist').textContent = '0';
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('gameOver').style.display = 'none';
+        document.getElementById("score").textContent = "0";
+        document.getElementById("dist").textContent = "0";
+        document.getElementById("startScreen").style.display = "none";
+        document.getElementById("gameOver").style.display = "none";
 
         for (let i = 0; i < 6; i++) {
           spawnRow(-i * 18 - 25);
@@ -847,7 +865,6 @@
       }
 
       function gameOver() {
-        // Impede chamadas repetidas quando mais de uma colisão ocorre.
         if (!G.running) return;
 
         G.running = false;
@@ -858,16 +875,16 @@
         salvarPontuacaoGlobal(playerNick, G.distance, G.coins);
 
         setTimeout(() => {
-          document.getElementById('gameOver').style.display = 'flex';
-          document.getElementById('finalScore').textContent =
-            Math.floor(G.distance) + 'm';
-          document.getElementById('finalCoins').textContent =
-            '🪙 ' + G.coins + ' moedas';
+          document.getElementById("gameOver").style.display = "flex";
+          document.getElementById("finalScore").textContent =
+            Math.floor(G.distance) + "m";
+          document.getElementById("finalCoins").textContent =
+            "🪙 " + G.coins + " moedas";
         }, 600);
       }
 
-      document.getElementById('startBtn').addEventListener('click', reset);
-      document.getElementById('restartBtn').addEventListener('click', reset);
+      document.getElementById("startBtn").addEventListener("click", reset);
+      document.getElementById("restartBtn").addEventListener("click", reset);
 
       function animate() {
         requestAnimationFrame(animate);
@@ -880,9 +897,8 @@
           G.speed = Math.min(G.speed + 0.000004 * dt, G.maxSpeed);
           G.distance += G.speed * dt * 1.8;
 
-          document.getElementById('dist').textContent =
-            Math.floor(G.distance);
-          document.getElementById('score').textContent = G.coins;
+          document.getElementById("dist").textContent = Math.floor(G.distance);
+          document.getElementById("score").textContent = G.coins;
 
           G.currentLane += (G.targetLane - G.currentLane) * 0.40 * dt;
           player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
@@ -932,13 +948,13 @@
             sz = 1.3;
             player.position.y = 0.25;
           } else if (G.isJumping) {
-            const v = G.jumpVel / G.jumpPower;
-            if (v > 0) {
-              sy = 1 + v * 0.15;
-              sx = 1 - v * 0.1;
+            const velocityRatio = G.jumpVel / G.jumpPower;
+            if (velocityRatio > 0) {
+              sy = 1 + velocityRatio * 0.15;
+              sx = 1 - velocityRatio * 0.1;
             } else {
-              sy = 1 + v * 0.1;
-              sx = 1 - v * 0.05;
+              sy = 1 + velocityRatio * 0.1;
+              sx = 1 - velocityRatio * 0.05;
             }
           } else {
             sy = 1 + Math.sin(now * 0.004) * 0.02;
@@ -956,7 +972,6 @@
           }
 
           player.rotation.z = (G.currentLane - 1) * 0.15;
-
           G.animPhase += dt * G.speed * 4.5;
           const cycle = G.animPhase;
 
@@ -1022,14 +1037,14 @@
               const playerTop =
                 player.position.y + (G.isDucking ? 0.6 : 2.0);
 
-              if (obstacle.userData.type === 'highBar') {
+              if (obstacle.userData.type === "highBar") {
                 if (playerTop > minY) gameOver();
               } else if (
-                obstacle.userData.type === 'low' &&
+                obstacle.userData.type === "low" &&
                 playerBottom > height - 0.1
               ) {
-                // O jogador pulou por cima do obstáculo baixo.
-              } else if (obstacle.userData.type === 'tall') {
+                // Pulou por cima do obstáculo baixo.
+              } else if (obstacle.userData.type === "tall") {
                 if (playerBottom < height - 0.8) gameOver();
               } else {
                 gameOver();
@@ -1056,7 +1071,7 @@
 
             if (dx < 0.8 && dz < 1.0 && dy < 1.2) {
               G.coins++;
-              document.getElementById('score').textContent = G.coins;
+              document.getElementById("score").textContent = G.coins;
               scene.remove(coin);
               coins.splice(i, 1);
             }
