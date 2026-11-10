@@ -214,12 +214,12 @@
       document.getElementById("nomeUsuarioDisplay").textContent = nickAtual;
       const avatar = document.querySelector(".user-box img");
       if (avatar) avatar.src = "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(nickAtual);
-      const key = encodeURIComponent(nickAtual.trim().toLowerCase()).replace(/\\./g, "%2E");
+      const key = encodeURIComponent(nickAtual.trim().toLowerCase()).replace(/\./g, "%2E");
       get(ref(db, "profiles/" + key)).then(snapshot => {
         if (!snapshot.exists()) return;
         const perfil = snapshot.val();
         if (perfil.displayName) document.getElementById("nomeUsuarioDisplay").textContent = perfil.displayName;
-        if (avatar && perfil.avatarUrl && /^https?:\\/\\//i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
+        if (avatar && perfil.avatarUrl && /^https?:\/\/i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
       }).catch(error => console.warn("Não foi possível carregar o perfil:", error));
     }
 
