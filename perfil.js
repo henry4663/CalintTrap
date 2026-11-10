@@ -14,13 +14,24 @@ async function carregarPerfil(){
  try{
   const snapshot=await get(ref(db,"profiles/"+profileKey(nickAlvo)));const dados=snapshot.exists()?snapshot.val():{};
   $("profile-title").textContent=String(dados.displayName||nickAlvo).slice(0,24);
-  const oldBadge=$("profile-role-badge"); if(oldBadge) oldBadge.remove();
-  if(dados.role==="verified" || dados.role==="influencer"){
-   const badge=document.createElement("span"); badge.id="profile-role-badge";
-   badge.textContent=dados.role==="verified"?"✓ Verificado":"★ Influenciador";
-   badge.style.cssText="display:inline-block;margin:8px 0 0 10px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:800;background:"+(dados.role==="verified"?"#dbeafe":"#f3e8ff")+";color:"+(dados.role==="verified"?"#1d4ed8":"#7e22ce");
-   $("profile-title").after(badge);
+  const usernameLine=$("profile-username");
+  usernameLine.replaceChildren();
+  usernameLine.style.cssText="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px";
+  const roleConfig={
+   verified:{label:"VERIFICADO",color:"#38bdf8",background:"#082f49",border:"#0ea5e9"},
+   influencer:{label:"INFLUENCIADOR",color:"#c084fc",background:"#3b0764",border:"#a855f7"}
+  };
+  const role=roleConfig[dados.role];
+  if(role){
+   const roleTag=document.createElement("span");
+   roleTag.textContent=role.label;
+   roleTag.style.cssText="display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:900;letter-spacing:.7px;color:"+role.color+";background:"+role.background+";border:1px solid "+role.border;
+   usernameLine.appendChild(roleTag);
   }
+  const nickTag=document.createElement("span");
+  nickTag.textContent="@"+nickAlvo;
+  nickTag.style.cssText="font-weight:800;color:"+(role?role.color:"#aab2c8")+";";
+  usernameLine.appendChild(nickTag);
   $("profile-bio").textContent=String(dados.bio||"Este jogador ainda não escreveu uma biografia.");
   $("profile-avatar").src=imagemSegura(dados.avatarUrl,nickAlvo);
   $("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
