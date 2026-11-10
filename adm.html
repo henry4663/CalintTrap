@@ -38,7 +38,7 @@ body{background:#090914;color:#f4f2ff} .panel{background:#151426;border:1px soli
   <p id="admin-status" class="text-sm text-slate-400 mb-3" role="status">Carregando contas...</p>
   <div class="overflow-x-auto">
    <table class="w-full text-left text-sm">
-    <thead class="text-slate-400 border-b border-violet-950"><tr><th class="py-3 pr-4">Usuário</th><th class="py-3 pr-4">Nome de exibição</th><th class="py-3">Perfil</th></tr></thead>
+    <thead class="text-slate-400 border-b border-violet-950"><tr><th class="py-3 pr-4">Usuário</th><th class="py-3 pr-4">Nome de exibição</th><th class="py-3 pr-4">Cargo</th><th class="py-3 pr-4">Perfil</th><th class="py-3">Ação</th></tr></thead>
     <tbody id="users-table"></tbody>
    </table>
   </div>
@@ -50,7 +50,7 @@ body{background:#090914;color:#f4f2ff} .panel{background:#151426;border:1px soli
 </div>
 <script type="module">
 import { getCurrentNick } from "./authLocal.js";
-import { db, ref, get } from "./firebase.js";
+import { db, ref, get, set } from "./firebase.js";
 
 const nick = getCurrentNick();
 const allowed = String(nick || "").trim().toLowerCase() === "henrydev77";
@@ -70,16 +70,32 @@ if (!allowed) {
     if (!filtered.length) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
-      td.colSpan = 3; td.className = "py-6 text-slate-400"; td.textContent = "Nenhuma conta encontrada.";
+      td.colSpan = 5; td.className = "py-6 text-slate-400"; td.textContent = "Nenhuma conta encontrada.";
       tr.appendChild(td); tbody.appendChild(tr); return;
     }
     for (const user of filtered) {
       const tr = document.createElement("tr"); tr.className = "border-b border-violet-950/70";
       const name = document.createElement("td"); name.className = "py-4 pr-4 font-bold"; name.textContent = user.username;
       const display = document.createElement("td"); display.className = "py-4 pr-4 text-slate-300"; display.textContent = user.displayName || "—";
-      const profile = document.createElement("td"); profile.className = "py-4";
-      const link = document.createElement("a"); link.href = "perfil.html?user=" + encodeURIComponent(user.username); link.textContent = "Ver perfil"; link.className = "text-violet-300 hover:underline";
-      profile.appendChild(link); tr.append(name,display,profile); tbody.appendChild(tr);
+      const roleCell = document.createElement("td"); roleCell.className = "py-4 pr-4";
+      const select = document.createElement("select"); select.className = "input rounded-lg px-2 py-2";
+      for (const [value,label] of [["none","Sem cargo"],["verified","Verificado"],["influencer","Influenciador"]]) { const option=document.createElement("option"); option.value=value; option.textContent=label; select.appendChild(option); }
+      select.value = user.role || "none";
+      const profile = document.createElement("td"); profile.className = "py-4 pr-4";
+      const link = document.createElement("a"); link.href = "perfil.html?user=" + encodeURIComponent(user.username); link.textContent = "Ver perfil"; link.className = "text-violet-300 hover:underline"; profile.appendChild(link);
+      const actionCell = document.createElement("td"); actionCell.className = "py-4";
+      const save = document.createElement("button"); save.type="button"; save.textContent="Salvar cargo"; save.className="bg-violet-600 hover:bg-violet-500 rounded-lg px-3 py-2 font-bold text-xs";
+      save.addEventListener("click", async () => {
+        save.disabled=true; save.textContent="Salvando...";
+        try {
+          const roleRef=ref(db,"profiles/"+user.key); const snap=await get(roleRef); const current=snap.exists()?snap.val():{};
+          if(select.value==="none") delete current.role; else current.role=select.value;
+          current.updatedAt=Date.now(); await set(roleRef,current); user.role=select.value;
+          status.textContent="Cargo de @"+user.username+" atualizado."; save.textContent="Salvo";
+        } catch(error) { console.error(error); status.textContent="Erro ao salvar cargo. Verifique as regras do Firebase."; save.textContent="Tentar novamente"; }
+        finally { save.disabled=false; }
+      });
+      actionCell.appendChild(save); tr.append(name,display,roleCell,profile,actionCell); tbody.appendChild(tr);
     }
   }
 
@@ -96,7 +112,7 @@ if (!allowed) {
       rows = Object.entries(users).map(([username]) => {
         const key = encodeURIComponent(username.trim().toLowerCase()).replace(/\./g, "%2E");
         const profile = profiles[key] || {};
-        return { username, displayName: String(profile.displayName || "") };
+        return { username, key, displayName: String(profile.displayName || ""), role: profile.role || "none" };
       }).sort((a,b) => a.username.localeCompare(b.username));
       document.getElementById("stat-users").textContent = rows.length;
       document.getElementById("stat-profiles").textContent = Object.keys(profiles).length;
