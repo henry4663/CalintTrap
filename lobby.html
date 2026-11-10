@@ -212,7 +212,7 @@
       window.location.href = "index.html";
     } else {
       document.getElementById("nomeUsuarioDisplay").textContent = nickAtual;
-      const avatar = document.querySelector(".user-box img");
+      const avatar = document.querySelector("header img");
       if (avatar) avatar.src = "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(nickAtual);
       const key = encodeURIComponent(nickAtual.trim().toLowerCase()).replace(/\./g, "%2E");
       get(ref(db, "profiles/" + key)).then(snapshot => {
