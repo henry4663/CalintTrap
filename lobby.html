@@ -219,7 +219,7 @@
         if (!snapshot.exists()) return;
         const perfil = snapshot.val();
         if (perfil.displayName) document.getElementById("nomeUsuarioDisplay").textContent = perfil.displayName;
-        if (avatar && perfil.avatarUrl && /^https?:\/\/i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
+        if (avatar && perfil.avatarUrl && /^https?:\/\//i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
       }).catch(error => console.warn("Não foi possível carregar o perfil:", error));
     }
 
