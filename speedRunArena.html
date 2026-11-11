@@ -200,6 +200,12 @@
       .screen button { padding: 14px 36px; font-size: 20px; }
       #hint { font-size: 12px; }
     }
+
+    #mobileControls{display:none;position:fixed;inset:auto 0 18px;z-index:80;justify-content:space-between;align-items:end;padding:0 16px;pointer-events:none;gap:12px}
+    .mobileGroup{display:flex;gap:9px;pointer-events:auto}
+    .mobileControl{width:58px;height:58px;border:2px solid #ffffff88;border-radius:18px;background:#170b35dd;color:#fff;font-size:22px;font-weight:900;box-shadow:0 5px 18px #0008;touch-action:none;user-select:none;-webkit-user-select:none}
+    .mobileControl:active{background:#7135c9;transform:scale(.94)}
+    @media(max-width:700px),(pointer:coarse){#mobileControls{display:flex}#hint{bottom:92px;font-size:11px}#globalLeaderboardCorner{top:10px;right:10px;width:150px;padding:6px}.corner-title{font-size:11px}.corner-item{font-size:10px}#coinHud{top:130px}}
   </style>
 </head>
 
@@ -236,6 +242,11 @@
   </div>
 
   <div id="toast" class="toast"></div>
+  <div id="mobileControls" aria-label="Controles para celular">
+    <div class="mobileGroup"><button class="mobileControl" id="mobileLeft" aria-label="Mover para esquerda">◀</button><button class="mobileControl" id="mobileRight" aria-label="Mover para direita">▶</button></div>
+    <div class="mobileGroup"><button class="mobileControl" id="mobileDuck" aria-label="Abaixar">▼</button><button class="mobileControl" id="mobileJump" aria-label="Pular">▲</button></div>
+  </div>
+
 
   <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 
@@ -827,6 +838,26 @@
           duckPressed = true;
         }
       }, { passive: true });
+
+
+      // Controles grandes para celular: suportam toque simultâneo e cancelamento.
+      function bindMobileButton(id, action, release) {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          button.setPointerCapture(event.pointerId);
+          if (!G.running) return;
+          action();
+        });
+        ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => {
+          button.addEventListener(type, event => { event.preventDefault(); if (release) release(); });
+        });
+      }
+      bindMobileButton("mobileLeft", () => { if (G.targetLane > 0) G.targetLane--; });
+      bindMobileButton("mobileRight", () => { if (G.targetLane < 2) G.targetLane++; });
+      bindMobileButton("mobileJump", () => { jumpPressed = true; });
+      bindMobileButton("mobileDuck", () => { duckPressed = true; });
 
       function spawnRow(z) {
         const obstacleCount = Math.random() < 0.6 ? 2 : 1;
