@@ -75,17 +75,39 @@ function reload(){let i=player.weapon,w=weapons[i];if(player.reloading||player.a
 function spawnShot(){if(dead||player.reloading)return;let i=player.weapon,w=weapons[i],now=Date.now();if(now-lastShot<w.delay)return;lastShot=now;if(player.ammo[i]<=0){reload();return}player.ammo[i]--;updateUI();let count=i===1?3:1;for(let n=0;n<count;n++){let spread=count===1?0:(n-1)*.13;let a=player.angle+spread;let shot={owner:myId,x:player.x+Math.cos(a)*23,y:player.y+Math.sin(a)*23,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,damage:w.damage,size:w.size,color:w.color,created:Date.now()};let newRef=push(shotsRef);set(newRef,shot).catch(()=>{})}}
 function damageLocal(amount,owner){if(dead||Date.now()<(lastDamage[owner]||0))return;lastDamage[owner]=Date.now()+300;if(Date.now()<shieldUntil)return;player.hp=Math.max(0,player.hp-amount);if(player.hp<=0){dead=true;respawnAt=Date.now()+2600;if(owner!==myId){kills+=0}setStatus("Você foi atingido! Aguarde o respawn.")}updateUI()}
 function respawn(){dead=false;player.hp=100;player.x=100+Math.random()*180;player.y=100+Math.random()*400;player.ammo=[30,18,6];player.reserve=[90,72,30];player.reloading=false;updateUI()}
-function step(now){let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now;if(!dead){let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0),dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);let len=Math.hypot(dx,dy)||1;let pos=moveWithWalls(player.x,player.y,dx/len*player.speed*dt,dy/len*player.speed*dt);player.x=pos.x;player.y=pos.y;player.angle=Math.atan2(aim.y-player.y,aim.x-player.x);
- if(shooting)spawnShot();
- pickups.forEach(p=>{if(Math.hypot(player.x-p.x,player.y-p.y)<28){if(p.t==="ammo"){player.reserve=player.reserve.map((v,i)=>Math.min(v+[30,24,8][i], [180,144,60][i]));setStatus("Munição coletada!")}else{shieldUntil=Date.now()+5000;setStatus("Escudo ativado por 5 segundos!")};p.x=-1000;p.y=-1000;setTimeout(()=>{p.x=90+Math.random()*(W-180);p.y=80+Math.random()*(H-160)},8000);updateUI()}})}
- if(now-lastSync>100){lastSync=now;set(myRef,{x:player.x,y:player.y,angle:player.angle,nick,hp:player.hp,ts:Date.now()}).catch(()=>{})}
- if(dead&&Date.now()>respawnAt)respawn();
- }
- Object.entries(shots).forEach(([id,s])=>{if(!s||typeof s.x!=="number")return;const shotRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id);if(now-(s.created||0)>2200){if(s.owner===myId)remove(shotRef).catch(()=>{});return}
- if(s.owner===myId&&now-(s.updatedAt||s.created||0)>35){const nx=s.x+(s.vx||0)*dt,ny=s.y+(s.vy||0)*dt;if(nx<8||nx>W-8||ny<8||ny>H-8||walls.some(w=>nx>w.x&&nx<w.x+w.w&&ny>w.y&&ny<w.y+w.h)){remove(shotRef).catch(()=>{});return}const moved={...s,x:nx,y:ny,updatedAt:now};shots[id]=moved;set(shotRef,moved).catch(()=>{})}
- if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(shotRef).catch(()=>{})}
+function step(now){
+ let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now;
+ if(!dead){
+  let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0);
+  let dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+  let len=Math.hypot(dx,dy)||1;
+  let pos=moveWithWalls(player.x,player.y,dx/len*player.speed*dt,dy/len*player.speed*dt);
+  player.x=pos.x;player.y=pos.y;player.angle=Math.atan2(aim.y-player.y,aim.x-player.x);
+  if(shooting)spawnShot();
+  pickups.forEach(p=>{
+   if(Math.hypot(player.x-p.x,player.y-p.y)<28){
+    if(p.t==="ammo"){player.reserve=player.reserve.map((v,i)=>Math.min(v+[30,24,8][i],[180,144,60][i]));setStatus("Munição coletada!")}
+    else{shieldUntil=Date.now()+5000;setStatus("Escudo ativado por 5 segundos!")}
+    p.x=-1000;p.y=-1000;
+    setTimeout(()=>{p.x=90+Math.random()*(W-180);p.y=80+Math.random()*(H-160)},8000);
+    updateUI();
+   }
+  });
+  if(now-lastSync>100){lastSync=now;set(myRef,{x:player.x,y:player.y,angle:player.angle,nick,hp:player.hp,ts:Date.now()}).catch(()=>{})}
+ } else if(Date.now()>respawnAt){respawn()}
+ Object.entries(shots).forEach(([id,s])=>{
+  if(!s||typeof s.x!=="number")return;
+  const shotRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id);
+  if(Date.now()-(s.created||0)>2200){if(s.owner===myId)remove(shotRef).catch(()=>{});return}
+  if(s.owner===myId&&now-(s.updatedAt||s.created||0)>35){
+   const nx=s.x+(s.vx||0)*dt,ny=s.y+(s.vy||0)*dt;
+   if(nx<8||nx>W-8||ny<8||ny>H-8||walls.some(w=>nx>w.x&&nx<w.x+w.w&&ny>w.y&&ny<w.y+w.h)){remove(shotRef).catch(()=>{});return}
+   const moved={...s,x:nx,y:ny,updatedAt:now};shots[id]=moved;set(shotRef,moved).catch(()=>{});
+  }
+  if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(shotRef).catch(()=>{})}
  });
- updateUI();draw();requestAnimationFrame(step)}
+ updateUI();draw();requestAnimationFrame(step);
+}
 window.addEventListener("keydown",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();if(k==="r")reload();if(k>="1"&&k<="3")chooseWeapon(Number(k)-1)});
 window.addEventListener("keyup",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=false});
 canvas.addEventListener("pointermove",e=>{let r=canvas.getBoundingClientRect();aim={x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}});
