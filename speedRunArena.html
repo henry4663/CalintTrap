@@ -580,7 +580,7 @@
             group.add(stripe);
           }
 
-          group.userData = { type, width: 2.2, height: 1.6 };
+          group.userData = { type, width: 2.2, height: 1.6, depth: 2 };
         } else if (type === "low") {
           const bar = new THREE.Mesh(
             new THREE.BoxGeometry(2.5, 0.25, 0.4),
@@ -611,7 +611,7 @@
           legRight.position.x = 1.1;
           group.add(legRight);
 
-          group.userData = { type, width: 2.5, height: 0.65 };
+          group.userData = { type, width: 2.5, height: 0.65, depth: 0.6 };
         } else if (type === "highBar") {
           const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x112233 });
           const neonMaterial = new THREE.MeshStandardMaterial({
@@ -638,7 +638,7 @@
           pillarRight.position.x = 1.25;
           group.add(pillarRight);
 
-          group.userData = { type, width: 2.7, height: 2.2, minY: 1.4 };
+          group.userData = { type, width: 2.7, height: 2.2, depth: 0.6, minY: 1.4 };
         } else if (type === "spikes") {
           const spikeMaterial = new THREE.MeshStandardMaterial({
             color: 0xff3344, emissive: 0x660011, emissiveIntensity: 0.45,
@@ -650,7 +650,7 @@
             spike.castShadow = true;
             group.add(spike);
           }
-          group.userData = { type, width: 2.5, height: 1.15 };
+          group.userData = { type, width: 2.5, height: 1.15, depth: 0.9 };
         } else if (type === "tunnel") {
           const frameMaterial = new THREE.MeshStandardMaterial({
             color: 0x168cff, emissive: 0x004477, emissiveIntensity: 0.55,
@@ -665,7 +665,7 @@
             leg.position.set(x, 0.775, 0);
             group.add(leg);
           }
-          group.userData = { type, width: 2.8, height: 1.9, minY: 1.05 };
+          group.userData = { type, width: 2.8, height: 1.9, depth: 1.1, minY: 1.05 };
         } else if (type === "double") {
           const material = new THREE.MeshStandardMaterial({
             color: 0x7733cc, emissive: 0x220044, emissiveIntensity: 0.5,
@@ -684,7 +684,7 @@
             stripe.position.set(x, 1.0, 0);
             group.add(stripe);
           }
-          group.userData = { type, width: 2.4, height: 1.35 };
+          group.userData = { type, width: 2.4, height: 1.35, depth: 1.5 };
         } else {
           const pillar = new THREE.Mesh(
             new THREE.CylinderGeometry(1.1, 1.25, 3.4, 6),
@@ -710,7 +710,7 @@
           glow.position.y = 3.3;
           group.add(glow);
 
-          group.userData = { type, width: 2.2, height: 3.4 };
+          group.userData = { type, width: 2.2, height: 3.4, depth: 2.2 };
         }
 
         scene.add(group);
@@ -1030,25 +1030,41 @@
               continue;
             }
 
-            const dx = Math.abs(player.position.x - obstacle.position.x);
-            const dz = Math.abs(player.position.z - obstacle.position.z);
+            // Hitbox real: só há colisão quando os volumes do personagem
+            // e do obstáculo realmente se cruzam no espaço 3D.
+            const playerBox = new THREE.Box3().setFromObject(player);
+            const obstacleSize = new THREE.Vector3(
+              obstacle.userData.width,
+              obstacle.userData.height,
+              obstacle.userData.depth
+            );
+            const obstacleCenter = new THREE.Vector3(
+              obstacle.position.x,
+              obstacle.userData.height / 2,
+              obstacle.position.z
+            );
+            const obstacleBox = new THREE.Box3().setFromCenterAndSize(
+              obstacleCenter,
+              obstacleSize
+            );
+            const overlapsXZ =
+              playerBox.max.x > obstacleBox.min.x &&
+              playerBox.min.x < obstacleBox.max.x &&
+              playerBox.max.z > obstacleBox.min.z &&
+              playerBox.min.z < obstacleBox.max.z;
 
-            if (dx < obstacle.userData.width * 0.5 + 0.35 && dz < 1.3) {
-              const bottom = player.position.y - (G.isDucking ? 0.2 : 0.5);
-              const top = player.position.y + (G.isDucking ? 0.6 : 2.0);
+            if (overlapsXZ) {
               const type = obstacle.userData.type;
 
               if (type === "highBar" || type === "tunnel") {
-                // Passe por baixo da barra/teto abaixando.
-                if (top > (obstacle.userData.minY || 1.4)) gameOver();
+                // Só acerta se a parte de cima do personagem tocar no teto.
+                if (playerBox.max.y > obstacle.userData.minY) gameOver();
               } else if (type === "low" || type === "spikes") {
-                // Pule por cima da barra baixa ou dos espinhos.
-                if (bottom <= obstacle.userData.height - 0.1) gameOver();
-              } else if (type === "tall") {
-                if (bottom < obstacle.userData.height - 0.8) gameOver();
+                // Só acerta se o personagem tocar na altura da barra/espinhos.
+                if (playerBox.min.y < obstacle.userData.height) gameOver();
               } else {
-                // Blocos e caixas duplas bloqueiam a pista.
-                gameOver();
+                // Blocos, pilares e caixas: colisão 3D completa.
+                if (playerBox.intersectsBox(obstacleBox)) gameOver();
               }
             }
           }
