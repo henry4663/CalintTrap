@@ -1032,15 +1032,16 @@
 
             // Hitbox real: só há colisão quando os volumes do personagem
             // e do obstáculo realmente se cruzam no espaço 3D.
-            // Hitbox própria do jogador. A caixa visual do personagem inclui
-            // chapéu e braços; por isso ela não serve para validar o movimento abaixado.
-            const playerHeight = G.isDucking ? 0.9 : 2.5;
-            const playerWidth = G.isDucking ? 0.95 : 0.8;
-            const playerDepth = 0.8;
+            // Hitbox lógica do personagem: acompanha o pulo e o agachamento,
+            // sem incluir chapéu, braços ou animações visuais.
+            const playerHeight = G.isDucking ? 0.72 : 2.15;
+            const playerWidth = 0.72;
+            const playerDepth = 0.72;
+            const playerBottom = G.isJumping ? Math.max(0, G.jumpY) : 0;
             const playerBox = new THREE.Box3().setFromCenterAndSize(
               new THREE.Vector3(
                 player.position.x,
-                playerHeight / 2,
+                playerBottom + playerHeight / 2,
                 player.position.z
               ),
               new THREE.Vector3(playerWidth, playerHeight, playerDepth)
@@ -1069,11 +1070,11 @@
               const type = obstacle.userData.type;
 
               if (type === "highBar" || type === "tunnel") {
-                // Só acerta se a parte de cima do personagem tocar no teto.
+                // Passa por baixo apenas quando a hitbox agachada cabe no vão.
                 if (playerBox.max.y > obstacle.userData.minY) gameOver();
               } else if (type === "low" || type === "spikes") {
-                // Só acerta se o personagem tocar na altura da barra/espinhos.
-                if (playerBox.min.y < obstacle.userData.height) gameOver();
+                // Barra baixa e espinhos: só colide se a hitbox tocar neles.
+                if (playerBox.intersectsBox(obstacleBox)) gameOver();
               } else {
                 // Blocos, pilares e caixas: colisão 3D completa.
                 if (playerBox.intersectsBox(obstacleBox)) gameOver();
