@@ -282,17 +282,17 @@
       async function registrarVencedor(winner) {
         if (!tournament || !winner || tournamentStatus !== "running") return;
         try {
-          const resultRef = ref(db, "speedRunTournament/current");
+          const resultRef = tournamentRoomRef;
           const result = await runTransaction(resultRef, current => {
-            if (!current || current.roomId !== tournament.roomId || current.status !== "running" || current.winner) return;
+            if (!current || current.status !== "running" || current.winner) return;
             current.status = "finished";
-            current.active = false;
             current.winner = { nick:winner.nick, key:winner.key, score:Number(winner.score)||0, wonAt:Date.now(), title:tournament.title };
             current.endedAt = Date.now();
             return current;
           });
           if (result.committed && result.snapshot.val()?.winner) {
             const champ = result.snapshot.val().winner;
+            await update(ref(db, "speedRunTournament/current"), { active:false, status:"finished", winner:champ, endedAt:Date.now() });
             const winnerProfileRef = ref(db, "profiles/" + champ.key);
             const snap = await get(winnerProfileRef);
             const profile = snap.exists() ? snap.val() : {};
@@ -338,19 +338,21 @@
           sessionStorage.setItem(tournamentSessionKey, config.roomId);
           tournamentJoined = true;
           tournamentRoomRef = ref(db, "speedRunTournament/rooms/" + config.roomId);
-          const roomState = (await get(tournamentRoomRef)).val() || {};
-          if (Object.keys(roomState.players || {}).length >= 6 && roomState.status !== "running" && roomState.status !== "finished") {
+          const joinedPlayers = joinResult.snapshot.val() || {};
+          if (Object.keys(joinedPlayers).length >= 6) {
             await runTransaction(ref(db, "speedRunTournament/rooms/" + config.roomId + "/status"), current => current === "waiting" || current == null ? "running" : current);
           }
-          onValue(ref(db, "speedRunTournament/rooms/" + config.roomId + "/status"), snap => {
-            tournamentStatus = snap.val() || "waiting";
+          onValue(tournamentRoomRef, snap => {
+            const roomData = snap.val() || {};
+            tournamentStatus = roomData.status || "waiting";
+            if (roomData.winner) tournament.winner = roomData.winner;
             if (tournamentStatus === "running" && !tournamentStartedLocally && !tournamentEliminated) {
               tournamentStartedLocally = true;
               document.getElementById("startScreen").style.display = "none";
               reset();
             }
             if (tournamentStatus === "finished") {
-              const winner = tournament?.winner;
+              const winner = roomData.winner || tournament?.winner;
               showTournamentNotice(winner ? "🏆 CAMPEÃO: " + winner.nick + " — " + winner.title : "🏆 Torneio finalizado!");
             }
           });
