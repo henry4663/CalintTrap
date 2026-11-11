@@ -1,53 +1,103 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Space Explorers | Goblox</title>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Space Explorers: Arena | Goblox</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#090d18;color:#fff;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;touch-action:pan-y}
-header{width:min(100%,1000px);display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}a,button{color:white}a{font-weight:bold;text-decoration:none;background:#25213c;padding:10px 14px;border-radius:10px}h1{font-size:clamp(20px,4vw,30px);margin:0}.wrap{width:min(100%,1000px);background:#121a2a;border:1px solid #ffffff20;border-radius:18px;padding:14px;box-shadow:0 20px 50px #0008}
-.info{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;color:#dbeafe;font-weight:bold}.desc{color:#b9c4d8;font-size:14px;margin:0 0 12px}
-canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#101735;border:1px solid #ffffff24;touch-action:none}
-#actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}.action{border:0;border-radius:10px;background:#7dd3fc;color:#111827;padding:12px 16px;font-weight:900;cursor:pointer;min-height:44px}.action:active{transform:scale(.96)}
-#mobile{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:12px;user-select:none}.pad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:5px}.pad button,.jump{border:1px solid #ffffff44;border-radius:12px;background:#252e45;color:white;font-size:20px;font-weight:bold;touch-action:none}.pad button[data-d="up"]{grid-column:2}.pad button[data-d="left"]{grid-column:1;grid-row:2}.pad button[data-d="down"]{grid-column:2;grid-row:2}.pad button[data-d="right"]{grid-column:3;grid-row:2}.jump{width:82px;height:82px;background:#5637a6}.hint{text-align:center;color:#93a4bd;font-size:12px;margin:10px 0 0}
-#message{font-weight:bold;color:#7dd3fc;text-align:center;min-height:22px;margin-top:8px}
-@media(min-width:800px){#mobile{max-width:320px;margin-left:auto;margin-right:auto}.pad button,.jump{opacity:.75}}
-</style></head><body>
-<header><a href="lobby.html">← Goblox</a><h1>Space Explorers</h1><span style="color:#7dd3fc;font-weight:900">GOBLOX</span></header>
-<main class="wrap"><div class="info"><span id="score">Progresso: 0/15</span><span id="time">Tempo: 0s</span></div><p class="desc">Pilote sua nave, colete 15 estrelas e evite os meteoros.</p>
-<canvas id="game" width="960" height="540" aria-label="Área do jogo"></canvas>
-<div id="actions"></div><div id="mobile"><div class="pad"><button data-d="up">▲</button><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div><button class="jump" id="jump">PULAR</button></div>
-<div id="message" role="status">Pronto! Use WASD/setas ou os controles de celular.</div><p class="hint">PC: WASD / setas + espaço. Celular: use os botões abaixo.</p></main>
-<script>
-(()=>{
-const C={"title":"Space Explorers","file":"spaceExplorers.html","mode":"collect","goal":15,"player":"🚀","item":"⭐","hazard":"☄️","desc":"Pilote sua nave, colete 15 estrelas e evite os meteoros.","bg":"#101735","accent":"#7dd3fc"},cv=document.getElementById('game'),ctx=cv.getContext('2d'),scoreEl=document.getElementById('score'),timeEl=document.getElementById('time'),msg=document.getElementById('message'),actions=document.getElementById('actions');
-let keys={},player={x:100,y:270,r:22,vx:0,vy:0},items=[],hazards=[],score=0,elapsed=0,started=Date.now(),running=true,won=false,buildings=0,order=0,platforms=[],last=0;
-const W=cv.width,H=cv.height,rand=(a,b)=>Math.random()*(b-a)+a;
-function spawn(){items=[];hazards=[];for(let i=0;i<C.goal+8;i++)items.push({x:rand(70,W-70),y:rand(70,H-70),r:18});for(let i=0;i<7;i++)hazards.push({x:rand(180,W-80),y:rand(60,H-60),r:24,vx:rand(-1.8,1.8),vy:rand(-1.4,1.4)});}
-function say(t){msg.textContent=t}
-function finish(ok){if(!running)return;running=false;won=ok;say(ok?'Você conseguiu! Parabéns!':'Fim de jogo. Toque em Reiniciar para tentar de novo.');}
-function reset(){player={x:90,y:270,r:22,vx:0,vy:0};score=0;elapsed=0;started=Date.now();running=true;won=false;buildings=0;order=0;spawn();renderActions();say('Boa sorte!');}
-function renderActions(){actions.innerHTML='';if(C.mode==='build'){for(let i=0;i<3;i++){let b=document.createElement('button');b.className='action';b.textContent=['Casa 🏠','Loja 🏪','Parque 🌳'][i];b.onclick=()=>{if(!running)return;if(buildings>=C.goal)return;buildings++;score=buildings;update();if(score>=C.goal)finish(true)};actions.append(b)}}if(C.mode==='cook'){['🍞 Pão','🥬 Alface','🍅 Tomate','🧀 Queijo','🍔 Carne','✅ Servir'].forEach((t,i)=>{let b=document.createElement('button');b.className='action';b.textContent=t;b.onclick=()=>{if(!running)return;if(i===5){if(order>=3){score++;order=0;update();if(score>=C.goal)finish(true);say('Pedido servido! Próximo cliente.')}else say('Complete o pedido: pão, alface e tomate!')}else{order++;say('Ingrediente adicionado: '+t)}};actions.append(b)})}let r=document.createElement('button');r.className='action';r.textContent='Reiniciar';r.onclick=reset;actions.append(r)}
-function update(){scoreEl.textContent='Progresso: '+score+'/'+C.goal}
-function drawText(t,x,y,size=24){ctx.font='bold '+size+'px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(t,x,y)}
-function loop(now){let dt=Math.min((now-last)/16||1,2);last=now;if(running){elapsed=(Date.now()-started)/1000;timeEl.textContent='Tempo: '+Math.floor(elapsed)+'s';
-if(C.mode==='collect'||C.mode==='survive'||C.mode==='platform'){let dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),dy=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0);player.x+=dx*4*dt;player.y+=dy*4*dt;player.x=Math.max(25,Math.min(W-25,player.x));player.y=Math.max(25,Math.min(H-25,player.y));
-if(C.mode==='platform'&&keys[' ']){player.y-=5*dt}
-hazards.forEach(h=>{h.x+=h.vx*dt;h.y+=h.vy*dt;if(h.x<30||h.x>W-30)h.vx*=-1;if(h.y<30||h.y>H-30)h.vy*=-1});
-if(C.mode==='survive'){if(elapsed>=C.goal)finish(true);hazards.forEach(h=>{let a=Math.atan2(player.y-h.y,player.x-h.x);h.x+=Math.cos(a)*.35*dt;h.y+=Math.sin(a)*.35*dt})}
-else if(C.mode==='platform'){player.y=Math.min(480,Math.max(70,player.y));if(player.x>W-80){score=C.goal;update();finish(true)}}
-else{items=items.filter(it=>{if(Math.hypot(player.x-it.x,player.y-it.y)<player.r+it.r){score++;update();if(score>=C.goal)finish(true);return false}return true});if(hazards.some(h=>Math.hypot(player.x-h.x,player.y-h.y)<player.r+h.r-5)){player.x=90;player.y=270;say('Cuidado! Você voltou ao início.')}}}
+*{box-sizing:border-box}body{margin:0;background:#080d19;color:#eef4ff;font-family:Arial,sans-serif;min-height:100vh;padding:12px;touch-action:pan-y}
+header,.wrap{width:min(1100px,100%);margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}h1{font-size:clamp(18px,4vw,28px);margin:0}a,.btn{background:#252d45;color:#fff;text-decoration:none;border:1px solid #ffffff24;border-radius:10px;padding:10px 13px;font-weight:bold}
+.wrap{background:#111a2b;border:1px solid #ffffff20;border-radius:16px;padding:12px;box-shadow:0 18px 55px #0008}
+.top{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:10px}.stats{display:flex;gap:8px;flex-wrap:wrap}.stat{background:#1b2940;padding:8px 11px;border-radius:9px;font-weight:bold;font-size:14px}.stat b{color:#67e8f9}
+#status{color:#a9bad5;font-size:13px;margin:6px 0 10px;min-height:18px}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1425;border:1px solid #ffffff26;border-radius:12px;touch-action:none}
+#bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}.weapons{display:flex;gap:7px;flex-wrap:wrap}.weapon{background:#202d45;border:1px solid #ffffff24;color:white;border-radius:9px;padding:9px 12px;font-weight:bold}.weapon.active{background:#6d35c5;border-color:#c4b5fd}
+#mobile{display:none;justify-content:space-between;align-items:center;margin-top:12px;gap:14px;user-select:none}.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,42px);gap:4px}.pad button,.fire{background:#263653;color:white;border:1px solid #ffffff44;border-radius:12px;font-size:18px;font-weight:bold;touch-action:none}.pad [data-d=up]{grid-column:2}.pad [data-d=left]{grid-column:1;grid-row:2}.pad [data-d=down]{grid-column:2;grid-row:2}.pad [data-d=right]{grid-column:3;grid-row:2}.fire{width:84px;height:84px;background:#7436c9}
+.note{font-size:12px;color:#91a5c3;text-align:center;margin:10px 0 0}
+@media(max-width:760px){body{padding:7px}.wrap{padding:8px}#mobile{display:flex}.top{align-items:flex-start}.stat{font-size:12px;padding:7px}}
+</style>
+</head>
+<body>
+<header><a href="lobby.html">← Goblox</a><h1>SPACE EXPLORERS: ARENA</h1><span style="color:#67e8f9;font-weight:900">MULTIPLAYER</span></header>
+<main class="wrap">
+ <div class="top"><div class="stats">
+  <div class="stat">VIDA: <b id="hp">100</b></div><div class="stat">ELIMINAÇÕES: <b id="kills">0</b></div><div class="stat">JOGADORES: <b id="count">1</b></div><div class="stat">MUNIÇÃO: <b id="ammo">30/90</b></div>
+ </div><div class="stat">SALA: <b>ARENA-01</b></div></div>
+ <div id="status" role="status">Conectando à arena multiplayer...</div>
+ <canvas id="game" width="1100" height="620" aria-label="Arena multiplayer de tiro futurista"></canvas>
+ <div id="bottom"><div class="weapons">
+  <button class="weapon active" data-weapon="0">1 · Blaster</button><button class="weapon" data-weapon="1">2 · Rajada</button><button class="weapon" data-weapon="2">3 · Precisão</button>
+ </div><button class="btn" id="reload">Recarregar (R)</button><button class="btn" id="respawn">Reniciar partida</button></div>
+ <div id="mobile"><div class="pad"><button data-d="up">▲</button><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div><button class="fire" id="fire">ATIRAR</button></div>
+ <p class="note">PC: WASD/setas para andar · mouse para mirar e atirar · 1, 2, 3 troca arma · R recarrega. Use paredes e caixas como cobertura. Celular: controles na tela e toque na arena para mirar.</p>
+</main>
+<script type="module">
+import { db } from "./firebase.js";
+import { ref, set, update, onValue, onDisconnect, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
+const $=id=>document.getElementById(id),status=$("status");
+const nick=(localStorage.getItem("goblox_player_nick")||"Explorador").slice(0,20);
+const room="space_explorers_arena";
+const myId="p_"+Math.random().toString(36).slice(2,11);
+const playersRef=ref(db,"spaceExplorersArena/rooms/"+room+"/players");
+const myRef=ref(db,"spaceExplorersArena/rooms/"+room+"/players/"+myId);
+const shotsRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots");
+let connected=false,players={},shots={},keys={},lastSync=0,lastShot=0,lastDamage={},aim={x:800,y:300},shooting=false;
+let player={x:130+Math.random()*120,y:130+Math.random()*350,hp:100,angle:0,speed:3.4,weapon:0,ammo:[30,18,6],reserve:[90,72,30],reloading:false};
+let kills=0,dead=false,respawnAt=0,shieldUntil=0;
+const weapons=[
+ {name:"Blaster",mag:30,delay:170,damage:18,speed:10,size:5,color:"#65e8ff",reload:900},
+ {name:"Rajada",mag:18,delay:430,damage:11,speed:9,size:4,color:"#b89aff",reload:1200},
+ {name:"Precisão",mag:6,delay:700,damage:42,speed:15,size:6,color:"#ffd166",reload:1450}
+];
+const walls=[
+ {x:260,y:100,w:150,h:35},{x:480,y:60,w:38,h:150},{x:690,y:120,w:180,h:35},
+ {x:130,y:280,w:170,h:38},{x:410,y:260,w:230,h:40},{x:790,y:290,w:170,h:38},
+ {x:260,y:470,w:38,h:100},{x:530,y:440,w:170,h:38},{x:850,y:465,w:120,h:38}
+];
+const pickups=[{x:90,y:90,t:"ammo"},{x:550,y:180,t:"ammo"},{x:1010,y:520,t:"ammo"},{x:740,y:390,t:"shield"},{x:360,y:390,t:"shield"}];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function setStatus(t){status.textContent=t}
+function rectHit(x,y,r,w){return x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h}
+function moveWithWalls(x,y,dx,dy,r=16){let nx=clamp(x+dx,r,W-r),ny=clamp(y+dy,r,H-r);if(!walls.some(w=>rectHit(nx,y,r,w)))x=nx;if(!walls.some(w=>rectHit(x,ny,r,w)))y=ny;return{x,y}}
+function drawCover(){for(const w of walls){ctx.fillStyle="#263c57";ctx.fillRect(w.x,w.y,w.w,w.h);ctx.fillStyle="#3d5878";ctx.fillRect(w.x+4,w.y+4,w.w-8,7);ctx.strokeStyle="#83a8ca55";ctx.strokeRect(w.x,w.y,w.w,w.h)}}
+function drawPlayer(p,isMe){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle||0);ctx.fillStyle=isMe?"#5ee7ff":"#f0a7ff";ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.fillStyle="#12243b";ctx.fillRect(3,-5,23,10);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(4,-5,2.5,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle="#fff";ctx.font="12px Arial";ctx.textAlign="center";ctx.fillText(p.nick||"Jogador",p.x,p.y-23);ctx.fillStyle="#401d2a";ctx.fillRect(p.x-18,p.y+19,36,5);ctx.fillStyle="#4ade80";ctx.fillRect(p.x-18,p.y+19,36*clamp((p.hp??100)/100,0,1),5)}
+function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle="#0b1425";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#ffffff0b";for(let x=0;x<W;x+=44){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=44){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ pickups.forEach(p=>{ctx.fillStyle=p.t==="ammo"?"#fbbf24":"#a78bfa";ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#111827";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText(p.t==="ammo"?"A":"+",p.x,p.y+5)});
+ drawCover();Object.entries(players).forEach(([id,p])=>{if(id!==myId&&p&&typeof p.x==="number"&&Date.now()-(p.ts||0)<12000)drawPlayer(p,false)});
+ Object.values(shots).forEach(s=>{if(!s||typeof s.x!=="number")return;ctx.fillStyle=s.color||"#67e8f9";ctx.shadowBlur=12;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.size||5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0});
+ if(!dead)drawPlayer({...player,nick},true);
+ if(dead){ctx.fillStyle="#030712b9";ctx.fillRect(0,0,W,H);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 42px Arial";ctx.fillText("VOCÊ FOI ATINGIDO",W/2,H/2-12);ctx.font="20px Arial";ctx.fillText("Voltando para a arena...",W/2,H/2+28)}
 }
-ctx.clearRect(0,0,W,H);ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H);
-ctx.globalAlpha=.12;for(let x=0;x<W;x+=48)for(let y=0;y<H;y+=48){ctx.strokeStyle='#fff';ctx.strokeRect(x,y,48,48)}ctx.globalAlpha=1;
-if(C.mode==='build'){for(let y=0;y<5;y++)for(let x=0;x<8;x++){let xx=90+x*110,yy=65+y*95;ctx.fillStyle=((x+y)%2)?'#315b4b':'#3b6a52';ctx.fillRect(xx,yy,82,68);ctx.strokeStyle='#ffffff55';ctx.strokeRect(xx,yy,82,68);if((y*8+x)<buildings)drawText(['🏠','🏪','🌳'][((y*8+x)%3)],xx+41,yy+43,32);else drawText('＋',xx+41,yy+43,24)}}
-else if(C.mode==='cook'){drawText('PEDIDO: 🍞 + 🥬 + 🍅',W/2,160,44);drawText('Ingredientes: '+order+'/3',W/2,240,32);drawText('Escolha os botões abaixo e sirva!',W/2,310,26);drawText('🍽️',W/2,410,90)}
-else{if(C.mode==='platform'){ctx.fillStyle='#426b78';for(let i=0;i<8;i++)ctx.fillRect(i*130+20,470-(i%2)*45,95,22);drawText('CHEGADA 🏁',W-110,420,24)}
-items.forEach(it=>drawText(C.item,it.x,it.y+10,30));hazards.forEach(h=>drawText(C.hazard,h.x,h.y+10,32));drawText(C.player,player.x,player.y+12,38);
-if(C.mode==='survive')drawText('SOBREVIVA: '+Math.max(0,C.goal-Math.floor(elapsed))+'s',W/2,48,28)}
-if(!running){ctx.fillStyle='#050816bb';ctx.fillRect(0,0,W,H);drawText(won?'VITÓRIA!':'TENTE NOVAMENTE',W/2,H/2,54);drawText('Toque em Reiniciar',W/2,H/2+55,24)}
-requestAnimationFrame(loop)}
-cv.addEventListener('pointerdown',e=>{if(C.mode!=='build')return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;if(x>55&&x<W-55&&y>45&&y<H-20&&buildings<C.goal){buildings++;score=buildings;update();if(score>=C.goal)finish(true)}});
-window.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault()});window.addEventListener('keyup',e=>keys[e.key]=false);
-document.querySelectorAll('[data-d]').forEach(b=>{let k={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[b.dataset.d];b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
-document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();keys[' ']=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>document.getElementById('jump').addEventListener(ev,()=>keys[' ']=false));
-reset();requestAnimationFrame(loop);
-})();
-</script></body></html>
+function updateUI(){$("hp").textContent=player.hp;$("kills").textContent=kills;$("count").textContent=Object.keys(players).filter(id=>Date.now()-(players[id]?.ts||0)<12000).length;$("ammo").textContent=player.ammo[player.weapon]+"/"+player.reserve[player.weapon]}
+function chooseWeapon(i){player.weapon=i;document.querySelectorAll(".weapon").forEach(b=>b.classList.toggle("active",Number(b.dataset.weapon)===i));updateUI()}
+function reload(){let i=player.weapon,w=weapons[i];if(player.reloading||player.ammo[i]>=w.mag||player.reserve[i]<=0||dead)return;player.reloading=true;setStatus("Recarregando "+w.name+"...");setTimeout(()=>{let n=Math.min(w.mag-player.ammo[i],player.reserve[i]);player.ammo[i]+=n;player.reserve[i]-=n;player.reloading=false;updateUI();setStatus("Arena online · "+Object.keys(players).length+" conectados")},w.reload)}
+function spawnShot(){if(dead||player.reloading)return;let i=player.weapon,w=weapons[i],now=Date.now();if(now-lastShot<w.delay)return;lastShot=now;if(player.ammo[i]<=0){reload();return}player.ammo[i]--;updateUI();let count=i===1?3:1;for(let n=0;n<count;n++){let spread=count===1?0:(n-1)*.13;let a=player.angle+spread;let shot={owner:myId,x:player.x+Math.cos(a)*23,y:player.y+Math.sin(a)*23,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,damage:w.damage,size:w.size,color:w.color,created:Date.now()};let newRef=push(shotsRef);set(newRef,shot).catch(()=>{})}}
+function damageLocal(amount,owner){if(dead||Date.now()<(lastDamage[owner]||0))return;lastDamage[owner]=Date.now()+300;if(Date.now()<shieldUntil)return;player.hp=Math.max(0,player.hp-amount);if(player.hp<=0){dead=true;respawnAt=Date.now()+2600;if(owner!==myId){kills+=0}setStatus("Você foi atingido! Aguarde o respawn.")}updateUI()}
+function respawn(){dead=false;player.hp=100;player.x=100+Math.random()*180;player.y=100+Math.random()*400;player.ammo=[30,18,6];player.reserve=[90,72,30];player.reloading=false;updateUI()}
+function step(now){let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now;if(!dead){let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0),dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);let len=Math.hypot(dx,dy)||1;let pos=moveWithWalls(player.x,player.y,dx/len*player.speed*dt,dy/len*player.speed*dt);player.x=pos.x;player.y=pos.y;player.angle=Math.atan2(aim.y-player.y,aim.x-player.x);
+ if(shooting)spawnShot();
+ pickups.forEach(p=>{if(Math.hypot(player.x-p.x,player.y-p.y)<28){if(p.t==="ammo"){player.reserve=player.reserve.map((v,i)=>Math.min(v+[30,24,8][i], [180,144,60][i]));setStatus("Munição coletada!")}else{shieldUntil=Date.now()+5000;setStatus("Escudo ativado por 5 segundos!")};p.x=-1000;p.y=-1000;setTimeout(()=>{p.x=90+Math.random()*(W-180);p.y=80+Math.random()*(H-160)},8000);updateUI()}})}
+ if(now-lastSync>100){lastSync=now;set(myRef,{x:player.x,y:player.y,angle:player.angle,nick,hp:player.hp,ts:Date.now()}).catch(()=>{})}
+ if(dead&&Date.now()>respawnAt)respawn();
+ }
+ Object.entries(shots).forEach(([id,s])=>{if(!s||typeof s.x!=="number")return;if(Date.now()-(s.created||0)>2200){if(s.owner===myId)remove(ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id)).catch(()=>{});return}
+ if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id)).catch(()=>{})}
+ });
+ updateUI();draw();requestAnimationFrame(step)}
+window.addEventListener("keydown",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();if(k==="r")reload();if(k>="1"&&k<="3")chooseWeapon(Number(k)-1)});
+window.addEventListener("keyup",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=false});
+canvas.addEventListener("pointermove",e=>{let r=canvas.getBoundingClientRect();aim={x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}});
+canvas.addEventListener("pointerdown",e=>{let r=canvas.getBoundingClientRect();aim={x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};shooting=true;canvas.setPointerCapture(e.pointerId)});
+["pointerup","pointercancel","lostpointercapture"].forEach(ev=>canvas.addEventListener(ev,()=>shooting=false));
+document.querySelectorAll("[data-d]").forEach(b=>{let k={up:"w",down:"s",left:"a",right:"d"}[b.dataset.d];b.addEventListener("pointerdown",e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});["pointerup","pointercancel","lostpointercapture"].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+$("fire").addEventListener("pointerdown",e=>{e.preventDefault();shooting=true});["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fire").addEventListener(ev,()=>shooting=false));
+$("reload").onclick=reload;$("respawn").onclick=respawn;document.querySelectorAll(".weapon").forEach(b=>b.onclick=()=>chooseWeapon(Number(b.dataset.weapon)));
+onValue(playersRef,s=>{players=s.val()||{};updateUI();if(!connected){connected=true;setStatus("Multiplayer conectado · entre na arena e encontre outros jogadores!")}},e=>setStatus("Falha no multiplayer: "+e.message+" · confira as regras do Firebase"));
+onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));
+onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));
+set(myRef,{x:player.x,y:player.y,angle:0,nick,hp:100,ts:Date.now()}).catch(e=>setStatus("Não foi possível entrar na sala: "+e.message+" · verifique as regras do Firebase"));
+window.addEventListener("beforeunload",()=>remove(myRef).catch(()=>{}));
+updateUI();requestAnimationFrame(step);
+</script>
+</body></html>
