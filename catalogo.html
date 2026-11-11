@@ -50,9 +50,13 @@ let profile={};let balance=0;let owned=["name_white"];let equipped={theme:"theme
 function say(t,error=false){$("status").textContent=t;$("status").style.color=error?"#fda4af":"#86efac";}
 function itemById(id){return catalog.find(x=>x.id===id);}
 function renderPreview(){
- const theme=itemById(equipped.theme)||catalog[0],avatar=itemById(equipped.avatar)||catalog[4],frame=itemById(equipped.frame)||catalog[8],name=itemById(equipped.name)||catalog[12];
- $("preview").style.background=theme.paint;$("preview-avatar").src="https://api.dicebear.com/7.x/bottts/svg?seed="+encodeURIComponent(avatar.value);
- $("preview-avatar").style.borderColor=frame.value;$("preview-name").style.color=name.value;$("preview-name").textContent=profile.displayName||nick;$("preview-user").textContent="@"+nick;
+ const theme=itemById(equipped.theme)||catalog.find(x=>x.kind==="theme"),frame=itemById(equipped.frame)||catalog.find(x=>x.kind==="frame"),name=itemById(equipped.name)||catalog.find(x=>x.kind==="name");
+ $("preview").style.background=theme.paint;
+ $("preview-avatar").src=profile.avatarUrl||"https://api.dicebear.com/9.x/bottts/svg?seed="+encodeURIComponent(nick);
+ $("preview-avatar").style.borderColor=frame.value;
+ $("preview-name").style.color=name.value;
+ $("preview-name").textContent=profile.displayName||nick;
+ $("preview-user").textContent="@"+nick;
 }
 function renderItems(){
  const root=$("items");root.replaceChildren();
@@ -79,6 +83,7 @@ async function choose(item){
  try{
   if(!ownedAlready){balance-=item.price;owned.push(item.id);}
   equipped[item.kind]=item.id;
+  if(item.kind==="photo") profile.avatarUrl=item.value;
   await persist();renderPreview();renderItems();say(ownedAlready?"Personalização equipada!":"Compra realizada e item equipado!");
  }catch(e){console.error(e);say("Não foi possível salvar no Firebase. Verifique as regras do banco.",true);}
 }
@@ -89,9 +94,9 @@ $("tabs").addEventListener("click",e=>{
 async function init(){
  try{
   const snap=await get(ref(db,"profiles/"+key));profile=snap.exists()?snap.val():{};
-  balance=Number.isFinite(Number(profile.zxBalance))?Math.max(0,Number(profile.zxBalance)):1250;
-  owned=Array.isArray(profile.catalogOwned)?profile.catalogOwned:["avatar_classic","name_white"];
-  equipped={theme:"theme_neon",avatar:"avatar_classic",frame:"frame_purple",name:"name_white",...(profile.catalogEquipped||{})};
+  balance=Number.isFinite(Number(profile.zxBalance))?Math.max(0,Number(profile.zxBalance)):0;
+  owned=Array.isArray(profile.catalogOwned)?profile.catalogOwned:["name_white"];
+  equipped={theme:"theme_neon",frame:"frame_purple",name:"name_white",...(profile.catalogEquipped||{})};
   $("zx-balance").textContent=balance.toLocaleString("pt-BR");renderPreview();renderItems();
   if(!profile.zxBalance){await persist();}
  }catch(e){console.error(e);$("zx-balance").textContent="—";say("Erro ao carregar sua carteira Zx. Confira a conexão com Firebase.",true);}
