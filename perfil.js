@@ -21,6 +21,18 @@ async function carregarPerfil(){
    verified:{label:"VERIFICADO",color:"#38bdf8",background:"#082f49",border:"#0ea5e9"},
    influencer:{label:"INFLUENCIADOR",color:"#c084fc",background:"#3b0764",border:"#a855f7"}
   };
+  const ban=dados.ban;
+  const banAtivo=Boolean(ban?.active && (ban.permanent || Number(ban.until)>Date.now()));
+  if (banAtivo) {
+   const suspended=document.createElement("div");
+   suspended.style.cssText="margin:18px 0;padding:16px;border:1px solid #ef4444;background:#450a0a;color:#fecaca;border-radius:12px";
+   const heading=document.createElement("strong");heading.textContent="⛔ CONTA SUSPENSA";
+   const reason=document.createElement("p");reason.style.marginTop="8px";reason.textContent="Motivo: "+String(ban.reason||"Não informado");
+   const until=document.createElement("p");until.style.marginTop="6px";until.textContent=ban.permanent?"Duração: permanente":"Suspensão até: "+new Date(Number(ban.until)).toLocaleString("pt-BR");
+   suspended.append(heading,reason,until);
+   document.querySelector(".profile-card")?.appendChild(suspended);
+   $("profile-status").textContent="Suspenso";
+  }
   const role=roleConfig[dados.role];
   if(role){
    const roleTag=document.createElement("span");
@@ -44,7 +56,7 @@ async function carregarPerfil(){
   if(frameColors[custom.frame])$("profile-avatar").style.borderColor=frameColors[custom.frame];
 $("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
   if(souDono){$("display-name").value=dados.displayName||nickAlvo;$("bio-input").value=dados.bio||"";$("avatar-url").value=dados.avatarUrl||"";$("bio-count").textContent=$("bio-input").value.length;}
-  if(!souDono)$("profile-status").textContent="Jogador";
+  if(!souDono && !banAtivo)$("profile-status").textContent="Jogador";
  }catch(error){console.error(error);$("profile-title").textContent=nickAlvo;$("profile-bio").textContent="Não foi possível carregar os dados deste perfil.";mensagem("Erro ao conectar com o Firebase.",true);}
 }
 $("bio-input").addEventListener("input",()=>$("bio-count").textContent=$("bio-input").value.length);
