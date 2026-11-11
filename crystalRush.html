@@ -102,8 +102,8 @@ onGround=grounded;if(player.position.y<-9)respawn();
 crystals.forEach(c=>{if(c.got)return;c.group.rotation.y+=dt*1.6;c.group.position.y+=Math.sin(now*.002+c.group.position.z)*dt*.18;if(player.position.distanceTo(c.group.position)<1.25){c.got=true;scene.remove(c.group);crystalCount++;updateHud()}});
 hazards.forEach(h=>{if(Math.abs(player.position.x-h.position.x)<.72&&Math.abs(player.position.z-h.position.z)<.72&&player.position.y<h.position.y+1.1)respawn()});
 if(checkpoint+1<checkpoints.length){const cp=checkpoints[checkpoint+1];if(Math.hypot(player.position.x-cp.x,player.position.z-cp.z)<1.7&&Math.abs(player.position.y-cp.y)<1.4){checkpoint++;checkpointPos={x:cp.x,y:cp.y,z:cp.z+1.1};updateHud()}}
-portal.rotation.y+=dt*.6;portalRing.rotation.z+=dt*.5;if(player.position.distanceTo(portal.position)<3.1&&crystalCount>=8)finish();
-if(player.position.z<-100&&crystalCount<8)respawn();updateHud();
+portal.rotation.y+=dt*.6;portalRing.rotation.z+=dt*.5;if(player.position.distanceTo(portal.position)<3.1&&crystalCount>=12)finish();
+if(player.position.z<-100&&crystalCount<12)respawn();updateHud();
 }
 const target=new THREE.Vector3(player.position.x,player.position.y+2.1,player.position.z+5.6);camera.position.lerp(new THREE.Vector3(player.position.x,player.position.y+5.3,player.position.z+10.5),.09);camera.lookAt(target);renderer.render(scene,camera)}
 requestAnimationFrame(loop);
