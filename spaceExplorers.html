@@ -2,126 +2,87 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Space Explorers: Arena | Goblox</title>
+<title>Space Explorers - Goblox</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#080d19;color:#eef4ff;font-family:Arial,sans-serif;min-height:100vh;padding:12px;touch-action:pan-y}
-header,.wrap{width:min(1100px,100%);margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}h1{font-size:clamp(18px,4vw,28px);margin:0}a,.btn{background:#252d45;color:#fff;text-decoration:none;border:1px solid #ffffff24;border-radius:10px;padding:10px 13px;font-weight:bold}
-.wrap{background:#111a2b;border:1px solid #ffffff20;border-radius:16px;padding:12px;box-shadow:0 18px 55px #0008}
-.top{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:10px}.stats{display:flex;gap:8px;flex-wrap:wrap}.stat{background:#1b2940;padding:8px 11px;border-radius:9px;font-weight:bold;font-size:14px}.stat b{color:#67e8f9}
-#status{color:#a9bad5;font-size:13px;margin:6px 0 10px;min-height:18px}
-canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1425;border:1px solid #ffffff26;border-radius:12px;touch-action:none}
-#bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}.weapons{display:flex;gap:7px;flex-wrap:wrap}.weapon{background:#202d45;border:1px solid #ffffff24;color:white;border-radius:9px;padding:9px 12px;font-weight:bold}.weapon.active{background:#6d35c5;border-color:#c4b5fd}
-#mobile{display:none;justify-content:space-between;align-items:center;margin-top:12px;gap:14px;user-select:none}.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,42px);gap:4px}.pad button,.fire{background:#263653;color:white;border:1px solid #ffffff44;border-radius:12px;font-size:18px;font-weight:bold;touch-action:none}.pad [data-d=up]{grid-column:2}.pad [data-d=left]{grid-column:1;grid-row:2}.pad [data-d=down]{grid-column:2;grid-row:2}.pad [data-d=right]{grid-column:3;grid-row:2}.fire{width:84px;height:84px;background:#7436c9}
-.note{font-size:12px;color:#91a5c3;text-align:center;margin:10px 0 0}
-@media(max-width:760px){body{padding:7px}.wrap{padding:8px}#mobile{display:flex}.top{align-items:flex-start}.stat{font-size:12px;padding:7px}}
+*{box-sizing:border-box}body{margin:0;padding:10px;background:#050914;color:#eaf2ff;font-family:Arial,sans-serif;overflow-x:hidden}header,.game{width:min(1120px,100%);margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}h1{font-size:clamp(17px,4vw,27px);margin:0;letter-spacing:1px}a,.btn{color:white;text-decoration:none;background:#1a2942;border:1px solid #536783;border-radius:9px;padding:9px 12px;font-weight:bold}.game{background:#0c1526;border:1px solid #263b5c;border-radius:14px;padding:10px;box-shadow:0 12px 45px #0009}.stats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}.stat{background:#17263e;border:1px solid #293e5e;border-radius:8px;padding:7px 10px;font-size:13px}.stat b{color:#69e8ff}#status{font-size:12px;color:#9eb4d3;min-height:18px;margin:4px 0 8px}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#020611;border:1px solid #314563;border-radius:9px;touch-action:none}#controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}.hint{font-size:12px;color:#8fa5c4;line-height:1.5}.touch{display:none;align-items:center;justify-content:space-between;gap:20px;touch-action:none;user-select:none;padding:8px 4px 2px}.stick-area{width:140px;height:140px;position:relative;border-radius:50%;background:#182943;border:2px solid #527096;touch-action:none;flex:none}.stick-area:before{content:"";position:absolute;inset:28px;border:1px dashed #7791b3;border-radius:50%}.stick{position:absolute;left:42px;top:42px;width:52px;height:52px;border-radius:50%;background:linear-gradient(#a5c8e9,#42648e);border:2px solid #d2e9ff;box-shadow:0 4px 12px #0009;pointer-events:none}.fire{width:94px;height:94px;border-radius:50%;border:2px solid #ffc1a1;background:radial-gradient(#ff936a,#a93635);color:white;font-weight:900;font-size:15px;touch-action:none}.touch small{display:block;text-align:center;color:#91a8c9;margin-top:4px}.actions{display:flex;gap:8px;flex-wrap:wrap}@media(max-width:760px){body{padding:5px}.game{padding:7px}.touch{display:flex}#controls .hint{display:none}.stat{font-size:11px;padding:6px 8px}.stick-area{width:124px;height:124px}.stick{left:35px;top:35px}.fire{width:82px;height:82px}}
 </style>
 </head>
 <body>
-<header><a href="lobby.html">← Goblox</a><h1>SPACE EXPLORERS: ARENA</h1><span style="color:#67e8f9;font-weight:900">MULTIPLAYER</span></header>
-<main class="wrap">
- <div class="top"><div class="stats">
-  <div class="stat">VIDA: <b id="hp">100</b></div><div class="stat">ELIMINAÇÕES: <b id="kills">0</b></div><div class="stat">JOGADORES: <b id="count">1</b></div><div class="stat">MUNIÇÃO: <b id="ammo">30/90</b></div>
- </div><div class="stat">SALA: <b>ARENA-01</b></div></div>
- <div id="status" role="status">Conectando à arena multiplayer...</div>
- <canvas id="game" width="1100" height="620" aria-label="Arena multiplayer de tiro futurista"></canvas>
- <div id="bottom"><div class="weapons">
-  <button class="weapon active" data-weapon="0">1 · Blaster</button><button class="weapon" data-weapon="1">2 · Rajada</button><button class="weapon" data-weapon="2">3 · Precisão</button>
- </div><button class="btn" id="reload">Recarregar (R)</button><button class="btn" id="respawn">Reniciar partida</button></div>
- <div id="mobile"><div class="pad"><button data-d="up">▲</button><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div><button class="fire" id="fire">ATIRAR</button></div>
- <p class="note">PC: WASD/setas para andar · mouse para mirar e atirar · 1, 2, 3 troca arma · R recarrega. Use paredes e caixas como cobertura. Celular: controles na tela e toque na arena para mirar.</p>
+<header><a href="lobby.html">← Goblox</a><h1>SPACE EXPLORERS</h1><span style="color:#70eaff;font-size:12px;font-weight:bold">ARCADE ONLINE</span></header>
+<main class="game">
+ <div class="stats"><div class="stat">VIDAS: <b id="hp">3</b></div><div class="stat">PONTOS: <b id="score">0</b></div><div class="stat">JOGADORES: <b id="count">1</b></div><div class="stat">NAVE: <b id="shipname">FALCON</b></div></div>
+ <div id="status">Entrando na galáxia...</div>
+ <canvas id="game" width="1100" height="620"></canvas>
+ <div class="touch">
+  <div><div class="stick-area" id="stickArea"><div class="stick" id="stick"></div></div><small>JOYSTICK · MOVER</small></div>
+  <div><button class="fire" id="fire">DISPARAR</button><small>SEGURE PARA ATIRAR</small></div>
+ </div>
+ <div id="controls"><div class="hint">PC: WASD ou setas para pilotar · ESPAÇO para disparar · X para impulso.<br>Celular: joystick para controlar a nave e botão vermelho para disparar.<br>As naves atravessam as bordas, como nos jogos clássicos de arcade.</div><div class="actions"><button class="btn" id="boost">IMPULSO (X)</button><button class="btn" id="restart">RECOMEÇAR</button></div></div>
 </main>
 <script type="module">
 import { db } from "./firebase.js";
-import { ref, set, update, onValue, onDisconnect, remove, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
-const $=id=>document.getElementById(id),status=$("status");
-const nick=(localStorage.getItem("goblox_player_nick")||"Explorador").slice(0,20);
-const room="space_explorers_arena";
-const myId="p_"+Math.random().toString(36).slice(2,11);
-const playersRef=ref(db,"spaceExplorersArena/rooms/"+room+"/players");
-const myRef=ref(db,"spaceExplorersArena/rooms/"+room+"/players/"+myId);
-const shotsRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots");
-let connected=false,players={},shots={},keys={},lastSync=0,lastShot=0,lastDamage={},aim={x:800,y:300},shooting=false;
-let player={x:130+Math.random()*120,y:130+Math.random()*350,hp:100,angle:0,speed:3.4,weapon:0,ammo:[30,18,6],reserve:[90,72,30],reloading:false};
-let kills=0,dead=false,respawnAt=0,shieldUntil=0;
-const weapons=[
- {name:"Blaster",mag:30,delay:170,damage:18,speed:10,size:5,color:"#65e8ff",reload:900},
- {name:"Rajada",mag:18,delay:430,damage:11,speed:9,size:4,color:"#b89aff",reload:1200},
- {name:"Precisão",mag:6,delay:700,damage:42,speed:15,size:6,color:"#ffd166",reload:1450}
-];
-const walls=[
- {x:260,y:100,w:150,h:35},{x:480,y:60,w:38,h:150},{x:690,y:120,w:180,h:35},
- {x:130,y:280,w:170,h:38},{x:410,y:260,w:230,h:40},{x:790,y:290,w:170,h:38},
- {x:260,y:470,w:38,h:100},{x:530,y:440,w:170,h:38},{x:850,y:465,w:120,h:38}
-];
-const pickups=[{x:90,y:90,t:"ammo"},{x:550,y:180,t:"ammo"},{x:1010,y:520,t:"ammo"},{x:740,y:390,t:"shield"},{x:360,y:390,t:"shield"}];
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-function setStatus(t){status.textContent=t}
-function rectHit(x,y,r,w){return x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h}
-function moveWithWalls(x,y,dx,dy,r=16){let nx=clamp(x+dx,r,W-r),ny=clamp(y+dy,r,H-r);if(!walls.some(w=>rectHit(nx,y,r,w)))x=nx;if(!walls.some(w=>rectHit(x,ny,r,w)))y=ny;return{x,y}}
-function drawCover(){for(const w of walls){ctx.fillStyle="#263c57";ctx.fillRect(w.x,w.y,w.w,w.h);ctx.fillStyle="#3d5878";ctx.fillRect(w.x+4,w.y+4,w.w-8,7);ctx.strokeStyle="#83a8ca55";ctx.strokeRect(w.x,w.y,w.w,w.h)}}
-function drawPlayer(p,isMe){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle||0);ctx.fillStyle=isMe?"#5ee7ff":"#f0a7ff";ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.fillStyle="#12243b";ctx.fillRect(3,-5,23,10);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(4,-5,2.5,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle="#fff";ctx.font="12px Arial";ctx.textAlign="center";ctx.fillText(p.nick||"Jogador",p.x,p.y-23);ctx.fillStyle="#401d2a";ctx.fillRect(p.x-18,p.y+19,36,5);ctx.fillStyle="#4ade80";ctx.fillRect(p.x-18,p.y+19,36*clamp((p.hp??100)/100,0,1),5)}
-function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle="#0b1425";ctx.fillRect(0,0,W,H);ctx.strokeStyle="#ffffff0b";for(let x=0;x<W;x+=44){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=44){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
- pickups.forEach(p=>{ctx.fillStyle=p.t==="ammo"?"#fbbf24":"#a78bfa";ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#111827";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText(p.t==="ammo"?"A":"+",p.x,p.y+5)});
- drawCover();Object.entries(players).forEach(([id,p])=>{if(id!==myId&&p&&typeof p.x==="number"&&Date.now()-(p.ts||0)<12000)drawPlayer(p,false)});
- Object.values(shots).forEach(s=>{if(!s||typeof s.x!=="number")return;ctx.fillStyle=s.color||"#67e8f9";ctx.shadowBlur=12;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.size||5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0});
- if(!dead)drawPlayer({...player,nick},true);
- if(dead){ctx.fillStyle="#030712b9";ctx.fillRect(0,0,W,H);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 42px Arial";ctx.fillText("VOCÊ FOI ATINGIDO",W/2,H/2-12);ctx.font="20px Arial";ctx.fillText("Voltando para a arena...",W/2,H/2+28)}
+import { ref, set, onValue, onDisconnect, remove, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height,$=id=>document.getElementById(id);
+const nick=(localStorage.getItem("goblox_player_nick")||"Piloto").slice(0,18),room="space_explorers_arcade",myId="ship_"+Math.random().toString(36).slice(2,10);
+const base="spaceExplorersArcade/rooms/"+room,playersRef=ref(db,base+"/players"),myRef=ref(db,base+"/players/"+myId),shotsRef=ref(db,base+"/shots");
+let players={},shots={},online=false,keys={},lastSync=0,lastFire=0,shooting=false,boosting=false,score=0,scoreRef=ref(db,base+"/scores/"+myId);
+const ship={x:W/2,y:H/2,angle:-Math.PI/2,vx:0,vy:0,lives:3,invulnerable:0};
+let joystick={x:0,y:0,active:false},pointerId=null;
+const stars=Array.from({length:150},(_,i)=>({x:(i*7919%W),y:(i*3571%H),r:(i%3)*.55+.5,a:.25+(i%5)*.12}));
+let rocks=Array.from({length:13},(_,i)=>({id:i,x:(i*173+91)%W,y:(i*257+53)%H,r:22+(i%4)*8,a:i*.71,spin:(i%2?.004:-.005),vx:Math.sin(i*4)*.55,vy:Math.cos(i*3)*.55,hp:2+Math.floor(i%3)}));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),wrap=(n,max)=>(n%max+max)%max;
+function status(t){$("status").textContent=t}
+function updateUI(){$("hp").textContent=ship.lives;$("score").textContent=score;$("count").textContent=Object.keys(players).filter(id=>Date.now()-(players[id]?.ts||0)<10000).length}
+function shipShape(x,y,a,scale=1,color="#72e8ff"){
+ ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(scale,scale);ctx.shadowColor=color;ctx.shadowBlur=13;ctx.fillStyle=color;ctx.strokeStyle="#e3fbff";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(23,0);ctx.lineTo(-15,-13);ctx.lineTo(-9,0);ctx.lineTo(-15,13);ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+ ctx.fillStyle="#e7faff";ctx.beginPath();ctx.arc(-4,0,4,0,Math.PI*2);ctx.fill();
+ ctx.restore();
 }
-function updateUI(){$("hp").textContent=player.hp;$("kills").textContent=kills;$("count").textContent=Object.keys(players).filter(id=>Date.now()-(players[id]?.ts||0)<12000).length;$("ammo").textContent=player.ammo[player.weapon]+"/"+player.reserve[player.weapon]}
-function chooseWeapon(i){player.weapon=i;document.querySelectorAll(".weapon").forEach(b=>b.classList.toggle("active",Number(b.dataset.weapon)===i));updateUI()}
-function reload(){let i=player.weapon,w=weapons[i];if(player.reloading||player.ammo[i]>=w.mag||player.reserve[i]<=0||dead)return;player.reloading=true;setStatus("Recarregando "+w.name+"...");setTimeout(()=>{let n=Math.min(w.mag-player.ammo[i],player.reserve[i]);player.ammo[i]+=n;player.reserve[i]-=n;player.reloading=false;updateUI();setStatus("Arena online · "+Object.keys(players).length+" conectados")},w.reload)}
-function spawnShot(){if(dead||player.reloading)return;let i=player.weapon,w=weapons[i],now=Date.now();if(now-lastShot<w.delay)return;lastShot=now;if(player.ammo[i]<=0){reload();return}player.ammo[i]--;updateUI();let count=i===1?3:1;for(let n=0;n<count;n++){let spread=count===1?0:(n-1)*.13;let a=player.angle+spread;let shot={owner:myId,x:player.x+Math.cos(a)*23,y:player.y+Math.sin(a)*23,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,damage:w.damage,size:w.size,color:w.color,created:Date.now()};let newRef=push(shotsRef);set(newRef,shot).catch(()=>{})}}
-function damageLocal(amount,owner){if(dead||Date.now()<(lastDamage[owner]||0))return;lastDamage[owner]=Date.now()+300;if(Date.now()<shieldUntil)return;player.hp=Math.max(0,player.hp-amount);if(player.hp<=0){dead=true;respawnAt=Date.now()+2600;if(owner!==myId){runTransaction(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+owner),value=>(Number(value)||0)+1).catch(()=>{})}setStatus("Você foi atingido! Aguarde o respawn.")}updateUI()}
-function respawn(){dead=false;player.hp=100;player.x=100+Math.random()*180;player.y=100+Math.random()*400;player.ammo=[30,18,6];player.reserve=[90,72,30];player.reloading=false;updateUI()}
-function step(now){
- let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now;
- if(!dead){
-  let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0);
-  let dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
-  let len=Math.hypot(dx,dy)||1;
-  let pos=moveWithWalls(player.x,player.y,dx/len*player.speed*dt,dy/len*player.speed*dt);
-  player.x=pos.x;player.y=pos.y;player.angle=Math.atan2(aim.y-player.y,aim.x-player.x);
-  if(shooting)spawnShot();
-  pickups.forEach(p=>{
-   if(Math.hypot(player.x-p.x,player.y-p.y)<28){
-    if(p.t==="ammo"){player.reserve=player.reserve.map((v,i)=>Math.min(v+[30,24,8][i],[180,144,60][i]));setStatus("Munição coletada!")}
-    else{shieldUntil=Date.now()+5000;setStatus("Escudo ativado por 5 segundos!")}
-    p.x=-1000;p.y=-1000;
-    setTimeout(()=>{p.x=90+Math.random()*(W-180);p.y=80+Math.random()*(H-160)},8000);
-    updateUI();
-   }
-  });
-  if(now-lastSync>100){lastSync=now;set(myRef,{x:player.x,y:player.y,angle:player.angle,nick,hp:player.hp,ts:Date.now()}).catch(()=>{})}
- } else if(Date.now()>respawnAt){respawn()}
+function drawRock(r){ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.a);ctx.strokeStyle="#a2b4c9";ctx.fillStyle="#27374e";ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5,rad=r.r*(.78+((i*7)%5)*.055);let x=Math.cos(a)*rad,y=Math.sin(a)*rad;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+function draw(){
+ ctx.fillStyle="#020611";ctx.fillRect(0,0,W,H);
+ stars.forEach(s=>{ctx.globalAlpha=s.a;ctx.fillStyle="#d6efff";ctx.fillRect(s.x,s.y,s.r,s.r)});ctx.globalAlpha=1;
+ rocks.forEach(drawRock);
+ Object.entries(players).forEach(([id,p])=>{if(id!==myId&&p&&typeof p.x==="number"&&Date.now()-(p.ts||0)<10000){shipShape(p.x,p.y,p.angle||0,.95,"#f4a7ff");ctx.fillStyle="#eaf2ff";ctx.font="13px Arial";ctx.textAlign="center";ctx.fillText(p.nick||"Piloto",p.x,p.y-25)}});
+ Object.values(shots).forEach(s=>{if(!s||typeof s.x0!=="number")return;let age=(Date.now()-s.created)/1000,x=wrap(s.x0+s.vx*age,W),y=wrap(s.y0+s.vy*age,H);ctx.fillStyle=s.color||"#7cecff";ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0});
+ if(ship.lives>0){if(Date.now()<ship.invulnerable&&Math.floor(Date.now()/100)%2===0){}else shipShape(ship.x,ship.y,ship.angle,1,"#72e8ff");if(boosting){ctx.fillStyle="#ffb45d";ctx.beginPath();ctx.moveTo(ship.x-Math.cos(ship.angle)*14+Math.sin(ship.angle)*5,ship.y-Math.sin(ship.angle)*14-Math.cos(ship.angle)*5);ctx.lineTo(ship.x-Math.cos(ship.angle)*34,ship.y-Math.sin(ship.angle)*34);ctx.lineTo(ship.x-Math.cos(ship.angle)*14-Math.sin(ship.angle)*5,ship.y-Math.sin(ship.angle)*14+Math.cos(ship.angle)*5);ctx.fill()}}
+}
+function fire(){if(ship.lives<=0||Date.now()-lastFire<230)return;lastFire=Date.now();let speed=8.8;let shot={owner:myId,x0:ship.x+Math.cos(ship.angle)*24,y0:ship.y+Math.sin(ship.angle)*24,vx:Math.cos(ship.angle)*speed+ship.vx*.45,vy:Math.sin(ship.angle)*speed+ship.vy*.45,created:Date.now(),color:"#7cecff"};pushShot(shot)}
+function pushShot(s){let r=push(shotsRef);set(r,s).catch(()=>status("Falha ao disparar. Confira o Firebase."))}
+function hurt(){if(Date.now()<ship.invulnerable||ship.lives<=0)return;ship.lives--;ship.invulnerable=Date.now()+1800;ship.x=W/2;ship.y=H/2;ship.vx=ship.vy=0;if(ship.lives<=0){status("Sua nave foi destruída! Aperte RECOMEÇAR.");}updateUI()}
+function reset(){ship.lives=3;ship.x=W/2;ship.y=H/2;ship.vx=ship.vy=0;ship.angle=-Math.PI/2;ship.invulnerable=Date.now()+1800;score=0;updateUI();status("Nave pronta. Boa viagem, piloto!")}
+function tick(now){
+ let dt=Math.min((now-(tick.last||now))/16.67,2);tick.last=now;
+ if(ship.lives>0){
+  let ix=joystick.active?joystick.x:((keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0));
+  let iy=joystick.active?joystick.y:((keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0));
+  let mag=Math.hypot(ix,iy);
+  if(mag>.12){ship.angle=Math.atan2(iy,ix);let thrust=boosting||keys.x?0.22:0.12;ship.vx+=ix/mag*thrust*dt;ship.vy+=iy/mag*thrust*dt}
+  ship.vx*=Math.pow(.986,dt);ship.vy*=Math.pow(.986,dt);let max=boosting||keys.x?7:4.6;let sp=Math.hypot(ship.vx,ship.vy);if(sp>max){ship.vx=ship.vx/sp*max;ship.vy=ship.vy/sp*max}
+  ship.x=wrap(ship.x+ship.vx*dt,W);ship.y=wrap(ship.y+ship.vy*dt,H);
+  if(shooting||keys[" "] )fire();
+  rocks.forEach(r=>{r.x=wrap(r.x+r.vx*dt,W);r.y=wrap(r.y+r.vy*dt,H);r.a+=r.spin*dt;if(Math.hypot(ship.x-r.x,ship.y-r.y)<r.r+13)hurt()});
+  if(now-lastSync>90){lastSync=now;set(myRef,{x:ship.x,y:ship.y,angle:ship.angle,nick,ts:Date.now(),lives:ship.lives}).catch(()=>{})}
+ }
  Object.entries(shots).forEach(([id,s])=>{
-  if(!s||typeof s.x!=="number")return;
-  const shotRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id);
-  if(Date.now()-(s.created||0)>2200){if(s.owner===myId)remove(shotRef).catch(()=>{});return}
-  if(s.owner===myId&&now-(s.updatedAt||s.created||0)>35){
-   const nx=s.x+(s.vx||0)*dt,ny=s.y+(s.vy||0)*dt;
-   if(nx<8||nx>W-8||ny<8||ny>H-8||walls.some(w=>nx>w.x&&nx<w.x+w.w&&ny>w.y&&ny<w.y+w.h)){remove(shotRef).catch(()=>{});return}
-   const moved={...s,x:nx,y:ny,updatedAt:now};shots[id]=moved;set(shotRef,moved).catch(()=>{});
-  }
-  if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(shotRef).catch(()=>{})}
+  if(!s||typeof s.x0!=="number")return;let age=(Date.now()-s.created)/1000;
+  if(age>2.1){if(s.owner===myId)remove(ref(db,base+"/shots/"+id)).catch(()=>{});return}
+  let x=wrap(s.x0+s.vx*age,W),y=wrap(s.y0+s.vy*age,H);
+  if(s.owner!==myId&&ship.lives>0&&Math.hypot(ship.x-x,ship.y-y)<19){hurt();remove(ref(db,base+"/shots/"+id)).catch(()=>{})}
+  if(s.owner===myId){for(const r of rocks){if(Math.hypot(r.x-x,r.y-y)<r.r){remove(ref(db,base+"/shots/"+id)).catch(()=>{});r.hp--;if(r.hp<=0){r.x=wrap(r.x+W*.47,W);r.y=wrap(r.y+H*.39,H);r.hp=2+Math.floor(Math.random()*3);score+=10;updateUI()}break}}}
  });
- updateUI();draw();requestAnimationFrame(step);
+ draw();updateUI();requestAnimationFrame(tick);
 }
-window.addEventListener("keydown",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();if(k==="r")reload();if(k>="1"&&k<="3")chooseWeapon(Number(k)-1)});
-window.addEventListener("keyup",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=false});
-canvas.addEventListener("pointermove",e=>{let r=canvas.getBoundingClientRect();aim={x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}});
-canvas.addEventListener("pointerdown",e=>{let r=canvas.getBoundingClientRect();aim={x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};shooting=true;canvas.setPointerCapture(e.pointerId)});
-["pointerup","pointercancel","lostpointercapture"].forEach(ev=>canvas.addEventListener(ev,()=>shooting=false));
-document.querySelectorAll("[data-d]").forEach(b=>{let k={up:"w",down:"s",left:"a",right:"d"}[b.dataset.d];b.addEventListener("pointerdown",e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});["pointerup","pointercancel","lostpointercapture"].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+function setAimStick(e){let rect=$("stickArea").getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,dx=e.clientX-cx,dy=e.clientY-cy,limit=rect.width*.34,len=Math.hypot(dx,dy);if(len>limit){dx=dx/len*limit;dy=dy/len*limit}joystick.x=dx/limit;joystick.y=dy/limit;joystick.active=Math.hypot(joystick.x,joystick.y)>.12;$("stick").style.transform="translate("+dx+"px,"+dy+"px)"}
+const area=$("stickArea");area.addEventListener("pointerdown",e=>{e.preventDefault();pointerId=e.pointerId;area.setPointerCapture(pointerId);setAimStick(e)});area.addEventListener("pointermove",e=>{if(e.pointerId===pointerId)setAimStick(e)});function endStick(){pointerId=null;joystick={x:0,y:0,active:false};$("stick").style.transform="translate(0,0)"}["pointerup","pointercancel","lostpointercapture"].forEach(ev=>area.addEventListener(ev,endStick));
 $("fire").addEventListener("pointerdown",e=>{e.preventDefault();shooting=true});["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fire").addEventListener(ev,()=>shooting=false));
-$("reload").onclick=reload;$("respawn").onclick=respawn;document.querySelectorAll(".weapon").forEach(b=>b.onclick=()=>chooseWeapon(Number(b.dataset.weapon)));
-onValue(playersRef,s=>{players=s.val()||{};updateUI();if(!connected){connected=true;setStatus("Multiplayer conectado · entre na arena e encontre outros jogadores!")}},e=>setStatus("Falha no multiplayer: "+e.message+" · confira as regras do Firebase"));
-onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));
-onValue(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+myId),s=>{kills=Number(s.val())||0;updateUI()});
-onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));
-set(myRef,{x:player.x,y:player.y,angle:0,nick,hp:100,ts:Date.now()}).catch(e=>setStatus("Não foi possível entrar na sala: "+e.message+" · verifique as regras do Firebase"));
-window.addEventListener("beforeunload",()=>remove(myRef).catch(()=>{}));
-updateUI();requestAnimationFrame(step);
+window.addEventListener("keydown",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;if(k===" "){e.preventDefault();shooting=true}});window.addEventListener("keyup",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=false;if(k===" ")shooting=false});
+$("boost").addEventListener("pointerdown",()=>boosting=true);["pointerup","pointerleave","pointercancel"].forEach(ev=>$("boost").addEventListener(ev,()=>boosting=false));$("restart").onclick=reset;
+onValue(playersRef,s=>{players=s.val()||{};if(!online){online=true;status("Multiplayer conectado · "+nick+" entrou na galáxia!") }updateUI()},e=>status("Erro de conexão: "+e.message));
+onValue(shotsRef,s=>{shots=s.val()||{}},e=>status("Erro ao receber disparos: "+e.message));
+onValue(scoreRef,s=>{score=Number(s.val())||0;updateUI()});
+onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));set(myRef,{x:ship.x,y:ship.y,angle:ship.angle,nick,ts:Date.now(),lives:ship.lives}).catch(e=>status("Não entrou na sala: "+e.message));
+updateUI();requestAnimationFrame(tick);
 </script>
 </body></html>
