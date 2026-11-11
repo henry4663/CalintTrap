@@ -1128,11 +1128,11 @@
                 ctx.save();
                 ctx.translate(player.x, player.y);
                 if (playerSpriteReady) {
-                    const frame = Math.floor(performance.now() / 115) % 4;
+                    // Pose parada: usa sempre o mesmo quadro, sem animação de corrida.
                     const facingLeft = Math.cos(player.angle) < 0;
                     ctx.scale(facingLeft ? -1 : 1, 1);
                     ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(playerSprite, frame * 64, 0, 64, 64, -34, -34, 68, 68);
+                    ctx.drawImage(playerSprite, -22, -35, 44, 70);
                 } else {
                     ctx.fillStyle = player.color;
                     ctx.beginPath();
