@@ -81,8 +81,9 @@ function step(now){let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now
  if(now-lastSync>100){lastSync=now;set(myRef,{x:player.x,y:player.y,angle:player.angle,nick,hp:player.hp,ts:Date.now()}).catch(()=>{})}
  if(dead&&Date.now()>respawnAt)respawn();
  }
- Object.entries(shots).forEach(([id,s])=>{if(!s||typeof s.x!=="number")return;if(Date.now()-(s.created||0)>2200){if(s.owner===myId)remove(ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id)).catch(()=>{});return}
- if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id)).catch(()=>{})}
+ Object.entries(shots).forEach(([id,s])=>{if(!s||typeof s.x!=="number")return;const shotRef=ref(db,"spaceExplorersArena/rooms/"+room+"/shots/"+id);if(now-(s.created||0)>2200){if(s.owner===myId)remove(shotRef).catch(()=>{});return}
+ if(s.owner===myId&&now-(s.updatedAt||s.created||0)>35){const nx=s.x+(s.vx||0)*dt,ny=s.y+(s.vy||0)*dt;if(nx<8||nx>W-8||ny<8||ny>H-8||walls.some(w=>nx>w.x&&nx<w.x+w.w&&ny>w.y&&ny<w.y+w.h)){remove(shotRef).catch(()=>{});return}const moved={...s,x:nx,y:ny,updatedAt:now};shots[id]=moved;set(shotRef,moved).catch(()=>{})}
+ if(s.owner!==myId&&!dead&&Math.hypot(player.x-s.x,player.y-s.y)<20){damageLocal(s.damage||15,s.owner);remove(shotRef).catch(()=>{})}
  });
  updateUI();draw();requestAnimationFrame(step)}
 window.addEventListener("keydown",e=>{let k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();if(k==="r")reload();if(k>="1"&&k<="3")chooseWeapon(Number(k)-1)});
