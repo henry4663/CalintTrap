@@ -32,7 +32,20 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
   <button type="button" data-tab="cargos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Cargos</button>
   <button type="button" data-tab="banimentos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Banimentos</button>
   <button type="button" data-tab="zx" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Zx</button>
+  <button type="button" data-tab="torneio" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Torneio Speed Run</button>
  </nav>
+ <section id="tournament-panel" class="panel rounded-2xl p-5 mb-6 hidden">
+  <p class="text-violet-300 text-xs font-black tracking-widest">SPEED RUN ARENA</p>
+  <h2 class="text-2xl font-black mt-2">Controle de torneio</h2>
+  <p class="text-slate-400 text-sm mt-2">Crie uma sala com 6 vagas. A partida começa automaticamente quando as seis pessoas entrarem.</p>
+  <label for="tournament-title" class="block text-sm font-bold mt-5 mb-2">Título de campeão (definido por você)</label>
+  <input id="tournament-title" maxlength="40" class="input w-full rounded-xl px-4 py-3" placeholder="Ex.: Lenda do Speed Run">
+  <div class="flex flex-wrap gap-3 mt-4">
+   <button id="create-speed-tournament" type="button" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-5 py-3 font-black">Criar e ativar sala</button>
+   <button id="stop-speed-tournament" type="button" class="bg-red-800 hover:bg-red-700 rounded-xl px-5 py-3 font-bold">Encerrar torneio</button>
+  </div>
+  <p id="tournament-admin-status" class="text-sm text-slate-300 mt-4" role="status">Carregando torneio...</p>
+ </section>
  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Contas cadastradas</p><p id="stat-users" class="text-3xl font-black mt-2">—</p></section>
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Perfis públicos</p><p id="stat-profiles" class="text-3xl font-black mt-2">—</p></section>
@@ -73,7 +86,8 @@ if (!allowed) {
     contas: ["Lista de contas", "Consulte os jogadores cadastrados no Goblox."],
     cargos: ["Gerenciar cargos", "Escolha e salve o cargo de cada jogador."],
     banimentos: ["Central de banimentos", "Aplique suspensão temporária ou permanente e remova banimentos."],
-    zx: ["Gerenciar Zx", "Adicione moedas ao saldo de um jogador."]
+    zx: ["Gerenciar Zx", "Adicione moedas ao saldo de um jogador."],
+    torneio: ["Torneio Speed Run", "Crie e controle uma sala competitiva de seis jogadores."]
   };
   document.querySelectorAll("[data-tab]").forEach(button => {
     button.addEventListener("click", () => {
@@ -84,6 +98,8 @@ if (!allowed) {
         tab.className = "tab-btn rounded-xl px-4 py-3 font-bold " +
           (tab.dataset.tab === activeTab ? "bg-violet-600 text-white" : "panel text-slate-300 hover:bg-violet-950");
       });
+      document.getElementById("tournament-panel").classList.toggle("hidden", activeTab !== "torneio");
+      document.querySelector(".panel.rounded-2xl.p-5:not(#tournament-panel)")?.classList.toggle("hidden", activeTab === "torneio");
       render();
     });
   });
@@ -324,6 +340,51 @@ if (!allowed) {
       document.getElementById("refresh-users").disabled = false;
     }
   }
+  const tournamentRef = ref(db, "speedRunTournament/current");
+  const tournamentStatus = document.getElementById("tournament-admin-status");
+  async function refreshTournamentStatus() {
+    try {
+      const snap = await get(tournamentRef);
+      const t = snap.exists() ? snap.val() : null;
+      tournamentStatus.textContent = t
+        ? (t.active ? "ATIVO — Sala " + t.roomId + " | " + Object.keys(t.players || {}).length + "/6 jogadores | " + (t.title || "Sem título") : "Nenhum torneio ativo.")
+        : "Nenhum torneio criado.";
+    } catch (error) {
+      console.error(error);
+      tournamentStatus.textContent = "Não foi possível consultar o torneio. Confira as regras do Firebase.";
+    }
+  }
+  document.getElementById("create-speed-tournament").addEventListener("click", async () => {
+    const title = document.getElementById("tournament-title").value.trim();
+    if (title.length < 2) { tournamentStatus.textContent = "Digite um título de campeão com pelo menos 2 caracteres."; return; }
+    const button = document.getElementById("create-speed-tournament");
+    button.disabled = true;
+    try {
+      const roomId = "speed_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+      await set(tournamentRef, { active:true, game:"speedRunArena", roomId, title:title.slice(0,40), status:"waiting", maxPlayers:6, players:{}, createdAt:Date.now(), createdBy:nick });
+      tournamentStatus.textContent = "Sala criada! " + roomId + " — aguardando 6 jogadores.";
+    } catch (error) {
+      console.error(error);
+      tournamentStatus.textContent = "Falha ao criar sala. Verifique as permissões do Firebase.";
+    } finally { button.disabled = false; }
+  });
+  document.getElementById("stop-speed-tournament").addEventListener("click", async () => {
+    try {
+      const snap = await get(tournamentRef);
+      if (!snap.exists()) { tournamentStatus.textContent = "Não existe torneio para encerrar."; return; }
+      await set(tournamentRef, { ...snap.val(), active:false, status:"cancelled", endedAt:Date.now() });
+      tournamentStatus.textContent = "Torneio encerrado.";
+    } catch (error) {
+      console.error(error);
+      tournamentStatus.textContent = "Não foi possível encerrar o torneio.";
+    }
+  });
+  onValue(tournamentRef, snap => {
+    const t = snap.exists() ? snap.val() : null;
+    tournamentStatus.textContent = t
+      ? (t.active ? "ATIVO — Sala " + t.roomId + " | " + Object.keys(t.players || {}).length + "/6 jogadores | " + (t.title || "Sem título") : "Torneio " + (t.status || "encerrado") + ".")
+      : "Nenhum torneio criado.";
+  }, error => { console.error(error); tournamentStatus.textContent = "Erro ao acompanhar torneio."; });
   document.getElementById("refresh-users").addEventListener("click", loadUsers);
   document.getElementById("user-filter").addEventListener("input", render);
   loadUsers();
