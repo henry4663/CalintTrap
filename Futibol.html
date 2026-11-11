@@ -1,279 +1,128 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FUT-ONLINE 2D</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { touch-action: none; user-select: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Goblox Futebol</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111f;color:#fff;font-family:Arial,sans-serif;touch-action:none}
+body{display:flex;flex-direction:column;align-items:center;padding:10px;gap:10px}
+header{width:min(1100px,100%);display:flex;align-items:center;justify-content:space-between;gap:10px;background:#101d30;border:1px solid #263b58;border-radius:14px;padding:10px 14px}
+h1{font-size:18px;margin:0;color:#7cf5b2}#status{font-size:12px;color:#a9bed4;margin-top:4px}
+button{border:0;border-radius:10px;padding:10px 13px;background:#263b58;color:white;font-weight:700;cursor:pointer}
+button:active{transform:scale(.97)}#layout{width:min(1100px,100%);display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:10px;min-height:0;flex:1}
+#gameWrap{position:relative;min-height:260px;max-height:calc(100vh - 100px);align-self:center;width:100%;aspect-ratio:16/9;background:#087b48;border:4px solid #263b58;border-radius:14px;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+#side{display:flex;flex-direction:column;gap:10px}
+.panel{background:#101d30;border:1px solid #263b58;border-radius:12px;padding:12px}
+.panel h2{font-size:12px;color:#a9bed4;margin:0 0 10px}
+.score{font-size:28px;font-weight:900;text-align:center}.blue{color:#60a5fa}.red{color:#fb7185}
+#players{font-size:12px;line-height:1.8;max-height:180px;overflow:auto}
+#joystick{position:absolute;left:14px;bottom:14px;width:104px;height:104px;border:2px solid #ffffff66;background:#ffffff22;border-radius:50%;display:none;align-items:center;justify-content:center;z-index:3;touch-action:none}
+#knob{width:42px;height:42px;border-radius:50%;background:#ffffffcc;box-shadow:0 2px 8px #0008}
+#shoot{position:absolute;right:18px;bottom:22px;width:78px;height:78px;border-radius:50%;background:#f59e0b;color:#241300;border:3px solid #fff9;display:none;z-index:3}
+#hint{font-size:11px;color:#9fb3c8;line-height:1.5}
+@media(max-width:760px){body{padding:6px;gap:6px}header{padding:8px 10px}h1{font-size:15px}#layout{display:flex;flex-direction:column;gap:6px}#gameWrap{min-height:0;max-height:none;flex:none;width:100%;aspect-ratio:16/9}#side{display:grid;grid-template-columns:1fr 1fr;gap:6px}.panel{padding:8px}.panel h2{margin-bottom:4px}.score{font-size:20px}#players{max-height:56px}#joystick,#shoot{display:flex}#hint{display:none}}
+</style>
 </head>
-<body class="bg-slate-950 text-white font-sans min-h-screen flex flex-col items-center justify-center p-2 overflow-hidden">
+<body>
+<header>
+ <div><h1>⚽ GOBLOX FUTEBOL</h1><div id="status">Conectando à partida...</div></div>
+ <div style="display:flex;gap:7px"><button id="teamBtn">Trocar time</button><button id="exitBtn">Sair</button></div>
+</header>
+<div id="layout">
+ <div id="gameWrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="joystick"><div id="knob"></div></div>
+  <button id="shoot">CHUTAR</button>
+ </div>
+ <aside id="side">
+  <section class="panel"><h2>PLACAR</h2><div class="score"><span class="blue" id="blueScore">0</span> <span style="color:#8294aa">×</span> <span class="red" id="redScore">0</span></div><div style="display:flex;justify-content:space-between;font-size:10px"><span class="blue">AZUL</span><span class="red">VERMELHO</span></div></section>
+  <section class="panel"><h2>JOGADORES NA SALA</h2><div id="players">Carregando...</div></section>
+  <section class="panel" id="hint">PC: WASD ou setas para andar. Espaço para chutar. Celular: use o controle e o botão CHUTAR. Encoste na bola para conduzi-la.</section>
+</aside>
+</div>
+<script type="module">
+import { db, ref, set, onValue, remove } from "./firebase.js";
+import { getCurrentNick } from "./authLocal.js";
 
-  <!-- Placar Superior -->
-  <header class="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 mb-3 flex items-center justify-between shadow-lg">
-    <div class="flex items-center space-x-3">
-      <div class="bg-emerald-600 p-2 rounded-lg text-white font-bold">⚽</div>
-      <div>
-        <h1 class="font-extrabold text-base text-emerald-400">FUT-ONLINE 2D</h1>
-        <div class="flex items-center space-x-1.5 text-xs text-slate-300">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Firebase Conectado</span>
-        </div>
-      </div>
-    </div>
-    <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link da sala copiado!');" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition">
-      🔗 Convidar
-    </button>
-  </header>
-
-  <!-- Container do Jogo -->
-  <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
-    <div class="lg:col-span-3 relative w-full aspect-[16/9] bg-emerald-700 rounded-xl shadow-2xl border-4 border-slate-800 overflow-hidden">
-      <canvas id="gameCanvas" class="w-full h-full block"></canvas>
-      
-      <!-- Joystick Analógico -->
-      <div id="joystickZone" class="absolute bottom-4 left-4 w-28 h-28 bg-white/15 backdrop-blur-sm rounded-full border border-white/30 flex items-center justify-center touch-none z-20">
-        <div id="joystickKnob" class="w-10 h-10 bg-white/80 rounded-full shadow-md transition-transform duration-75"></div>
-      </div>
-    </div>
-
-    <!-- Painel Lateral -->
-    <div class="lg:col-span-1 flex flex-col space-y-3">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold text-slate-300">👥 JOGADORES</span>
-          <span id="playerCount" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">1/6</span>
-        </div>
-        <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
-          <span id="myNameDisplay" class="text-xs font-medium text-white">Você</span>
-          <span id="myTeamBadge" class="text-[10px] font-bold text-blue-400">AZUL</span>
-        </div>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow">
-        <div class="text-xs font-bold text-slate-300 mb-2">🎮 CONTROLES</div>
-        <button onclick="toggleTeam()" class="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs py-2 rounded border border-slate-700 transition">
-          Trocar de Time
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Script Firebase & Jogo -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // COLE AS SUAS CONFIGURAÇÕES DO FIREBASE AQUI
-    const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "seu-projeto.firebaseapp.com",
-      projectId: "seu-projeto-id",
-      storageBucket: "seu-projeto.appspot.com",
-      messagingSenderId: "SEU_SENDER_ID",
-      appId: "SEU_APP_ID"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const playerId = 'Player_' + Math.floor(Math.random() * 900 + 100);
-    const roomId = 'sala_principal';
-    let myTeam = 'AZUL';
-
-    document.getElementById('myNameDisplay').innerText = playerId;
-
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 450;
-
-    const player = {
-      x: Math.random() * 400 + 200,
-      y: Math.random() * 200 + 100,
-      radius: 14,
-      speed: 4.5
-    };
-
-    const inputState = { vx: 0, vy: 0 };
-    let remotePlayers = {};
-
-    // Referência do jogador no Firestore
-    const playerRef = doc(db, 'rooms', roomId, 'players', playerId);
-
-    async function syncPosition() {
-      try {
-        await setDoc(playerRef, {
-          x: player.x,
-          y: player.y,
-          team: myTeam,
-          lastActive: Date.now()
-        }, { merge: true });
-      } catch (e) {
-        console.error("Erro ao sincronizar dados:", e);
-      }
-    }
-
-    function listenPlayers() {
-      const playersCol = collection(db, 'rooms', roomId, 'players');
-      onSnapshot(playersCol, (snapshot) => {
-        remotePlayers = {};
-        let count = 0;
-        snapshot.forEach((docSnap) => {
-          count++;
-          if (docSnap.id !== playerId) {
-            remotePlayers[docSnap.id] = docSnap.data();
-          }
-        });
-        document.getElementById('playerCount').innerText = `${count}/6`;
-      });
-    }
-
-    listenPlayers();
-    setInterval(syncPosition, 45);
-
-    window.addEventListener('beforeunload', () => {
-      deleteDoc(playerRef);
-    });
-
-    // Joystick Analógico
-    const joystickZone = document.getElementById('joystickZone');
-    const joystickKnob = document.getElementById('joystickKnob');
-    let joystickActive = false;
-    let joystickTouchId = null;
-    let originX = 0, originY = 0;
-    const maxRadius = 36;
-
-    function handleJoystickStart(e) {
-      const touch = e.changedTouches ? e.changedTouches[0] : e;
-      joystickActive = true;
-      joystickTouchId = touch.identifier ?? 'mouse';
-      const rect = joystickZone.getBoundingClientRect();
-      originX = rect.left + rect.width / 2;
-      originY = rect.top + rect.height / 2;
-      updateJoystick(touch);
-    }
-
-    function handleJoystickMove(e) {
-      if (!joystickActive) return;
-      let touch = null;
-      if (e.changedTouches) {
-        for (let i = 0; i < e.changedTouches.length; i++) {
-          if (e.changedTouches[i].identifier === joystickTouchId) { touch = e.changedTouches[i]; break; }
-        }
-      } else { touch = e; }
-      if (touch) updateJoystick(touch);
-    }
-
-    function handleJoystickEnd() {
-      joystickActive = false;
-      joystickTouchId = null;
-      joystickKnob.style.transform = `translate(0px, 0px)`;
-      inputState.vx = 0; inputState.vy = 0;
-    }
-
-    function updateJoystick(touch) {
-      const dx = touch.clientX - originX;
-      const dy = touch.clientY - originY;
-      const dist = Math.hypot(dx, dy);
-      const angle = Math.atan2(dy, dx);
-      const clampedDist = Math.min(dist, maxRadius);
-      const knobX = Math.cos(angle) * clampedDist;
-      const knobY = Math.sin(angle) * clampedDist;
-      joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-      inputState.vx = knobX / maxRadius;
-      inputState.vy = knobY / maxRadius;
-    }
-
-    joystickZone.addEventListener('touchstart', handleJoystickStart, { passive: false });
-    window.addEventListener('touchmove', handleJoystickMove, { passive: false });
-    window.addEventListener('touchend', handleJoystickEnd, { passive: false });
-    joystickZone.addEventListener('mousedown', handleJoystickStart);
-    window.addEventListener('mousemove', handleJoystickMove);
-    window.addEventListener('mouseup', handleJoystickEnd);
-
-    const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-    window.toggleTeam = function() {
-      myTeam = myTeam === 'AZUL' ? 'VERMELHO' : 'AZUL';
-      const badge = document.getElementById('myTeamBadge');
-      badge.innerText = myTeam;
-      badge.className = `text-[10px] font-bold ${myTeam === 'AZUL' ? 'text-blue-400' : 'text-red-400'}`;
-    }
-
-    // Loop do Jogo
-    function gameLoop() {
-      let moveX = inputState.vx;
-      let moveY = inputState.vy;
-
-      if (moveX === 0 && moveY === 0) {
-        if (keys['a'] || keys['arrowleft']) moveX = -1;
-        if (keys['d'] || keys['arrowright']) moveX = 1;
-        if (keys['w'] || keys['arrowup']) moveY = -1;
-        if (keys['s'] || keys['arrowdown']) moveY = 1;
-      }
-
-      player.x += moveX * player.speed;
-      player.y += moveY * player.speed;
-
-      const border = 25;
-      player.x = Math.max(border + player.radius, Math.min(canvas.width - border - player.radius, player.x));
-      player.y = Math.max(border + player.radius, Math.min(canvas.height - border - player.radius, player.y));
-
-      // Desenhar Campo
-      ctx.fillStyle = '#047857';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(border, border, canvas.width - (border * 2), canvas.height - (border * 2));
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, border);
-      ctx.lineTo(canvas.width / 2, canvas.height - border);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 55, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Renderizar Outros Jogadores
-      for (let id in remotePlayers) {
-        let p = remotePlayers[id];
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
-        ctx.fillStyle = p.team === 'AZUL' ? '#3b82f6' : '#ef4444';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(id, p.x, p.y - 18);
-      }
-
-      // Renderizar Jogador Local
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-      ctx.fillStyle = myTeam === 'AZUL' ? '#3b82f6' : '#ef4444';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(playerId + ' (Você)', player.x, player.y - player.radius - 4);
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-  </script>
+const $ = id => document.getElementById(id);
+const canvas = $("game"), ctx = canvas.getContext("2d");
+const room = "goblox_futebol_v2";
+const nick = getCurrentNick() || "Jogador";
+const playerId = (crypto.randomUUID ? crypto.randomUUID() : "p"+Math.random().toString(36).slice(2));
+const playersRef = ref(db, "games/"+room+"/players");
+const myRef = ref(db, "games/"+room+"/players/"+playerId);
+const ballRef = ref(db, "games/"+room+"/ball");
+const scoreRef = ref(db, "games/"+room+"/score");
+let team = Math.random() < .5 ? "AZUL" : "VERMELHO";
+let players = {};
+let ball = {x:480,y:270,vx:0,vy:0};
+let score = {blue:0,red:0};
+let keys = {}, move = {x:0,y:0}, facing = {x:1,y:0};
+let lastPublish=0,lastBallPublish=0,lastShot=0,goalLock=0,host=false,alive=true;
+const me={x:team==="AZUL"?220:740,y:270,r:17,speed:230};
+$("status").textContent = "Entrando na sala...";
+$("teamBtn").onclick=async()=>{team=team==="AZUL"?"VERMELHO":"AZUL";await publishPlayer();};
+$("exitBtn").onclick=()=>{location.href="lobby.html";};
+function publishPlayer(){return set(myRef,{nick:String(nick).slice(0,24),team,x:me.x,y:me.y,active:true,updatedAt:Date.now()});}
+onValue(playersRef,snap=>{
+ players={};snap.forEach(child=>{const p=child.val();if(p&&p.active&&Date.now()-(p.updatedAt||0)<20000)players[child.key]=p;});
+ const ids=Object.keys(players).sort();host=ids.length>0&&ids[0]===playerId;
+ $("players").innerHTML=ids.map(id=>{const p=players[id];return '<div><span style="color:'+(p.team==="AZUL"?'#60a5fa':'#fb7185')+'">●</span> '+escapeHtml(p.nick||"Jogador")+(id===playerId?' (você)':'')+'</div>';}).join("")||"Você está sozinho";
+ $("status").textContent=host?"Partida online • você mantém a bola":"Partida online • sala "+ids.length+"/12";
+});
+onValue(ballRef,snap=>{if(snap.exists()&&!host){const b=snap.val();if(Number.isFinite(b.x)&&Number.isFinite(b.y)){ball.x=b.x;ball.y=b.y;ball.vx=b.vx||0;ball.vy=b.vy||0;}}});
+onValue(scoreRef,snap=>{if(snap.exists()){score=snap.val();$("blueScore").textContent=score.blue||0;$("redScore").textContent=score.red||0;}});
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+window.addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault();if(e.code==="Space")shoot();});
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+function shoot(){const now=performance.now();if(now-lastShot<380)return;lastShot=now;const d=Math.hypot(ball.x-me.x,ball.y-me.y);if(d<66){let dx=ball.x-me.x,dy=ball.y-me.y,l=Math.hypot(dx,dy)||1;if(l<10){dx=facing.x;dy=facing.y;l=Math.hypot(dx,dy)||1;}ball.vx=dx/l*570;ball.vy=dy/l*570;if(host)publishBall();}}
+$("shoot").addEventListener("pointerdown",e=>{e.preventDefault();shoot();});
+const joy=$("joystick"),knob=$("knob");let joyPointer=null;
+joy.addEventListener("pointerdown",e=>{joyPointer=e.pointerId;joy.setPointerCapture(joyPointer);joyMove(e);});
+joy.addEventListener("pointermove",e=>{if(e.pointerId===joyPointer)joyMove(e);});
+function joyMove(e){const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),d=Math.hypot(dx,dy),m=32,x=d?dx/d*Math.min(d,m):0,y=d?dy/d*Math.min(d,m):0;knob.style.transform='translate('+x+'px,'+y+'px)';move.x=x/m;move.y=y/m;}
+function joyEnd(){joyPointer=null;move={x:0,y:0};knob.style.transform="translate(0,0)";}
+joy.addEventListener("pointerup",joyEnd);joy.addEventListener("pointercancel",joyEnd);
+async function publishBall(){try{await set(ballRef,{x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,at:Date.now()});}catch(e){console.warn("Falha ao sincronizar bola",e);}}
+function draw(){
+ ctx.clearRect(0,0,960,540);ctx.fillStyle="#087b48";ctx.fillRect(0,0,960,540);
+ ctx.strokeStyle="#eafff0";ctx.lineWidth=4;ctx.strokeRect(28,25,904,490);ctx.beginPath();ctx.moveTo(480,25);ctx.lineTo(480,515);ctx.stroke();ctx.beginPath();ctx.arc(480,270,75,0,Math.PI*2);ctx.stroke();
+ ctx.strokeRect(28,175,105,190);ctx.strokeRect(827,175,105,190);
+ ctx.fillStyle="#d1fae5";ctx.fillRect(0,218,29,104);ctx.fillRect(931,218,29,104);
+ for(const [id,p] of Object.entries(players)){if(id===playerId)continue;drawPlayer(p.x,p.y,p.team,p.nick);}
+ drawPlayer(me.x,me.y,team,nick+" (Você)");
+ ctx.beginPath();ctx.arc(ball.x,ball.y,11,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.strokeStyle="#172033";ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(ball.x,ball.y,4,0,Math.PI*2);ctx.fillStyle="#111827";ctx.fill();
+}
+function drawPlayer(x,y,t,n){ctx.beginPath();ctx.arc(x,y,17,0,Math.PI*2);ctx.fillStyle=t==="AZUL"?"#3b82f6":"#ef4444";ctx.fill();ctx.lineWidth=3;ctx.strokeStyle="#fff";ctx.stroke();ctx.fillStyle="#fff";ctx.font="12px Arial";ctx.textAlign="center";ctx.fillText(String(n||"Jogador").slice(0,16),x,y-24);}
+function frame(now){
+ if(!alive)return;const dt=Math.min((now-(frame.last||now))/1000,.035);frame.last=now;
+ let x=move.x,y=move.y;
+ if(keys.a||keys.arrowleft)x-=1;if(keys.d||keys.arrowright)x+=1;if(keys.w||keys.arrowup)y-=1;if(keys.s||keys.arrowdown)y+=1;
+ const len=Math.hypot(x,y);if(len>1){x/=len;y/=len;}
+ if(x||y){facing={x,y};}
+ me.x=clamp(me.x+x*me.speed*dt,48,912);me.y=clamp(me.y+y*me.speed*dt,48,492);
+ if(host){
+  ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+  const friction=Math.pow(.985,dt*60);ball.vx*=friction;ball.vy*=friction;
+  if(ball.y<38||ball.y>502){ball.y=clamp(ball.y,38,502);ball.vy*=-.72;}
+  if(ball.x<38||ball.x>922){
+   if(ball.y>210&&ball.y<330&&now>goalLock){const scored=ball.x<38?"red":"blue";score[scored]=(score[scored]||0)+1;set(scoreRef,score);goalLock=now+1300;ball={x:480,y:270,vx:0,vy:0};}
+   else {ball.x=clamp(ball.x,38,922);ball.vx*=-.72;}
+  }
+  const dx=ball.x-me.x,dy=ball.y-me.y,d=Math.hypot(dx,dy),min=28;
+  if(d<min){const nx=dx/(d||1),ny=dy/(d||1);ball.x=me.x+nx*min;ball.y=me.y+ny*min;ball.vx+=nx*95;ball.vy+=ny*95;}
+  for(const p of Object.values(players)){const px=ball.x-p.x,py=ball.y-p.y,pd=Math.hypot(px,py);if(pd<28){const nx=px/(pd||1),ny=py/(pd||1);ball.x=p.x+nx*28;ball.y=p.y+ny*28;ball.vx+=nx*45;ball.vy+=ny*45;}}
+  if(now-lastBallPublish>95){lastBallPublish=now;publishBall();}
+ }
+ if(now-lastPublish>130){lastPublish=now;publishPlayer().catch(e=>{$("status").textContent="Erro de conexão. Verifique as regras do Firebase.";console.warn(e);});}
+ draw();requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.addEventListener("pagehide",()=>{alive=false;remove(myRef).catch(()=>{});});
+publishPlayer().catch(e=>{$("status").textContent="Não conectou ao Firebase. Confira as regras do Realtime Database.";console.error(e);});
+</script>
 </body>
 </html>
