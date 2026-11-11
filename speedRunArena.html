@@ -1032,7 +1032,19 @@
 
             // Hitbox real: só há colisão quando os volumes do personagem
             // e do obstáculo realmente se cruzam no espaço 3D.
-            const playerBox = new THREE.Box3().setFromObject(player);
+            // Hitbox própria do jogador. A caixa visual do personagem inclui
+            // chapéu e braços; por isso ela não serve para validar o movimento abaixado.
+            const playerHeight = G.isDucking ? 0.9 : 2.5;
+            const playerWidth = G.isDucking ? 0.95 : 0.8;
+            const playerDepth = 0.8;
+            const playerBox = new THREE.Box3().setFromCenterAndSize(
+              new THREE.Vector3(
+                player.position.x,
+                playerHeight / 2,
+                player.position.z
+              ),
+              new THREE.Vector3(playerWidth, playerHeight, playerDepth)
+            );
             const obstacleSize = new THREE.Vector3(
               obstacle.userData.width,
               obstacle.userData.height,
