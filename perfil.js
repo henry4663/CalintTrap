@@ -34,6 +34,16 @@ async function carregarPerfil(){
   usernameLine.appendChild(nickTag);
   $("profile-bio").textContent=String(dados.bio||"Este jogador ainda não escreveu uma biografia.");
   $("profile-avatar").src=imagemSegura(dados.avatarUrl,nickAlvo);
+  const custom=dados.catalogEquipped||{};
+  const themeStyles={theme_neon:"linear-gradient(115deg,#5522c8,#242b62 60%,#087d9e)",theme_ocean:"linear-gradient(115deg,#075985,#0e7490)",theme_fire:"linear-gradient(115deg,#9a3412,#7f1d1d)",theme_nature:"linear-gradient(115deg,#166534,#365314)"};
+  const nameColors={name_white:"#ffffff",name_purple:"#c4b5fd",name_cyan:"#67e8f9",name_gold:"#fcd34d"};
+  const frameColors={frame_purple:"#a78bfa",frame_gold:"#fbbf24",frame_cyan:"#22d3ee",frame_red:"#fb7185"};
+  const cover=document.querySelector(".cover");
+  if(cover&&themeStyles[custom.theme])cover.style.background=themeStyles[custom.theme];
+  if(nameColors[custom.name])$("profile-title").style.color=nameColors[custom.name];
+  if(frameColors[custom.frame])$("profile-avatar").style.borderColor=frameColors[custom.frame];
+  const avatarSeeds={avatar_classic:"PlayerOne",avatar_cyber:"CyberHero",avatar_gold:"GoldenBot",avatar_alien:"AlienKing"};
+  if(avatarSeeds[custom.avatar]&&!dados.avatarUrl)$("profile-avatar").src=avatarPadrao(avatarSeeds[custom.avatar]);
   $("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
   if(souDono){$("display-name").value=dados.displayName||nickAlvo;$("bio-input").value=dados.bio||"";$("avatar-url").value=dados.avatarUrl||"";$("bio-count").textContent=$("bio-input").value.length;}
   if(!souDono)$("profile-status").textContent="Jogador";
