@@ -46,7 +46,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
   </div>
   <p id="tournament-admin-status" class="text-sm text-slate-300 mt-4" role="status">Carregando torneio...</p>
  </section>
- <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+ <div id="admin-stats" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Contas cadastradas</p><p id="stat-users" class="text-3xl font-black mt-2">—</p></section>
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Perfis públicos</p><p id="stat-profiles" class="text-3xl font-black mt-2">—</p></section>
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Status do painel</p><p class="text-xl font-bold text-emerald-300 mt-3">Conectado ao Firebase</p></section>
@@ -68,7 +68,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
 </div>
 <script type="module">
 import { getCurrentNick } from "./authLocal.js";
-import { db, ref, get, set, remove } from "./firebase.js";
+import { db, ref, get, set, remove, onValue } from "./firebase.js";
 
 const nick = getCurrentNick();
 const ADMIN_USERS = ["henrydev77", "rik_dev"];
@@ -100,6 +100,7 @@ if (!allowed) {
       });
       document.getElementById("tournament-panel").classList.toggle("hidden", activeTab !== "torneio");
       document.getElementById("users-panel").classList.toggle("hidden", activeTab === "torneio");
+      document.getElementById("admin-stats").classList.toggle("hidden", activeTab === "torneio");
       render();
     });
   });
@@ -381,14 +382,20 @@ if (!allowed) {
       tournamentStatus.textContent = "Não foi possível encerrar o torneio.";
     }
   });
+  let stopPlayersListener = null;
   onValue(tournamentRef, snap => {
     const t = snap.exists() ? snap.val() : null;
-    if (!t) { tournamentStatus.textContent = "Nenhum torneio criado."; return; }
-    onValue(ref(db, "speedRunTournament/rooms/" + t.roomId + "/players"), playerSnap => {
-      const count = playerSnap.exists() ? Object.keys(playerSnap.val() || {}).length : 0;
-      tournamentStatus.textContent = t.active ? "ATIVO — Sala " + t.roomId + " | " + count + "/6 jogadores | " + (t.title || "Sem título") : "Torneio " + (t.status || "encerrado") + ".";
-    });
-  }, error => { console.error(error); tournamentStatus.textContent = "Erro ao acompanhar torneio."; });
+    if (stopPlayersListener) { stopPlayersListener(); stopPlayersListener = null; }
+    if (!t || !t.roomId) { tournamentStatus.textContent = "Nenhum torneio criado."; return; }
+    stopPlayersListener = onValue(ref(db, "speedRunTournament/rooms/" + t.roomId + "/players"), playerSnap => {
+      const players = playerSnap.exists() ? playerSnap.val() : {};
+      const count = Object.keys(players || {}).length;
+      const alive = Object.values(players || {}).filter(p => p && p.alive && !p.eliminated).length;
+      tournamentStatus.textContent = t.active
+        ? "ATIVO — Sala " + t.roomId + " | " + count + "/6 inscritos | " + alive + " vivos | " + (t.title || "Sem título")
+        : "Torneio " + (t.status || "encerrado") + ".";
+    }, error => { console.error(error); tournamentStatus.textContent = "Erro ao ler jogadores da sala."; });
+  }, error => { console.error(error); tournamentStatus.textContent = "Erro ao acompanhar torneio. Confira as regras do Firebase."; });
   document.getElementById("refresh-users").addEventListener("click", loadUsers);
   document.getElementById("user-filter").addEventListener("input", render);
   loadUsers();
