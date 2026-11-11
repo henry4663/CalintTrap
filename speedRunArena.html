@@ -186,6 +186,12 @@
     }
 
     #tournamentNotice { position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:2000; width:min(720px,calc(100% - 24px)); padding:10px 16px; border:1px solid #facc15; border-radius:0 0 14px 14px; background:rgba(18,12,35,.96); color:#fff; text-align:center; font-weight:800; box-shadow:0 8px 28px #0009; display:none; pointer-events:none; }
+    #tournamentRoster{position:fixed;top:58px;right:20px;z-index:1800;width:220px;padding:10px 12px;border:1px solid #38bdf8;border-radius:12px;background:#080d20eF;color:#fff;font:700 12px Arial;pointer-events:none}
+    #tournamentRoster .alive-row{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ffffff18}
+    #tournamentCountdown{position:fixed;inset:0;z-index:2500;display:none;align-items:center;justify-content:center;flex-direction:column;background:#050816eF;color:#fff;font:bold 22px Arial;text-align:center}
+    #tournamentCountdown strong{display:block;color:#facc15;font-size:min(28vw,150px);line-height:1.1}
+    @media(max-width:600px){#tournamentRoster{top:auto;bottom:12px;right:10px;width:170px;font-size:10px}}
+
     .toast.show { bottom: 70px; }
     .toast.success { color: #00ffcc; border-color: #00ffcc; }
     .toast.error { color: #ff3366; border-color: #ff3366; }
@@ -207,6 +213,8 @@
 
 <body>
   <div id="tournamentNotice" role="status"></div>
+  <div id="tournamentRoster" aria-live="polite" style="display:none"></div>
+  <div id="tournamentCountdown"><span>PREPARE-SE!</span><strong id="tournamentCountdownNumber">5</strong><span>O TORNEIO VAI COMEÇAR</span></div>
   <div id="distance">📍 <span id="dist">0</span>m</div>
   <div id="pointsHud">🏆 <span id="points">0</span> pontos</div>
   <div id="coinHud">🪙 <span id="coinCount">0</span></div>
@@ -300,27 +308,71 @@
           }
         } catch (error) { console.error("Falha ao registrar campeão:", error); }
       }
+      let countdownInterval = null;
+      function renderTournamentRoster(players) {
+        const roster = document.getElementById("tournamentRoster");
+        const entries = Object.values(players || {});
+        if (!tournament || !entries.length) { roster.style.display = "none"; return; }
+        roster.style.display = "block";
+        const alive = entries.filter(p => p && p.alive && !p.eliminated).length;
+        roster.innerHTML = "<b>JOGADORES • " + alive + "/6 VIVOS</b>" + entries.map(p =>
+          '<div class="alive-row"><span></span><span></span></div>'
+        ).join("");
+        [...roster.querySelectorAll(".alive-row")].forEach((row,i) => {
+          const p = entries[i] || {};
+          row.children[0].textContent = String(p.nick || "Jogador").slice(0,18);
+          row.children[1].textContent = p.eliminated || p.alive === false ? "ELIMINADO" : "VIVO";
+          row.children[1].style.color = p.eliminated || p.alive === false ? "#fb7185" : "#4ade80";
+        });
+      }
+      async function iniciarContagem(roomData) {
+        const overlay = document.getElementById("tournamentCountdown");
+        const number = document.getElementById("tournamentCountdownNumber");
+        const startBtn = document.getElementById("startBtn");
+        if (!tournamentStartedLocally) {
+          tournamentStartedLocally = true;
+          G.running = false;
+          reset();
+          G.running = false;
+          startBtn.disabled = true;
+          startBtn.textContent = "TORNEIO EM ANDAMENTO";
+          document.getElementById("startScreen").style.display = "none";
+          document.getElementById("gameOver").style.display = "none";
+        }
+        overlay.style.display = "flex";
+        if (countdownInterval) clearInterval(countdownInterval);
+        const tick = async () => {
+          const remaining = Math.max(0, Math.ceil((Number(roomData.countdownEndsAt || Date.now()) - Date.now()) / 1000));
+          number.textContent = String(remaining);
+          if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            await runTransaction(tournamentRoomRef, current => {
+              if (!current || current.status !== "countdown") return;
+              current.status = "running";
+              current.startedAt = Date.now();
+              return current;
+            });
+          }
+        };
+        await tick();
+        countdownInterval = setInterval(tick, 150);
+      }
       async function joinSpeedTournament(config) {
         if (!config || !config.active || config.game !== "speedRunArena") return;
         tournament = config;
         tournamentRoomRef = ref(db, "speedRunTournament/rooms/" + config.roomId);
         tournamentPlayersRef = ref(db, "speedRunTournament/rooms/" + config.roomId + "/players");
-        const alreadyInSession = sessionStorage.getItem(tournamentSessionKey) === config.roomId;
+        const startBtn = document.getElementById("startBtn");
         try {
           const roomSnap = await get(tournamentRoomRef);
           const room = roomSnap.exists() ? roomSnap.val() : {};
           const players = room.players || {};
-          if (players[tournamentPlayerKey]?.eliminated && !alreadyInSession) {
+          if (players[tournamentPlayerKey]?.eliminated) {
             tournamentEliminated = true;
-            showTournamentNotice("Você já foi eliminado deste torneio. Não é possível voltar para a sala.");
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("startBtn").textContent = "ELIMINADO";
-            return;
-          }
-          if (!players[tournamentPlayerKey] && Object.keys(players).length >= 6) {
-            showTournamentNotice("Sala cheia (6/6). Entre no próximo torneio.");
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("startBtn").textContent = "SALA CHEIA";
+            showTournamentNotice("Você já foi eliminado deste torneio.");
+            startBtn.disabled = true;
+            startBtn.textContent = "ELIMINADO";
             return;
           }
           const joinResult = await runTransaction(tournamentPlayersRef, current => {
@@ -331,35 +383,39 @@
             return current;
           });
           if (!joinResult.committed && !joinResult.snapshot.child(tournamentPlayerKey).exists()) {
-            showTournamentNotice("Sala cheia (6/6). Entre no próximo torneio.");
+            showTournamentNotice("Sala cheia (6/6).");
             return;
           }
-          if (alreadyInSession && players[tournamentPlayerKey]?.eliminated) {
-            tournamentEliminated = true;
-            showTournamentNotice("Você já foi eliminado. A partida não permite retorno.");
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("startBtn").textContent = "ELIMINADO";
-            return;
-          }
-          sessionStorage.setItem(tournamentSessionKey, config.roomId);
           tournamentJoined = true;
-          tournamentRoomRef = ref(db, "speedRunTournament/rooms/" + config.roomId);
-          const joinedPlayers = joinResult.snapshot.val() || {};
-          if (Object.keys(joinedPlayers).length >= 6) {
-            await runTransaction(ref(db, "speedRunTournament/rooms/" + config.roomId + "/status"), current => current === "waiting" || current == null ? "running" : current);
-          }
+          sessionStorage.setItem(tournamentSessionKey, config.roomId);
+          await runTransaction(tournamentRoomRef, current => {
+            if (!current) return;
+            current.players = current.players || {};
+            if (current.status === "waiting" && Object.keys(current.players).length >= 6) {
+              current.status = "countdown";
+              current.countdownEndsAt = Date.now() + 5000;
+            }
+            return current;
+          });
           onValue(tournamentRoomRef, snap => {
-            const roomData = snap.val() || {};
-            tournamentStatus = roomData.status || "waiting";
-            if (roomData.winner) tournament.winner = roomData.winner;
-            if (tournamentStatus === "running" && !tournamentStartedLocally && !tournamentEliminated) {
-              tournamentStartedLocally = true;
-              document.getElementById("startScreen").style.display = "none";
-              reset();
+            const data = snap.val() || {};
+            tournamentStatus = data.status || "waiting";
+            if (data.winner) tournament.winner = data.winner;
+            if (tournamentStatus === "countdown") iniciarContagem(data);
+            if (tournamentStatus === "running") {
+              document.getElementById("tournamentCountdown").style.display = "none";
+              if (!G.running && !tournamentEliminated && !data.winner) {
+                tournamentStartedLocally = true;
+                reset();
+              }
+              startBtn.disabled = true;
+              startBtn.textContent = "TORNEIO EM ANDAMENTO";
             }
             if (tournamentStatus === "finished") {
-              const winner = roomData.winner || tournament?.winner;
-              showTournamentNotice(winner ? "🏆 CAMPEÃO: " + winner.nick + " — " + winner.title : "🏆 Torneio finalizado!");
+              if (countdownInterval) clearInterval(countdownInterval);
+              document.getElementById("tournamentCountdown").style.display = "none";
+              const winner = data.winner || tournament?.winner;
+              showTournamentNotice(winner ? "CAMPEÃO: " + winner.nick + " — " + winner.title : "TORNEIO FINALIZADO!");
               if (winner && winner.key === tournamentPlayerKey) {
                 G.running = false;
                 document.getElementById("gameOver").style.display = "flex";
@@ -373,20 +429,19 @@
           });
           onValue(tournamentPlayersRef, snap => {
             const list = snap.val() || {};
+            renderTournamentRoster(list);
             updateTournamentNotice(list);
             const alive = Object.values(list).filter(p => p && p.alive && !p.eliminated);
             if (tournamentStatus === "running" && alive.length === 1) registrarVencedor(alive[0]);
           });
-          if (roomState.status === "waiting" || !roomState.status) {
+          const currentPlayers = joinResult.snapshot.val() || {};
+          if (Object.keys(currentPlayers).length < 6) {
             tournamentStatus = "waiting";
-            showTournamentNotice("🏆 " + config.title + " • " + Object.keys(roomState.players || {}).length + "/6 jogadores • aguardando sala completar");
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("startBtn").textContent = "AGUARDANDO 6 JOGADORES";
+            showTournamentNotice("🏆 " + config.title + " • " + Object.keys(currentPlayers).length + "/6 inscritos • partida normal até completar");
           }
         } catch (error) {
           console.error("Erro ao entrar no torneio:", error);
-          showTournamentNotice("Não foi possível entrar no torneio. Verifique as permissões do Firebase.");
-          document.getElementById("startBtn").disabled = true;
+          showTournamentNotice("Falha ao entrar no torneio. Verifique as permissões do Firebase.");
         }
       }
       onValue(tournamentConfigRef, snap => {
@@ -1054,7 +1109,7 @@
             `📍 ${Math.floor(G.distance)}m`;
           document.getElementById("finalCoins").textContent =
             `🪙 ${G.coins} moedas`;
-          if (tournament && tournamentJoined) {
+          if (tournament && tournamentJoined && tournamentStatus === "running") {
             document.querySelector("#gameOver h1").textContent = "ELIMINADO";
             document.getElementById("restartBtn").style.display = "none";
             document.getElementById("finalScore").textContent = "Você saiu da disputa.";
