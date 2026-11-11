@@ -94,11 +94,11 @@ $("tabs").addEventListener("click",e=>{
 async function init(){
  try{
   const snap=await get(ref(db,"profiles/"+key));profile=snap.exists()?snap.val():{};
-  balance=Number.isFinite(Number(profile.zxBalance))?Math.max(0,Number(profile.zxBalance)):0;
+  balance=profile.zxInitialized?Math.max(0,Number(profile.zxBalance)||0):0;
   owned=Array.isArray(profile.catalogOwned)?profile.catalogOwned:["name_white"];
   equipped={theme:"theme_neon",frame:"frame_purple",name:"name_white",...(profile.catalogEquipped||{})};
   $("zx-balance").textContent=balance.toLocaleString("pt-BR");renderPreview();renderItems();
-  if(!profile.zxBalance){await persist();}
+  if(!profile.zxInitialized){profile.zxInitialized=true;await persist();}
  }catch(e){console.error(e);$("zx-balance").textContent="—";say("Erro ao carregar sua carteira Zx. Confira a conexão com Firebase.",true);}
 }
 init();
