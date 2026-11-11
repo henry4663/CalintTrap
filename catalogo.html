@@ -20,7 +20,7 @@
 <section class="shop">
 <h2 class="section-title">Catálogo Goblox</h2><p class="muted">Compre e equipe personalizações usando Zx. Seus itens ficam salvos na sua conta.</p>
 <div class="tabs" id="tabs">
-<button class="tab active" data-category="themes">Temas</button><button class="tab" data-category="avatars">Avatares</button><button class="tab" data-category="frames">Molduras</button><button class="tab" data-category="names">Cores de nome</button>
+<button class="tab active" data-category="photos">Fotos personalizadas</button><button class="tab" data-category="themes">Temas</button><button class="tab" data-category="frames">Molduras</button><button class="tab" data-category="names">Cores de nome</button>
 </div>
 <div class="grid" id="items"></div>
 </section>
@@ -32,15 +32,11 @@ const nick=getCurrentNick();
 const $=id=>document.getElementById(id);
 if(!nick){location.href="index.html";}
 const key=encodeURIComponent(String(nick||"").trim().toLowerCase()).replace(/\./g,"%2E");
-const catalog=[
+const catalog=[\n{id:"photo_crown",category:"photos",name:"Coroa Roxa",price:50,kind:"photo",value:"https://api.dicebear.com/9.x/adventurer/svg?seed=PurpleCrown&backgroundColor=b6e3f4",paint:"linear-gradient(135deg,#641baf,#101a48)",symbol:"★"},\n{id:"photo_cat",category:"photos",name:"Gato Style",price:50,kind:"photo",value:"https://api.dicebear.com/9.x/fun-emoji/svg?seed=CoolCat&backgroundColor=c0aede",paint:"#30204c",symbol:"🐱"},\n{id:"photo_galaxy",category:"photos",name:"Galáxia",price:75,kind:"photo",value:"https://api.dicebear.com/9.x/shapes/svg?seed=Galaxy&backgroundColor=6842c2",paint:"linear-gradient(135deg,#3b0764,#1e1b4b)",symbol:"✦"},\n{id:"photo_robot",category:"photos",name:"Robô Goblox",price:50,kind:"photo",value:"https://api.dicebear.com/9.x/bottts/svg?seed=GobloxBot&backgroundColor=c0aede",paint:"#312e81",symbol:"◈"},\n{id:"photo_fire",category:"photos",name:"Chamas",price:75,kind:"photo",value:"https://api.dicebear.com/9.x/adventurer/svg?seed=FirePlayer&backgroundColor=ffdfbf",paint:"linear-gradient(135deg,#9a3412,#7f1d1d)",symbol:"♨"},\n{id:"photo_cyber",category:"photos",name:"Cyber",price:75,kind:"photo",value:"https://api.dicebear.com/9.x/bottts/svg?seed=CyberPlayer&backgroundColor=b6e3f4",paint:"#172554",symbol:"⌁"},\n{id:"photo_shadow",category:"photos",name:"Sombrio",price:75,kind:"photo",value:"https://api.dicebear.com/9.x/adventurer/svg?seed=ShadowPlayer&backgroundColor=333333",paint:"#111827",symbol:"◉"},\n{id:"photo_smile",category:"photos",name:"Neon Smile",price:50,kind:"photo",value:"https://api.dicebear.com/9.x/fun-emoji/svg?seed=NeonSmile&backgroundColor=d1d4f9",paint:"#4c1d95",symbol:"☻"},
 {id:"theme_neon",category:"themes",name:"Neon Roxo",price:180,kind:"theme",value:"neon",paint:"linear-gradient(135deg,#641baf,#101a48)",symbol:"✦"},
 {id:"theme_ocean",category:"themes",name:"Oceano",price:160,kind:"theme",value:"ocean",paint:"linear-gradient(135deg,#075985,#0e7490)",symbol:"〰"},
 {id:"theme_fire",category:"themes",name:"Chamas",price:220,kind:"theme",value:"fire",paint:"linear-gradient(135deg,#9a3412,#7f1d1d)",symbol:"♨"},
 {id:"theme_nature",category:"themes",name:"Natureza",price:150,kind:"theme",value:"nature",paint:"linear-gradient(135deg,#166534,#365314)",symbol:"❖"},
-{id:"avatar_classic",category:"avatars",name:"Bot Clássico",price:0,kind:"avatar",value:"PlayerOne",paint:"#28334d",symbol:"🤖"},
-{id:"avatar_cyber",category:"avatars",name:"Cyber Bot",price:120,kind:"avatar",value:"CyberHero",paint:"#312e81",symbol:"⌁"},
-{id:"avatar_gold",category:"avatars",name:"Bot Dourado",price:190,kind:"avatar",value:"GoldenBot",paint:"#713f12",symbol:"★"},
-{id:"avatar_alien",category:"avatars",name:"Alienígena",price:210,kind:"avatar",value:"AlienKing",paint:"#14532d",symbol:"◉"},
 {id:"frame_purple",category:"frames",name:"Moldura Roxa",price:90,kind:"frame",value:"#a78bfa",paint:"linear-gradient(135deg,#7c3aed,#c4b5fd)",symbol:"◯"},
 {id:"frame_gold",category:"frames",name:"Moldura Dourada",price:140,kind:"frame",value:"#fbbf24",paint:"linear-gradient(135deg,#92400e,#facc15)",symbol:"◯"},
 {id:"frame_cyan",category:"frames",name:"Moldura Ciano",price:110,kind:"frame",value:"#22d3ee",paint:"linear-gradient(135deg,#0e7490,#67e8f9)",symbol:"◯"},
@@ -50,7 +46,7 @@ const catalog=[
 {id:"name_cyan",category:"names",name:"Ciano",price:85,kind:"name",value:"#67e8f9",paint:"#0891b2",symbol:"Aa"},
 {id:"name_gold",category:"names",name:"Dourado",price:100,kind:"name",value:"#fcd34d",paint:"#b45309",symbol:"Aa"}
 ];
-let profile={};let balance=1250;let owned=["avatar_classic","name_white"];let equipped={theme:"theme_neon",avatar:"avatar_classic",frame:"frame_purple",name:"name_white"};let category="themes";
+let profile={};let balance=0;let owned=["name_white"];let equipped={theme:"theme_neon",frame:"frame_purple",name:"name_white"};let category="photos";
 function say(t,error=false){$("status").textContent=t;$("status").style.color=error?"#fda4af":"#86efac";}
 function itemById(id){return catalog.find(x=>x.id===id);}
 function renderPreview(){
@@ -62,7 +58,7 @@ function renderItems(){
  const root=$("items");root.replaceChildren();
  catalog.filter(x=>x.category===category).forEach(item=>{
   const card=document.createElement("article");card.className="item";
-  const swatch=document.createElement("div");swatch.className="swatch";swatch.style.background=item.paint;swatch.textContent=item.symbol;
+  const swatch=document.createElement("div");swatch.className="swatch";swatch.style.background=item.paint;if(item.kind==="photo"){const image=document.createElement("img");image.src=item.value;image.alt=item.name;image.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:9px";swatch.appendChild(image);}else{swatch.textContent=item.symbol;}
   const title=document.createElement("h3");title.textContent=item.name;
   const price=document.createElement("div");price.className="price";price.textContent=item.price===0?"Grátis":item.price+" Zx";
   const btn=document.createElement("button");btn.className="action";
