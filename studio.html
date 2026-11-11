@@ -29,10 +29,10 @@ button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid
   <button id="add-part">▰<br>Bloco</button><button id="add-cylinder">◉<br>Cilindro</button><button id="add-sphere">●<br>Esfera</button><button id="add-spawn">⌂<br>Spawn</button>
  </div></section>
  <section class="section"><h3>Cena</h3><div id="object-list" class="object-list"><p class="empty">Sua cena está vazia. Adicione um bloco para começar.</p></div></section>
- <section class="section"><h3>Dica rápida</h3><p class="empty">Clique em um objeto para selecionar. Arraste o mouse para girar a câmera e use a roda para aproximar.</p></section>
+ <section class="section"><h3>Como construir</h3><p class="empty">1. Adicione uma peça.<br>2. Clique nela.<br>3. Use Mover, Girar ou Moldar.<br>4. Arraste as alças coloridas para editar a peça.</p></section>
 </aside>
 <main class="center">
- <div class="toolbar"><button id="focus-object">◎ Centralizar</button><button id="duplicate-object">Duplicar</button><button id="delete-object">Excluir</button><span class="hint">Arraste para girar · Roda para zoom</span></div>
+ <div class="toolbar"><button id="tool-move" class="active">↔ Mover</button><button id="tool-rotate">⟳ Girar</button><button id="tool-scale">◩ Moldar</button><button id="focus-object">◎ Centralizar</button><button id="duplicate-object">Duplicar</button><button id="delete-object">Excluir</button><span class="hint">Selecione e arraste as alças coloridas</span></div>
  <div class="viewport"><canvas id="view"></canvas><div class="view-help">Clique em um objeto para selecioná-lo · Botão direito/arraste para mover a câmera</div></div>
  <section class="bottom"><div class="tabs"><button class="active" id="tab-scene">Editor</button><button id="tab-script">Script Luau</button></div><div id="editor-info" class="empty" style="padding:12px">Construa seu mapa adicionando objetos. Selecione um objeto para editar suas propriedades.</div><textarea id="script-editor" spellcheck="false" placeholder="-- Escreva seu script Luau aqui...&#10;print(&quot;Olá, Goblox!&quot;)" hidden></textarea></section>
  <div id="status" class="status">Pronto para criar.</div>
