@@ -16,12 +16,14 @@ function make(tag, className, text) {
 async function playerInfo(username) {
   const snap = await get(ref(db, "profiles/" + keyOf(username)));
   const data = snap.exists() ? snap.val() : {};
+  const ban = data.ban;
+  const suspended = Boolean(ban?.active && (ban.permanent || Number(ban.until) > Date.now()));
   let avatar = avatarDefault(username);
   try {
     const url = new URL(data.avatarUrl || "");
     if (url.protocol === "https:" || url.protocol === "http:") avatar = url.href;
   } catch {}
-  return { username, displayName: String(data.displayName || username), avatar };
+  return { username, displayName: String(data.displayName || username), avatar, suspended, ban };
 }
 function makePlayerCard(player, action) {
   const card = make("div", "flex items-center gap-3 border border-gray-200 rounded-xl p-3 bg-gray-50");
@@ -30,6 +32,10 @@ function makePlayerCard(player, action) {
   const info = make("div", "min-w-0 flex-1");
   info.append(make("p", "font-bold text-gray-900 truncate", player.displayName));
   info.append(make("p", "text-xs text-gray-500 truncate", "@" + player.username));
+  if (player.suspended) {
+    const badge = make("span", "inline-block mt-1 text-[10px] font-black tracking-wide rounded-md px-2 py-1 bg-red-100 text-red-700", "⛔ CONTA SUSPENSA");
+    info.append(badge);
+  }
   const link = make("a", "text-xs font-semibold text-red-600 hover:underline", "Ver perfil");
   link.href = "perfil.html?user=" + encodeURIComponent(player.username);
   info.append(link);
