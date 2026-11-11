@@ -249,7 +249,7 @@
       "use strict";
 
       const playerNick = getCurrentNick() || "Anônimo";
-      const profileKey = encodeURIComponent(String(playerNick).trim().toLowerCase()).replace(/\\./g, "%2E");
+      const profileKey = encodeURIComponent(String(playerNick).trim().toLowerCase()).replace(/\./g, "%2E");
       const PONTUACAO_MINIMA = 10;
       const leaderboardRef = ref(db, "leaderboard");
 
