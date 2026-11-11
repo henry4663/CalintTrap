@@ -241,13 +241,15 @@
 
   <script type="module">
     import { criarPersonagem } from "./personagem.js";
-    import { db, ref, set, get, onValue, toast } from "./firebase.js";
+    import { db, ref, set, get, update, onValue, toast } from "./firebase.js";
+    import { increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { getCurrentNick } from "./authLocal.js";
 
     (() => {
       "use strict";
 
       const playerNick = getCurrentNick() || "Anônimo";
+      const profileKey = encodeURIComponent(String(playerNick).trim().toLowerCase()).replace(/\\./g, "%2E");
       const PONTUACAO_MINIMA = 10;
       const leaderboardRef = ref(db, "leaderboard");
 
@@ -714,6 +716,19 @@
       let jumpPressed = false;
       let duckPressed = false;
 
+      // Cada moeda coletada no Speed Run Arena adiciona exatamente 1 Zx à carteira.
+      async function adicionarZxPorMoeda() {
+        try {
+          await update(ref(db, "profiles/" + profileKey), {
+            zxBalance: increment(1)
+          });
+          toast("+1 Zx!", "sucesso");
+        } catch (error) {
+          console.error("Erro ao adicionar Zx pela moeda:", error);
+          toast("Moeda coletada, mas não foi possível salvar o Zx.", "erro");
+        }
+      }
+
       function atualizarHUD() {
         document.getElementById("dist").textContent = String(Math.floor(G.distance));
         document.getElementById("coinCount").textContent = String(G.coins);
@@ -1008,6 +1023,7 @@
 
               if (dx < 0.8 && dz < 1 && dy < 1.2) {
                 G.coins++;
+                adicionarZxPorMoeda();
                 scene.remove(coin);
                 coins.splice(i, 1);
               }
