@@ -49,7 +49,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
 </div>
 <script type="module">
 import { getCurrentNick } from "./authLocal.js";
-import { db, ref, get, set } from "./firebase.js";
+import { db, ref, get, set, remove } from "./firebase.js";
 
 const nick = getCurrentNick();
 const allowed = String(nick || "").trim().toLowerCase() === "henrydev77";
@@ -148,6 +148,82 @@ if (!allowed) {
         finally { unban.disabled = false; }
       });
       banActions.append(applyBan, unban);
+      const extraTitle = document.createElement("p");
+      extraTitle.className = "font-bold text-sm text-violet-200";
+      extraTitle.textContent = "Ações do administrador";
+
+      const followButton = document.createElement("button");
+      followButton.type = "button";
+      followButton.className = "save-btn rounded-xl px-3 py-3 font-bold border border-violet-700 text-violet-200";
+      followButton.textContent = user.following ? "✓ Seguindo" : "+ Seguir";
+      followButton.disabled = user.username.trim().toLowerCase() === "henrydev77";
+      followButton.addEventListener("click", async () => {
+        followButton.disabled = true;
+        try {
+          const followRef = ref(db, "following/henrydev77/" + user.key);
+          if (user.following) {
+            await remove(followRef);
+            user.following = false;
+            followButton.textContent = "+ Seguir";
+            status.textContent = "Você deixou de seguir @" + user.username + ".";
+          } else {
+            await set(followRef, { username:user.username, since:Date.now() });
+            user.following = true;
+            followButton.textContent = "✓ Seguindo";
+            status.textContent = "Agora você está seguindo @" + user.username + ".";
+          }
+        } catch (error) {
+          console.error(error);
+          status.textContent = "Não foi possível alterar o acompanhamento. Confira as regras do Firebase.";
+        } finally { followButton.disabled = user.username.trim().toLowerCase() === "henrydev77"; }
+      });
+
+      const zxRow = document.createElement("div");
+      zxRow.className = "flex gap-2";
+      const zxAmount = document.createElement("input");
+      zxAmount.type = "number";
+      zxAmount.min = "1";
+      zxAmount.max = "1000000000";
+      zxAmount.step = "1";
+      zxAmount.value = "100";
+      zxAmount.inputMode = "numeric";
+      zxAmount.placeholder = "Quantidade de Zx";
+      zxAmount.setAttribute("aria-label", "Quantidade de Zx para " + user.username);
+      zxAmount.className = "input min-w-0 flex-1 rounded-xl px-3 py-3";
+      const addZx = document.createElement("button");
+      addZx.type = "button";
+      addZx.textContent = "Adicionar Zx";
+      addZx.className = "save-btn bg-cyan-700 hover:bg-cyan-600 rounded-xl px-3 py-3 font-bold";
+      addZx.addEventListener("click", async () => {
+        const amount = Number(zxAmount.value);
+        if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000000) {
+          status.textContent = "Digite uma quantidade inteira de Zx entre 1 e 1 bilhão.";
+          zxAmount.focus();
+          return;
+        }
+        addZx.disabled = true;
+        addZx.textContent = "Adicionando...";
+        try {
+          const profileRef = ref(db, "profiles/" + user.key);
+          const profileSnap = await get(profileRef);
+          const current = profileSnap.exists() ? profileSnap.val() : {};
+          const balance = Number(current.zxBalance || 0);
+          if (!Number.isSafeInteger(balance) || balance < 0 || balance + amount > Number.MAX_SAFE_INTEGER) {
+            throw new Error("Saldo atual inválido ou limite de Zx excedido.");
+          }
+          current.zxBalance = balance + amount;
+          current.updatedAt = Date.now();
+          await set(profileRef, current);
+          status.textContent = "Adicionado " + amount.toLocaleString("pt-BR") + " Zx para @" + user.username + ". Novo saldo: " + current.zxBalance.toLocaleString("pt-BR") + " Zx.";
+          addZx.textContent = "✓ Adicionado";
+        } catch (error) {
+          console.error(error);
+          status.textContent = error.message || "Não foi possível adicionar Zx. Confira as regras do Firebase.";
+          addZx.textContent = "Tentar novamente";
+        } finally { addZx.disabled = false; }
+      });
+      zxRow.append(zxAmount, addZx);
+
       const actions = document.createElement("div");
       actions.className = "flex gap-2";
       const profile = document.createElement("a");
@@ -179,7 +255,7 @@ if (!allowed) {
         }
       });
       actions.append(profile, save);
-      card.append(heading, label, select, banTitle, banStatus, banReason, banType, banActions, actions);
+      card.append(heading, label, select, banTitle, banStatus, banReason, banType, banActions, extraTitle, followButton, zxRow, actions);
       list.appendChild(card);
     }
   }
@@ -193,13 +269,13 @@ if (!allowed) {
         get(ref(db, "profiles"))
       ]);
       const users = usersSnap.exists() ? usersSnap.val() : {};
-      const profiles = profilesSnap.exists() ? profilesSnap.val() : {};
+      const profiles = profilesSnap.exists() ? profilesSnap.val() : {};\n      const following = followingSnap.exists() ? followingSnap.val() : {};
       rows = Object.entries(users).map(([username]) => {
         const key = encodeURIComponent(username.trim().toLowerCase()).replace(/\./g, "%2E");
         const profile = profiles[key] || {};
         const ban = profile.ban || null;
         const banStillActive = Boolean(ban?.active && (ban.permanent || (Number(ban.until) > Date.now())));
-        return { username, key, displayName: String(profile.displayName || ""), role: profile.role || "none", ban: banStillActive ? ban : null };
+        return { username, key, displayName: String(profile.displayName || ""), role: profile.role || "none", ban: banStillActive ? ban : null, following: Boolean(following[key]) };
       }).sort((a,b) => a.username.localeCompare(b.username));
       document.getElementById("stat-users").textContent = rows.length;
       document.getElementById("stat-profiles").textContent = Object.keys(profiles).length;
