@@ -237,7 +237,7 @@
     // Verifica se o utilizador está logado ao carregar a página
     const nickAtual = getCurrentNick();
     const adminMenu = document.getElementById("admin-menu-link");
-    if (adminMenu && String(nickAtual || "").trim().toLowerCase() === "henrydev77") adminMenu.classList.remove("hidden");
+    if (adminMenu && ["henrydev77", "rik_dev"].includes(String(nickAtual || "").trim().replace(/^@/, "").toLowerCase())) adminMenu.classList.remove("hidden");
     if (!nickAtual) {
       window.location.href = "index.html";
     } else {
