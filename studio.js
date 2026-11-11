@@ -1,5 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/TransformControls.js";
 
 const $ = id => document.getElementById(id);
 const canvas=$("view"), scene=new THREE.Scene();
@@ -11,6 +12,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true; controls.target.set(0,1,0);
+const gizmo=new TransformControls(camera,renderer.domElement);scene.add(gizmo);
+gizmo.addEventListener("dragging-changed",e=>{controls.enabled=!e.value;});
+gizmo.addEventListener("objectChange",()=>renderProperties());
 scene.add(new THREE.HemisphereLight(0xffffff,0x45405e,2));
 const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(7,12,6);sun.castShadow=true;scene.add(sun);
 const grid=new THREE.GridHelper(100,100,0x66558c,0x302b43);scene.add(grid);
@@ -30,7 +34,7 @@ function addObject(type="Bloco",data={}){
  const p=data.position||{x:0,y:size.y/2,z:0};mesh.position.set(p.x,p.y,p.z);
  mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);objects.push(mesh);select(mesh);renderList();status(mesh.name+" adicionado.");return mesh;
 }
-function select(mesh){selected=mesh;renderList();renderProperties();}
+function select(mesh){selected=mesh;if(mesh)gizmo.attach(mesh);else gizmo.detach();renderList();renderProperties();}
 function renderList(){
  const root=$("object-list");root.replaceChildren();
  if(!objects.length){const p=document.createElement("p");p.className="empty";p.textContent="Sua cena está vazia. Adicione um bloco para começar.";root.append(p);return;}
@@ -54,6 +58,8 @@ $("add-cylinder").onclick=()=>addObject("Cilindro");
 $("add-sphere").onclick=()=>addObject("Esfera");
 $("add-spawn").onclick=()=>{const m=addObject("Bloco",{name:"Spawn",size:{x:3,y:.3,z:3},position:{x:0,y:.15,z:0},color:"#22c55e"});m.userData.kind="Spawn";renderList();};
 $("delete-object").onclick=deleteSelected;$("duplicate-object").onclick=duplicate;
+function setTool(mode){gizmo.setMode(mode);["move","rotate","scale"].forEach(k=>$("tool-"+k).classList.toggle("active",k===({translate:"move",rotate:"rotate",scale:"scale"}[mode])));status(mode==="scale"?"Moldar: arraste as alças para mudar o tamanho.":mode==="rotate"?"Girar: arraste os anéis para girar.":"Mover: arraste as setas para posicionar.");}
+$("tool-move").onclick=()=>setTool("translate");$("tool-rotate").onclick=()=>setTool("rotate");$("tool-scale").onclick=()=>setTool("scale");setTool("translate");
 $("focus-object").onclick=()=>{if(!selected)return status("Selecione um objeto primeiro.");controls.target.copy(selected.position);camera.position.set(selected.position.x+7,selected.position.y+6,selected.position.z+8);controls.update();};
 $("save-project").onclick=save;$("open-project").onclick=()=>$("file-input").click();
 $("file-input").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{load(JSON.parse(await file.text()));}catch(err){status("Não consegui abrir esse arquivo .gog.");console.error(err);}e.target.value="";};
