@@ -507,14 +507,23 @@
 
         // Sprite temporário do jogador: 4 quadros de corrida em pixel art.
         const playerSprite = new Image();
+        const idleSprite = new Image();
         let playerSpriteReady = false;
+        let idleSpriteReady = false;
         fetch("./assets/zombie-player.b64")
-            .then(response => { if (!response.ok) throw new Error("Sprite não encontrado"); return response.text(); })
+            .then(response => { if (!response.ok) throw new Error("Sprite de corrida não encontrado"); return response.text(); })
             .then(encoded => {
                 playerSprite.onload = () => { playerSpriteReady = true; };
                 playerSprite.src = "data:image/png;base64," + encoded.trim();
             })
-            .catch(error => console.warn("Não foi possível carregar o sprite do jogador:", error));
+            .catch(error => console.warn("Não foi possível carregar o sprite de corrida:", error));
+        fetch("./assets/zombie-player-idle.b64")
+            .then(response => { if (!response.ok) throw new Error("Sprite parado não encontrado"); return response.text(); })
+            .then(encoded => {
+                idleSprite.onload = () => { idleSpriteReady = true; };
+                idleSprite.src = "data:image/png;base64," + encoded.trim();
+            })
+            .catch(error => console.warn("Não foi possível carregar o sprite parado:", error));
 
         function resizeCanvas() {
             canvas.width = container.clientWidth;
@@ -1127,12 +1136,17 @@
             if (gameState !== 'GAMEOVER') {
                 ctx.save();
                 ctx.translate(player.x, player.y);
-                if (playerSpriteReady) {
-                    // Pose parada: usa sempre o mesmo quadro, sem animação de corrida.
-                    const facingLeft = Math.cos(player.angle) < 0;
-                    ctx.scale(facingLeft ? -1 : 1, 1);
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(playerSprite, -22, -35, 44, 70);
+                const movingNow = Math.hypot(moveX, moveY) > 0.08;
+                const facingLeft = Math.cos(player.angle) < 0;
+                ctx.scale(facingLeft ? -1 : 1, 1);
+                ctx.imageSmoothingEnabled = false;
+                if (movingNow && playerSpriteReady) {
+                    const frame = Math.floor(performance.now() / 115) % 4;
+                    ctx.drawImage(playerSprite, frame * 64, 0, 64, 64, -34, -34, 68, 68);
+                } else if (idleSpriteReady) {
+                    ctx.drawImage(idleSprite, -22, -35, 44, 70);
+                } else if (playerSpriteReady) {
+                    ctx.drawImage(playerSprite, 0, 0, 64, 64, -34, -34, 68, 68);
                 } else {
                     ctx.fillStyle = player.color;
                     ctx.beginPath();
