@@ -25,7 +25,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
  <div class="mb-8">
   <p class="text-violet-300 text-sm font-bold tracking-widest">CENTRAL DE CONTROLE</p>
   <h1 class="text-3xl md:text-4xl font-black mt-2">Painel administrativo</h1>
-  <p class="text-slate-400 mt-2">Bem-vindo, henryDEV77. Visão geral das contas cadastradas no Goblox.</p>
+  <p class="text-slate-400 mt-2">Bem-vindo à equipe administrativa. Visão geral das contas cadastradas no Goblox.</p>
  </div>
  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Contas cadastradas</p><p id="stat-users" class="text-3xl font-black mt-2">—</p></section>
@@ -45,14 +45,15 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
  <p class="text-xs text-slate-500 mt-6">Acesso visual restrito por nickname nesta página. A proteção real dos dados também depende das regras de segurança do Firebase.</p>
 </main>
 <div id="denied" class="min-h-[70vh] flex items-center justify-center p-6">
- <div class="panel rounded-2xl p-8 max-w-md text-center"><div class="text-4xl mb-4">🔒</div><h1 class="text-2xl font-black">Acesso restrito</h1><p class="text-slate-400 mt-2">Esta área está disponível somente para a conta henryDEV77.</p><a href="lobby.html" class="inline-block mt-6 bg-violet-600 hover:bg-violet-500 rounded-xl px-5 py-3 font-bold">Voltar ao Goblox</a></div>
+ <div class="panel rounded-2xl p-8 max-w-md text-center"><div class="text-4xl mb-4">🔒</div><h1 class="text-2xl font-black">Acesso restrito</h1><p class="text-slate-400 mt-2">Esta área está disponível somente para contas autorizadas da equipe Goblox.</p><a href="lobby.html" class="inline-block mt-6 bg-violet-600 hover:bg-violet-500 rounded-xl px-5 py-3 font-bold">Voltar ao Goblox</a></div>
 </div>
 <script type="module">
 import { getCurrentNick } from "./authLocal.js";
 import { db, ref, get, set, remove } from "./firebase.js";
 
 const nick = getCurrentNick();
-const allowed = String(nick || "").trim().toLowerCase() === "henrydev77";
+const ADMIN_USERS = ["henrydev77", "rik_dev"];
+const allowed = ADMIN_USERS.includes(String(nick || "").trim().replace(/^@/, "").toLowerCase());
 if (!allowed) {
   document.getElementById("admin-app").classList.add("hidden");
 } else {
@@ -120,7 +121,7 @@ if (!allowed) {
       applyBan.type = "button"; applyBan.textContent = "Aplicar suspensão";
       applyBan.className = "save-btn flex-1 bg-red-700 hover:bg-red-600 rounded-xl px-3 py-3 font-bold";
       applyBan.addEventListener("click", async () => {
-        if (user.username.trim().toLowerCase() === "henrydev77") { status.textContent = "A conta principal do ADM não pode ser suspensa por este painel."; return; }
+        if (ADMIN_USERS.includes(user.username.trim().replace(/^@/, "").toLowerCase())) { status.textContent = "Contas de administrador não podem ser suspensas por este painel."; return; }
         const reason = banReason.value.trim();
         if (!reason) { status.textContent = "Informe o motivo antes de suspender."; banReason.focus(); return; }
         applyBan.disabled = true; applyBan.textContent = "Aplicando...";
