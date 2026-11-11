@@ -34,7 +34,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
  </div>
  <section class="panel rounded-2xl p-5">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">1. Pesquise a pessoa. 2. Escolha o cargo. 3. Toque em salvar.</p></div>
+   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">Pesquise a conta, gerencie o cargo ou aplique uma suspensão temporária/permanente.</p></div>
    <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-3 font-bold">↻ Atualizar lista</button>
   </div>
   <label for="user-filter" class="block text-sm font-bold mb-2">Buscar usuário</label>
@@ -96,6 +96,57 @@ if (!allowed) {
         option.value = value; option.textContent = text; select.appendChild(option);
       }
       select.value = user.role || "none";
+      const banTitle = document.createElement("p");
+      banTitle.className = "font-bold text-sm text-red-200";
+      banTitle.textContent = "Sistema de banimento";
+      const banReason = document.createElement("textarea");
+      banReason.className = "input rounded-xl px-3 py-3 w-full";
+      banReason.rows = 2;
+      banReason.maxLength = 240;
+      banReason.placeholder = "Motivo da suspensão (obrigatório)";
+      banReason.value = user.ban?.reason || "";
+      const banType = document.createElement("select");
+      banType.className = "input rounded-xl px-3 py-3";
+      for (const [value,label] of [["1h","Temporário — 1 hora"],["1d","Temporário — 1 dia"],["7d","Temporário — 7 dias"],["30d","Temporário — 30 dias"],["perm","Permanente"]]) {
+        const option = document.createElement("option"); option.value=value; option.textContent=label; banType.appendChild(option);
+      }
+      const banStatus = document.createElement("p");
+      banStatus.className = "text-xs text-slate-400";
+      const banActive = user.ban?.active && (!user.ban.until || user.ban.until > Date.now());
+      banStatus.textContent = banActive ? (user.ban.permanent ? "⛔ Conta suspensa permanentemente" : "⛔ Suspensa até " + new Date(user.ban.until).toLocaleString("pt-BR")) : "✓ Conta ativa";
+      const banActions = document.createElement("div");
+      banActions.className = "flex gap-2";
+      const applyBan = document.createElement("button");
+      applyBan.type = "button"; applyBan.textContent = "Aplicar suspensão";
+      applyBan.className = "save-btn flex-1 bg-red-700 hover:bg-red-600 rounded-xl px-3 py-3 font-bold";
+      applyBan.addEventListener("click", async () => {
+        const reason = banReason.value.trim();
+        if (!reason) { status.textContent = "Informe o motivo antes de suspender."; banReason.focus(); return; }
+        applyBan.disabled = true; applyBan.textContent = "Aplicando...";
+        try {
+          const until = banType.value === "perm" ? null : Date.now() + ({ "1h":3600000, "1d":86400000, "7d":604800000, "30d":2592000000 }[banType.value]);
+          const ban = { active:true, permanent:banType.value === "perm", reason:reason.slice(0,240), until, createdAt:Date.now(), by:"henryDEV77" };
+          await set(ref(db, "profiles/" + user.key + "/ban"), ban);
+          user.ban = ban;
+          banStatus.textContent = ban.permanent ? "⛔ Conta suspensa permanentemente" : "⛔ Suspensa até " + new Date(until).toLocaleString("pt-BR");
+          status.textContent = "Suspensão aplicada em @" + user.username + ".";
+          applyBan.textContent = "✓ Aplicada";
+        } catch(error) { console.error(error); status.textContent = "Falha ao aplicar suspensão. Verifique as regras do Firebase."; applyBan.textContent = "Tentar novamente"; }
+        finally { applyBan.disabled = false; }
+      });
+      const unban = document.createElement("button");
+      unban.type = "button"; unban.textContent = "Remover ban";
+      unban.className = "save-btn bg-emerald-700 hover:bg-emerald-600 rounded-xl px-3 py-3 font-bold";
+      unban.addEventListener("click", async () => {
+        unban.disabled = true;
+        try {
+          await set(ref(db, "profiles/" + user.key + "/ban"), null);
+          user.ban = null; banReason.value = ""; banStatus.textContent = "✓ Conta ativa";
+          status.textContent = "Suspensão removida de @" + user.username + ".";
+        } catch(error) { console.error(error); status.textContent = "Não foi possível remover a suspensão."; }
+        finally { unban.disabled = false; }
+      });
+      banActions.append(applyBan, unban);
       const actions = document.createElement("div");
       actions.className = "flex gap-2";
       const profile = document.createElement("a");
@@ -127,7 +178,7 @@ if (!allowed) {
         }
       });
       actions.append(profile, save);
-      card.append(heading, label, select, actions);
+      card.append(heading, label, select, banTitle, banStatus, banReason, banType, banActions, actions);
       list.appendChild(card);
     }
   }
@@ -145,7 +196,9 @@ if (!allowed) {
       rows = Object.entries(users).map(([username]) => {
         const key = encodeURIComponent(username.trim().toLowerCase()).replace(/\./g, "%2E");
         const profile = profiles[key] || {};
-        return { username, key, displayName: String(profile.displayName || ""), role: profile.role || "none" };
+        const ban = profile.ban || null;
+        const banStillActive = Boolean(ban?.active && (ban.permanent || (Number(ban.until) > Date.now())));
+        return { username, key, displayName: String(profile.displayName || ""), role: profile.role || "none", ban: banStillActive ? ban : null };
       }).sort((a,b) => a.username.localeCompare(b.username));
       document.getElementById("stat-users").textContent = rows.length;
       document.getElementById("stat-profiles").textContent = Object.keys(profiles).length;
