@@ -46,6 +46,7 @@ async function carregarPerfil(){
   usernameLine.appendChild(nickTag);
   $("profile-bio").textContent=String(dados.bio||"Este jogador ainda não escreveu uma biografia.");
   $("profile-avatar").src=imagemSegura(dados.avatarUrl,nickAlvo);
+  if(dados.tournamentTitle){$("tournament-title-card").hidden=false;$("tournament-title-value").textContent=String(dados.tournamentTitle).slice(0,40);}
   const custom=dados.catalogEquipped||{};
   const themeStyles={
    theme_neon:"linear-gradient(115deg,#5522c8,#242b62 60%,#087d9e)",theme_ocean:"linear-gradient(115deg,#075985,#0e7490)",theme_fire:"linear-gradient(115deg,#9a3412,#7f1d1d)",theme_nature:"linear-gradient(115deg,#166534,#365314)",
