@@ -52,8 +52,24 @@ const catalog=[
 {id:"name_white",category:"names",name:"Branco",price:0,kind:"name",value:"#ffffff",paint:"#e5e7eb",symbol:"Aa"},
 {id:"name_purple",category:"names",name:"Roxo",price:70,kind:"name",value:"#c4b5fd",paint:"#7c3aed",symbol:"Aa"},
 {id:"name_cyan",category:"names",name:"Ciano",price:85,kind:"name",value:"#67e8f9",paint:"#0891b2",symbol:"Aa"},
-{id:"name_gold",category:"names",name:"Dourado",price:100,kind:"name",value:"#fcd34d",paint:"#b45309",symbol:"Aa"}
+{
+{id:"photo_ice",category:"photos",name:"Gelo Azul",price:80,kind:"photo",value:"https://api.dicebear.com/9.x/adventurer/svg?seed=IceGoblox&backgroundColor=b6e3f4",paint:"linear-gradient(135deg,#0e7490,#bae6fd)",symbol:"❄"},
+{id:"photo_ninja",category:"photos",name:"Ninja",price:95,kind:"photo",value:"https://api.dicebear.com/9.x/bottts/svg?seed=NinjaGoblox&backgroundColor=33334d",paint:"#25213f",symbol:"忍"},
+{id:"photo_pixel",category:"photos",name:"Pixel",price:85,kind:"photo",value:"https://api.dicebear.com/9.x/pixel-art/svg?seed=PixelGoblox&backgroundColor=c4b5fd",paint:"#4c1d95",symbol:"▦"},
+{id:"photo_royal",category:"photos",name:"Real",price:120,kind:"photo",value:"https://api.dicebear.com/9.x/adventurer/svg?seed=RoyalGoblox&backgroundColor=fde68a",paint:"linear-gradient(135deg,#854d0e,#facc15)",symbol:"♛"},
+{id:"photo_slime",category:"photos",name:"Gosma",price:90,kind:"photo",value:"https://api.dicebear.com/9.x/fun-emoji/svg?seed=SlimeGoblox&backgroundColor=bbf7d0",paint:"linear-gradient(135deg,#166534,#4ade80)",symbol:"●"},
+{id:"theme_midnight",category:"themes",name:"Meia-noite",price:190,kind:"theme",value:"midnight",paint:"linear-gradient(135deg,#020617,#312e81)",symbol:"☾"},
+{id:"theme_lava",category:"themes",name:"Lava",price:230,kind:"theme",value:"lava",paint:"linear-gradient(135deg,#7f1d1d,#f97316)",symbol:"♨"},
+{id:"theme_frost",category:"themes",name:"Congelado",price:210,kind:"theme",value:"frost",paint:"linear-gradient(135deg,#164e63,#67e8f9)",symbol:"❄"},
+{id:"theme_matrix",category:"themes",name:"Matrix",price:250,kind:"theme",value:"matrix",paint:"linear-gradient(135deg,#052e16,#22c55e)",symbol:"⌘"},
+{id:"theme_sunset",category:"themes",name:"Pôr do sol",price:200,kind:"theme",value:"sunset",paint:"linear-gradient(135deg,#7c2d12,#db2777)",symbol:"☀"},
+{id:"frame_emerald",category:"frames",name:"Moldura Esmeralda",price:145,kind:"frame",value:"#34d399",paint:"linear-gradient(135deg,#065f46,#6ee7b7)",symbol:"◯"},
+{id:"frame_obsidian",category:"frames",name:"Moldura Obsidiana",price:160,kind:"frame",value:"#64748b",paint:"linear-gradient(135deg,#0f172a,#64748b)",symbol:"◯"},
+{id:"frame_orange",category:"frames",name:"Moldura Laranja",price:125,kind:"frame",value:"#fb923c",paint:"linear-gradient(135deg,#9a3412,#fdba74)",symbol:"◯"},
+{id:"name_lime",category:"names",name:"Verde-limão",price:95,kind:"name",value:"#a3e635",paint:"#3f6212",symbol:"Aa"},
+{id:"name_pink",category:"names",name:"Rosa",price:110,kind:"name",value:"#f9a8d4",paint:"#9d174d",symbol:"Aa"}
 ];
+
 let profile={};let balance=0;let owned=["name_white"];let equipped={theme:"theme_neon",frame:"frame_purple",name:"name_white"};let category="photos";
 function say(t,error=false){$("status").textContent=t;$("status").style.color=error?"#fda4af":"#86efac";}
 function itemById(id){return catalog.find(x=>x.id===id);}
@@ -102,7 +118,7 @@ $("tabs").addEventListener("click",e=>{
 async function init(){
  try{
   const snap=await get(ref(db,"profiles/"+key));profile=snap.exists()?snap.val():{};
-  balance=profile.zxInitialized?Math.max(0,Number(profile.zxBalance)||0):0;
+  balance=Math.max(0,Number(profile.zxBalance)||0);
   owned=Array.isArray(profile.catalogOwned)?profile.catalogOwned:["name_white"];
   equipped={theme:"theme_neon",frame:"frame_purple",name:"name_white",...(profile.catalogEquipped||{})};
   $("zx-balance").textContent=balance.toLocaleString("pt-BR");renderPreview();renderItems();
