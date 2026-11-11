@@ -48,7 +48,7 @@ function draw(){
  Object.values(shots).forEach(s=>{if(!s||typeof s.x0!=="number")return;let age=(Date.now()-s.created)/1000,x=wrap(s.x0+s.vx*age,W),y=wrap(s.y0+s.vy*age,H);ctx.fillStyle=s.color||"#7cecff";ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0});
  if(ship.lives>0){if(Date.now()<ship.invulnerable&&Math.floor(Date.now()/100)%2===0){}else shipShape(ship.x,ship.y,ship.angle,1,"#72e8ff");if(boosting){ctx.fillStyle="#ffb45d";ctx.beginPath();ctx.moveTo(ship.x-Math.cos(ship.angle)*14+Math.sin(ship.angle)*5,ship.y-Math.sin(ship.angle)*14-Math.cos(ship.angle)*5);ctx.lineTo(ship.x-Math.cos(ship.angle)*34,ship.y-Math.sin(ship.angle)*34);ctx.lineTo(ship.x-Math.cos(ship.angle)*14-Math.sin(ship.angle)*5,ship.y-Math.sin(ship.angle)*14+Math.cos(ship.angle)*5);ctx.fill()}}
 }
-function fire(){if(ship.lives<=0||Date.now()-lastFire<230)return;lastFire=Date.now();let speed=8.8;let shot={owner:myId,x0:ship.x+Math.cos(ship.angle)*24,y0:ship.y+Math.sin(ship.angle)*24,vx:Math.cos(ship.angle)*speed+ship.vx*.45,vy:Math.sin(ship.angle)*speed+ship.vy*.45,created:Date.now(),color:"#7cecff"};pushShot(shot)}
+function fire(){if(ship.lives<=0||Date.now()-lastFire<190)return;lastFire=Date.now();let speed=10.5;let shot={owner:myId,x0:ship.x+Math.cos(ship.angle)*25,y0:ship.y+Math.sin(ship.angle)*25,vx:Math.cos(ship.angle)*speed+ship.vx*.35,vy:Math.sin(ship.angle)*speed+ship.vy*.35,created:Date.now(),color:"#7cecff"};pushShot(shot)}
 function pushShot(s){let r=push(shotsRef);set(r,s).catch(()=>status("Falha ao disparar. Confira o Firebase."))}
 function hurt(){if(Date.now()<ship.invulnerable||ship.lives<=0)return;ship.lives--;ship.invulnerable=Date.now()+1800;ship.x=W/2;ship.y=H/2;ship.vx=ship.vy=0;if(ship.lives<=0){status("Sua nave foi destruída! Aperte RECOMEÇAR.");}updateUI()}
 function reset(){ship.lives=3;ship.x=W/2;ship.y=H/2;ship.vx=ship.vy=0;ship.angle=-Math.PI/2;ship.invulnerable=Date.now()+1800;score=0;updateUI();status("Nave pronta. Boa viagem, piloto!")}
@@ -70,7 +70,16 @@ function tick(now){
   if(age>2.1){if(s.owner===myId)remove(ref(db,base+"/shots/"+id)).catch(()=>{});return}
   let x=wrap(s.x0+s.vx*age,W),y=wrap(s.y0+s.vy*age,H);
   if(s.owner!==myId&&ship.lives>0&&Math.hypot(ship.x-x,ship.y-y)<19){hurt();remove(ref(db,base+"/shots/"+id)).catch(()=>{})}
-  if(s.owner===myId){for(const r of rocks){if(Math.hypot(r.x-x,r.y-y)<r.r){remove(ref(db,base+"/shots/"+id)).catch(()=>{});r.hp--;if(r.hp<=0){r.x=wrap(r.x+W*.47,W);r.y=wrap(r.y+H*.39,H);r.hp=2+Math.floor(Math.random()*3);score+=10;updateUI()}break}}}
+  if(s.owner===myId){
+   let hit=false;
+   for(const [pid,p] of Object.entries(players)){
+    if(pid!==myId&&p&&typeof p.x==="number"&&Date.now()-(p.ts||0)<3500&&Math.hypot(p.x-x,p.y-y)<22){
+     hit=true;score+=25;runTransaction(scoreRef,v=>(Number(v)||0)+25).catch(()=>{});status("Acertou a nave de "+(p.nick||"outro piloto")+"! +25 pontos");break;
+    }
+   }
+   if(!hit){for(const r of rocks){if(Math.hypot(r.x-x,r.y-y)<r.r){hit=true;r.hp--;if(r.hp<=0){r.x=wrap(r.x+W*.47,W);r.y=wrap(r.y+H*.39,H);r.hp=2+Math.floor(Math.random()*3);score+=10;runTransaction(scoreRef,v=>(Number(v)||0)+10).catch(()=>{});updateUI()}break}}}
+   if(hit)remove(ref(db,base+"/shots/"+id)).catch(()=>{});
+  }
  });
  draw();updateUI();requestAnimationFrame(tick);
 }
