@@ -504,6 +504,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('game-container');
+        let playerMoving = false;
 
         // Sprite temporário do jogador: 4 quadros de corrida em pixel art.
         const playerSprite = new Image();
@@ -895,6 +896,7 @@
             }
 
             const moveMag = Math.hypot(moveX, moveY);
+            playerMoving = moveMag > 0.08;
             if (moveMag > 0) {
                 const normX = moveX / (moveMag > 1 ? moveMag : 1);
                 const normY = moveY / (moveMag > 1 ? moveMag : 1);
@@ -1136,7 +1138,7 @@
             if (gameState !== 'GAMEOVER') {
                 ctx.save();
                 ctx.translate(player.x, player.y);
-                const movingNow = Math.hypot(moveX, moveY) > 0.08;
+                const movingNow = playerMoving;
                 const facingLeft = Math.cos(player.angle) < 0;
                 ctx.scale(facingLeft ? -1 : 1, 1);
                 ctx.imageSmoothingEnabled = false;
