@@ -57,6 +57,7 @@ const ballRef = ref(db, "games/"+room+"/ball");
 const scoreRef = ref(db, "games/"+room+"/score");
 let team = Math.random() < .5 ? "AZUL" : "VERMELHO";
 let players = {};
+const remoteVisual = {};
 let ball = {x:480,y:270,vx:0,vy:0};
 let score = {blue:0,red:0};
 let keys = {}, move = {x:0,y:0}, facing = {x:1,y:0};
@@ -67,7 +68,7 @@ $("teamBtn").onclick=async()=>{team=team==="AZUL"?"VERMELHO":"AZUL";await publis
 $("exitBtn").onclick=()=>{location.href="lobby.html";};
 function publishPlayer(){return set(myRef,{nick:String(nick).slice(0,24),team,x:me.x,y:me.y,active:true,updatedAt:Date.now()});}
 onValue(playersRef,snap=>{
- players={};snap.forEach(child=>{const p=child.val();if(p&&p.active&&Date.now()-(p.updatedAt||0)<20000)players[child.key]=p;});
+ players={};snap.forEach(child=>{const p=child.val();if(p&&p.active&&Date.now()-(p.updatedAt||0)<20000){players[child.key]=p;if(child.key!==playerId){if(!remoteVisual[child.key])remoteVisual[child.key]={x:p.x,y:p.y,targetX:p.x,targetY:p.y,team:p.team,nick:p.nick};else{remoteVisual[child.key].targetX=p.x;remoteVisual[child.key].targetY=p.y;remoteVisual[child.key].team=p.team;remoteVisual[child.key].nick=p.nick;}}}});for(const id of Object.keys(remoteVisual)){if(!players[id])delete remoteVisual[id];}
  const ids=Object.keys(players).sort();host=ids.length>0&&ids[0]===playerId;
  $("players").innerHTML=ids.map(id=>{const p=players[id];return '<div><span style="color:'+(p.team==="AZUL"?'#60a5fa':'#fb7185')+'">●</span> '+escapeHtml(p.nick||"Jogador")+(id===playerId?' (você)':'')+'</div>';}).join("")||"Você está sozinho";
  $("status").textContent=host?"Partida online • você mantém a bola":"Partida online • sala "+ids.length+"/12";
@@ -92,7 +93,7 @@ function draw(){
  ctx.strokeStyle="#eafff0";ctx.lineWidth=4;ctx.strokeRect(28,25,904,490);ctx.beginPath();ctx.moveTo(480,25);ctx.lineTo(480,515);ctx.stroke();ctx.beginPath();ctx.arc(480,270,75,0,Math.PI*2);ctx.stroke();
  ctx.strokeRect(28,175,105,190);ctx.strokeRect(827,175,105,190);
  ctx.fillStyle="#d1fae5";ctx.fillRect(0,218,29,104);ctx.fillRect(931,218,29,104);
- for(const [id,p] of Object.entries(players)){if(id===playerId)continue;drawPlayer(p.x,p.y,p.team,p.nick);}
+ for(const [id,p] of Object.entries(remoteVisual)){const smooth=0.22;p.x+=(p.targetX-p.x)*smooth;p.y+=(p.targetY-p.y)*smooth;if(Math.abs(p.targetX-p.x)<0.15)p.x=p.targetX;if(Math.abs(p.targetY-p.y)<0.15)p.y=p.targetY;drawPlayer(p.x,p.y,p.team,p.nick);}
  drawPlayer(me.x,me.y,team,nick+" (Você)");
  ctx.beginPath();ctx.arc(ball.x,ball.y,11,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.strokeStyle="#172033";ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(ball.x,ball.y,4,0,Math.PI*2);ctx.fillStyle="#111827";ctx.fill();
 }
@@ -117,7 +118,7 @@ function frame(now){
   for(const p of Object.values(players)){const px=ball.x-p.x,py=ball.y-p.y,pd=Math.hypot(px,py);if(pd<28){const nx=px/(pd||1),ny=py/(pd||1);ball.x=p.x+nx*28;ball.y=p.y+ny*28;ball.vx+=nx*45;ball.vy+=ny*45;}}
   if(now-lastBallPublish>95){lastBallPublish=now;publishBall();}
  }
- if(now-lastPublish>130){lastPublish=now;publishPlayer().catch(e=>{$("status").textContent="Erro de conexão. Verifique as regras do Firebase.";console.warn(e);});}
+ if(now-lastPublish>65){lastPublish=now;publishPlayer().catch(e=>{$("status").textContent="Erro de conexão. Verifique as regras do Firebase.";console.warn(e);});}
  draw();requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
