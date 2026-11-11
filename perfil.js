@@ -42,9 +42,7 @@ async function carregarPerfil(){
   if(cover&&themeStyles[custom.theme])cover.style.background=themeStyles[custom.theme];
   if(nameColors[custom.name])$("profile-title").style.color=nameColors[custom.name];
   if(frameColors[custom.frame])$("profile-avatar").style.borderColor=frameColors[custom.frame];
-  const avatarSeeds={avatar_classic:"PlayerOne",avatar_cyber:"CyberHero",avatar_gold:"GoldenBot",avatar_alien:"AlienKing"};
-  if(avatarSeeds[custom.avatar]&&!dados.avatarUrl)$("profile-avatar").src=avatarPadrao(avatarSeeds[custom.avatar]);
-  $("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
+$("profile-created").textContent=dados.createdAt?new Date(dados.createdAt).toLocaleDateString("pt-BR"):"Membro";
   if(souDono){$("display-name").value=dados.displayName||nickAlvo;$("bio-input").value=dados.bio||"";$("avatar-url").value=dados.avatarUrl||"";$("bio-count").textContent=$("bio-input").value.length;}
   if(!souDono)$("profile-status").textContent="Jogador";
  }catch(error){console.error(error);$("profile-title").textContent=nickAlvo;$("profile-bio").textContent="Não foi possível carregar os dados deste perfil.";mensagem("Erro ao conectar com o Firebase.",true);}
