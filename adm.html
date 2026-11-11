@@ -51,7 +51,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Perfis públicos</p><p id="stat-profiles" class="text-3xl font-black mt-2">—</p></section>
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Status do painel</p><p class="text-xl font-bold text-emerald-300 mt-3">Conectado ao Firebase</p></section>
  </div>
- <section class="panel rounded-2xl p-5">
+ <section id="users-panel" class="panel rounded-2xl p-5">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
    <div><h2 id="section-title" class="text-xl font-black">Lista de contas</h2><p id="section-description" class="text-sm text-slate-400 mt-1">Consulte os jogadores cadastrados no Goblox.</p></div>
    <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-3 font-bold">↻ Atualizar lista</button>
@@ -99,7 +99,7 @@ if (!allowed) {
           (tab.dataset.tab === activeTab ? "bg-violet-600 text-white" : "panel text-slate-300 hover:bg-violet-950");
       });
       document.getElementById("tournament-panel").classList.toggle("hidden", activeTab !== "torneio");
-      document.querySelector(".panel.rounded-2xl.p-5:not(#tournament-panel)")?.classList.toggle("hidden", activeTab === "torneio");
+      document.getElementById("users-panel").classList.toggle("hidden", activeTab === "torneio");
       render();
     });
   });
@@ -346,9 +346,10 @@ if (!allowed) {
     try {
       const snap = await get(tournamentRef);
       const t = snap.exists() ? snap.val() : null;
-      tournamentStatus.textContent = t
-        ? (t.active ? "ATIVO — Sala " + t.roomId + " | " + Object.keys(t.players || {}).length + "/6 jogadores | " + (t.title || "Sem título") : "Nenhum torneio ativo.")
-        : "Nenhum torneio criado.";
+      if (!t) { tournamentStatus.textContent = "Nenhum torneio criado."; return; }
+      const roomSnap = await get(ref(db, "speedRunTournament/rooms/" + t.roomId + "/players"));
+      const count = roomSnap.exists() ? Object.keys(roomSnap.val() || {}).length : 0;
+      tournamentStatus.textContent = t.active ? "ATIVO — Sala " + t.roomId + " | " + count + "/6 jogadores | " + (t.title || "Sem título") : "Torneio " + (t.status || "encerrado") + ".";
     } catch (error) {
       console.error(error);
       tournamentStatus.textContent = "Não foi possível consultar o torneio. Confira as regras do Firebase.";
@@ -361,7 +362,8 @@ if (!allowed) {
     button.disabled = true;
     try {
       const roomId = "speed_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
-      await set(tournamentRef, { active:true, game:"speedRunArena", roomId, title:title.slice(0,40), status:"waiting", maxPlayers:6, players:{}, createdAt:Date.now(), createdBy:nick });
+      await set(ref(db, "speedRunTournament/rooms/" + roomId), { status:"waiting", maxPlayers:6, players:{}, createdAt:Date.now() });
+      await set(tournamentRef, { active:true, game:"speedRunArena", roomId, title:title.slice(0,40), status:"waiting", maxPlayers:6, createdAt:Date.now(), createdBy:nick });
       tournamentStatus.textContent = "Sala criada! " + roomId + " — aguardando 6 jogadores.";
     } catch (error) {
       console.error(error);
@@ -381,9 +383,11 @@ if (!allowed) {
   });
   onValue(tournamentRef, snap => {
     const t = snap.exists() ? snap.val() : null;
-    tournamentStatus.textContent = t
-      ? (t.active ? "ATIVO — Sala " + t.roomId + " | " + Object.keys(t.players || {}).length + "/6 jogadores | " + (t.title || "Sem título") : "Torneio " + (t.status || "encerrado") + ".")
-      : "Nenhum torneio criado.";
+    if (!t) { tournamentStatus.textContent = "Nenhum torneio criado."; return; }
+    onValue(ref(db, "speedRunTournament/rooms/" + t.roomId + "/players"), playerSnap => {
+      const count = playerSnap.exists() ? Object.keys(playerSnap.val() || {}).length : 0;
+      tournamentStatus.textContent = t.active ? "ATIVO — Sala " + t.roomId + " | " + count + "/6 jogadores | " + (t.title || "Sem título") : "Torneio " + (t.status || "encerrado") + ".";
+    });
   }, error => { console.error(error); tournamentStatus.textContent = "Erro ao acompanhar torneio."; });
   document.getElementById("refresh-users").addEventListener("click", loadUsers);
   document.getElementById("user-filter").addEventListener("input", render);
