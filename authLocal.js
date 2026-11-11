@@ -59,6 +59,16 @@ export async function realizarLogin(username, password) {
       return;
     }
 
+    const profileKey = encodeURIComponent(String(username).trim().toLowerCase()).replace(/\./g, "%2E");
+    const profileSnap = await get(ref(db, "profiles/" + profileKey + "/ban"));
+    if (profileSnap.exists()) {
+      const ban = profileSnap.val();
+      const active = ban.active && (ban.permanent || Number(ban.until) > Date.now());
+      if (active) {
+        alert("Conta suspensa.\nMotivo: " + (ban.reason || "Não informado") + (ban.permanent ? "\nDuração: permanente" : "\nAté: " + new Date(Number(ban.until)).toLocaleString("pt-BR")));
+        return;
+      }
+    }
     iniciarSessao(username);
   } catch (err) {
     console.error("Erro detalhado no login:", err);
