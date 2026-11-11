@@ -505,6 +505,17 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('game-container');
 
+        // Sprite temporário do jogador: 4 quadros de corrida em pixel art.
+        const playerSprite = new Image();
+        let playerSpriteReady = false;
+        fetch("./assets/zombie-player.b64")
+            .then(response => { if (!response.ok) throw new Error("Sprite não encontrado"); return response.text(); })
+            .then(encoded => {
+                playerSprite.onload = () => { playerSpriteReady = true; };
+                playerSprite.src = "data:image/png;base64," + encoded.trim();
+            })
+            .catch(error => console.warn("Não foi possível carregar o sprite do jogador:", error));
+
         function resizeCanvas() {
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
@@ -1112,23 +1123,22 @@
                 }
             });
 
-            // Draw Player & Aim Indicator
+            // Jogador em pixel art: animação de corrida com 4 quadros.
             if (gameState !== 'GAMEOVER') {
                 ctx.save();
                 ctx.translate(player.x, player.y);
-                ctx.rotate(player.angle);
-
-                // Gun Barrel
-                ctx.fillStyle = '#94a3b8';
-                ctx.fillRect(0, -3.5, player.radius + 10, 7);
-
-                // Body
-                ctx.fillStyle = player.color;
-                ctx.shadowColor = player.color;
-                ctx.shadowBlur = 14;
-                ctx.beginPath();
-                ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-                ctx.fill();
+                if (playerSpriteReady) {
+                    const frame = Math.floor(performance.now() / 115) % 4;
+                    const facingLeft = Math.cos(player.angle) < 0;
+                    ctx.scale(facingLeft ? -1 : 1, 1);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(playerSprite, frame * 64, 0, 64, 64, -34, -34, 68, 68);
+                } else {
+                    ctx.fillStyle = player.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
                 ctx.restore();
 
                 // Mouse Crosshair Line for PC
