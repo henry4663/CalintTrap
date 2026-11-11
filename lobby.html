@@ -248,6 +248,13 @@
       get(ref(db, "profiles/" + key)).then(snapshot => {
         if (!snapshot.exists()) return;
         const perfil = snapshot.val();
+        const ban = perfil.ban;
+        const banActive = Boolean(ban?.active && (ban.permanent || Number(ban.until) > Date.now()));
+        if (banActive) {
+          alert("Sua conta está suspensa.\\nMotivo: " + (ban.reason || "Não informado") + (ban.permanent ? "\\nDuração: permanente" : "\\nAté: " + new Date(Number(ban.until)).toLocaleString("pt-BR")));
+          logout();
+          return;
+        }
         if (perfil.displayName) document.getElementById("nomeUsuarioDisplay").textContent = perfil.displayName;
         if (perfil.zxBalance !== undefined) document.getElementById("saldoMoedas").textContent = Number(perfil.zxBalance).toLocaleString("pt-BR") + " Zx";
         if (avatar && perfil.avatarUrl && /^https?:\/\//i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
