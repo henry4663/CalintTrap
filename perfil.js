@@ -47,9 +47,12 @@ async function carregarPerfil(){
   $("profile-bio").textContent=String(dados.bio||"Este jogador ainda não escreveu uma biografia.");
   $("profile-avatar").src=imagemSegura(dados.avatarUrl,nickAlvo);
   const custom=dados.catalogEquipped||{};
-  const themeStyles={theme_neon:"linear-gradient(115deg,#5522c8,#242b62 60%,#087d9e)",theme_ocean:"linear-gradient(115deg,#075985,#0e7490)",theme_fire:"linear-gradient(115deg,#9a3412,#7f1d1d)",theme_nature:"linear-gradient(115deg,#166534,#365314)"};
-  const nameColors={name_white:"#ffffff",name_purple:"#c4b5fd",name_cyan:"#67e8f9",name_gold:"#fcd34d"};
-  const frameColors={frame_purple:"#a78bfa",frame_gold:"#fbbf24",frame_cyan:"#22d3ee",frame_red:"#fb7185"};
+  const themeStyles={
+   theme_neon:"linear-gradient(115deg,#5522c8,#242b62 60%,#087d9e)",theme_ocean:"linear-gradient(115deg,#075985,#0e7490)",theme_fire:"linear-gradient(115deg,#9a3412,#7f1d1d)",theme_nature:"linear-gradient(115deg,#166534,#365314)",
+   theme_midnight:"linear-gradient(115deg,#020617,#312e81)",theme_lava:"linear-gradient(115deg,#7f1d1d,#f97316)",theme_frost:"linear-gradient(115deg,#164e63,#67e8f9)",theme_matrix:"linear-gradient(115deg,#052e16,#22c55e)",theme_sunset:"linear-gradient(115deg,#7c2d12,#db2777)"
+  };
+  const nameColors={name_white:"#ffffff",name_purple:"#c4b5fd",name_cyan:"#67e8f9",name_gold:"#fcd34d",name_lime:"#a3e635",name_pink:"#f9a8d4"};
+  const frameColors={frame_purple:"#a78bfa",frame_gold:"#fbbf24",frame_cyan:"#22d3ee",frame_red:"#fb7185",frame_emerald:"#34d399",frame_obsidian:"#64748b",frame_orange:"#fb923c"};
   const cover=document.querySelector(".cover");
   if(cover&&themeStyles[custom.theme])cover.style.background=themeStyles[custom.theme];
   if(nameColors[custom.name])$("profile-title").style.color=nameColors[custom.name];
