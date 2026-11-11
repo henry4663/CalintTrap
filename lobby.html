@@ -89,7 +89,7 @@
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>Jogos</span>
         </a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">
+        <a href="catalogo.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">
           <i data-lucide="shopping-bag" class="w-5 h-5"></i>
           <span>Catálogo Zx</span>
         </a>
@@ -249,6 +249,7 @@
         if (!snapshot.exists()) return;
         const perfil = snapshot.val();
         if (perfil.displayName) document.getElementById("nomeUsuarioDisplay").textContent = perfil.displayName;
+        if (perfil.zxBalance !== undefined) document.getElementById("saldoMoedas").textContent = Number(perfil.zxBalance).toLocaleString("pt-BR") + " Zx";
         if (avatar && perfil.avatarUrl && /^https?:\/\//i.test(perfil.avatarUrl)) avatar.src = perfil.avatarUrl;
       }).catch(error => console.warn("Não foi possível carregar o perfil:", error));
     }
