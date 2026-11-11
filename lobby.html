@@ -413,8 +413,11 @@ onValue(ref(db,"speedRunTournament/current"),snap=>{
  const t=snap.exists()?snap.val():null;
  if(!t||!t.active||t.game!=="speedRunArena"){banner.style.display="none";return;}
  banner.style.display="block";
- const count=Object.keys(t.players||{}).length;
- banner.textContent="🏆 TORNEIO SPEED RUN: "+(t.title||"Disputa especial")+" • "+count+"/6 jogadores • Entre no Speed Run para competir!";
+ banner.textContent="🏆 TORNEIO SPEED RUN: "+(t.title||"Disputa especial")+" • Sala "+t.roomId+" • Entre no Speed Run para competir!";
+ onValue(ref(db,"speedRunTournament/rooms/"+t.roomId+"/players"),playersSnap=>{
+  const count=playersSnap.exists()?Object.keys(playersSnap.val()||{}).length:0;
+  if(banner.style.display!=="none") banner.textContent="🏆 TORNEIO SPEED RUN: "+(t.title||"Disputa especial")+" • "+count+"/6 jogadores • Entre no Speed Run para competir!";
+ });
 });
 </script>
 </body>
