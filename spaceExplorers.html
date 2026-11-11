@@ -117,7 +117,8 @@ document.querySelectorAll("[data-d]").forEach(b=>{let k={up:"w",down:"s",left:"a
 $("fire").addEventListener("pointerdown",e=>{e.preventDefault();shooting=true});["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fire").addEventListener(ev,()=>shooting=false));
 $("reload").onclick=reload;$("respawn").onclick=respawn;document.querySelectorAll(".weapon").forEach(b=>b.onclick=()=>chooseWeapon(Number(b.dataset.weapon)));
 onValue(playersRef,s=>{players=s.val()||{};updateUI();if(!connected){connected=true;setStatus("Multiplayer conectado · entre na arena e encontre outros jogadores!")}},e=>setStatus("Falha no multiplayer: "+e.message+" · confira as regras do Firebase"));
-onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));\nonValue(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+myId),s=>{kills=Number(s.val())||0;updateUI()});
+onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));
+onValue(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+myId),s=>{kills=Number(s.val())||0;updateUI()});
 onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));
 set(myRef,{x:player.x,y:player.y,angle:0,nick,hp:100,ts:Date.now()}).catch(e=>setStatus("Não foi possível entrar na sala: "+e.message+" · verifique as regras do Firebase"));
 window.addEventListener("beforeunload",()=>remove(myRef).catch(()=>{}));
