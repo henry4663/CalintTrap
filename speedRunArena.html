@@ -313,10 +313,14 @@
           if (players[tournamentPlayerKey]?.eliminated && !alreadyInSession) {
             tournamentEliminated = true;
             showTournamentNotice("Você já foi eliminado deste torneio. Não é possível voltar para a sala.");
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("startBtn").textContent = "ELIMINADO";
             return;
           }
           if (!players[tournamentPlayerKey] && Object.keys(players).length >= 6) {
             showTournamentNotice("Sala cheia (6/6). Entre no próximo torneio.");
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("startBtn").textContent = "SALA CHEIA";
             return;
           }
           const joinResult = await runTransaction(tournamentPlayersRef, current => {
@@ -333,6 +337,8 @@
           if (alreadyInSession && players[tournamentPlayerKey]?.eliminated) {
             tournamentEliminated = true;
             showTournamentNotice("Você já foi eliminado. A partida não permite retorno.");
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("startBtn").textContent = "ELIMINADO";
             return;
           }
           sessionStorage.setItem(tournamentSessionKey, config.roomId);
@@ -354,6 +360,15 @@
             if (tournamentStatus === "finished") {
               const winner = roomData.winner || tournament?.winner;
               showTournamentNotice(winner ? "🏆 CAMPEÃO: " + winner.nick + " — " + winner.title : "🏆 Torneio finalizado!");
+              if (winner && winner.key === tournamentPlayerKey) {
+                G.running = false;
+                document.getElementById("gameOver").style.display = "flex";
+                document.querySelector("#gameOver h1").textContent = "CAMPEÃO!";
+                document.getElementById("restartBtn").style.display = "none";
+                document.getElementById("finalScore").textContent = "Você venceu: " + winner.title;
+                document.getElementById("finalDistance").textContent = "Último jogador vivo!";
+                document.getElementById("finalCoins").textContent = "Título salvo no seu perfil.";
+              }
             }
           });
           onValue(tournamentPlayersRef, snap => {
@@ -371,6 +386,7 @@
         } catch (error) {
           console.error("Erro ao entrar no torneio:", error);
           showTournamentNotice("Não foi possível entrar no torneio. Verifique as permissões do Firebase.");
+          document.getElementById("startBtn").disabled = true;
         }
       }
       onValue(tournamentConfigRef, snap => {
