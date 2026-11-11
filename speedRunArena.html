@@ -545,7 +545,7 @@
 
       const obstacles = [];
       const coins = [];
-      const TYPES = ["block", "low", "tall", "highBar"];
+      const TYPES = ["block", "low", "tall", "highBar", "spikes", "tunnel", "double"];
 
       function createObstacle(lane, z, type) {
         const group = new THREE.Group();
@@ -639,6 +639,52 @@
           group.add(pillarRight);
 
           group.userData = { type, width: 2.7, height: 2.2, minY: 1.4 };
+        } else if (type === "spikes") {
+          const spikeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff3344, emissive: 0x660011, emissiveIntensity: 0.45,
+            metalness: 0.45, roughness: 0.3
+          });
+          for (let i = -1; i <= 1; i++) {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.15, 5), spikeMaterial);
+            spike.position.set(i * 0.68, 0.57, 0);
+            spike.castShadow = true;
+            group.add(spike);
+          }
+          group.userData = { type, width: 2.5, height: 1.15 };
+        } else if (type === "tunnel") {
+          const frameMaterial = new THREE.MeshStandardMaterial({
+            color: 0x168cff, emissive: 0x004477, emissiveIntensity: 0.55,
+            metalness: 0.65, roughness: 0.25
+          });
+          const top = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.35, 1.1), frameMaterial);
+          top.position.y = 1.55;
+          top.castShadow = true;
+          group.add(top);
+          for (const x of [-1.25, 1.25]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.55, 1.1), frameMaterial);
+            leg.position.set(x, 0.775, 0);
+            group.add(leg);
+          }
+          group.userData = { type, width: 2.8, height: 1.9, minY: 1.05 };
+        } else if (type === "double") {
+          const material = new THREE.MeshStandardMaterial({
+            color: 0x7733cc, emissive: 0x220044, emissiveIntensity: 0.5,
+            metalness: 0.55, roughness: 0.35
+          });
+          for (const x of [-0.62, 0.62]) {
+            const crate = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.35, 1.5), material);
+            crate.position.set(x, 0.675, 0);
+            crate.castShadow = true;
+            crate.receiveShadow = true;
+            group.add(crate);
+            const stripe = new THREE.Mesh(
+              new THREE.BoxGeometry(1.08, 0.12, 1.53),
+              new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x664400, emissiveIntensity: 0.5 })
+            );
+            stripe.position.set(x, 1.0, 0);
+            group.add(stripe);
+          }
+          group.userData = { type, width: 2.4, height: 1.35 };
         } else {
           const pillar = new THREE.Mesh(
             new THREE.CylinderGeometry(1.1, 1.25, 3.4, 6),
@@ -992,13 +1038,16 @@
               const top = player.position.y + (G.isDucking ? 0.6 : 2.0);
               const type = obstacle.userData.type;
 
-              if (type === "highBar") {
+              if (type === "highBar" || type === "tunnel") {
+                // Passe por baixo da barra/teto abaixando.
                 if (top > (obstacle.userData.minY || 1.4)) gameOver();
-              } else if (type === "low") {
+              } else if (type === "low" || type === "spikes") {
+                // Pule por cima da barra baixa ou dos espinhos.
                 if (bottom <= obstacle.userData.height - 0.1) gameOver();
               } else if (type === "tall") {
                 if (bottom < obstacle.userData.height - 0.8) gameOver();
               } else {
+                // Blocos e caixas duplas bloqueiam a pista.
                 gameOver();
               }
             }
