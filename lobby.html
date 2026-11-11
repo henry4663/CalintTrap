@@ -26,6 +26,8 @@
   </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex flex-col min-h-screen">
+<div id="speed-tournament-banner" style="display:none;position:sticky;top:0;z-index:9999;padding:12px 16px;background:linear-gradient(90deg,#713f12,#422006);border-bottom:2px solid #facc15;color:#fff7cc;text-align:center;font-weight:900">🏆 TORNEIO SPEED RUN</div>
+
 
   <!-- CABEÇALHO SUPERIOR (HEADER) -->
   <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
@@ -403,5 +405,17 @@
     renderGames();
     initFriendsTab();
   </script>
+
+<script type="module">
+import { db, ref, onValue } from "./firebase.js";
+const banner=document.getElementById("speed-tournament-banner");
+onValue(ref(db,"speedRunTournament/current"),snap=>{
+ const t=snap.exists()?snap.val():null;
+ if(!t||!t.active||t.game!=="speedRunArena"){banner.style.display="none";return;}
+ banner.style.display="block";
+ const count=Object.keys(t.players||{}).length;
+ banner.textContent="🏆 TORNEIO SPEED RUN: "+(t.title||"Disputa especial")+" • "+count+"/6 jogadores • Entre no Speed Run para competir!";
+});
+</script>
 </body>
 </html>
