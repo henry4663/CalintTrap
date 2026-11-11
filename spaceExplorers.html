@@ -32,7 +32,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1425
 </main>
 <script type="module">
 import { db } from "./firebase.js";
-import { ref, set, update, onValue, onDisconnect, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, set, update, onValue, onDisconnect, remove, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
 const $=id=>document.getElementById(id),status=$("status");
@@ -73,7 +73,7 @@ function updateUI(){$("hp").textContent=player.hp;$("kills").textContent=kills;$
 function chooseWeapon(i){player.weapon=i;document.querySelectorAll(".weapon").forEach(b=>b.classList.toggle("active",Number(b.dataset.weapon)===i));updateUI()}
 function reload(){let i=player.weapon,w=weapons[i];if(player.reloading||player.ammo[i]>=w.mag||player.reserve[i]<=0||dead)return;player.reloading=true;setStatus("Recarregando "+w.name+"...");setTimeout(()=>{let n=Math.min(w.mag-player.ammo[i],player.reserve[i]);player.ammo[i]+=n;player.reserve[i]-=n;player.reloading=false;updateUI();setStatus("Arena online · "+Object.keys(players).length+" conectados")},w.reload)}
 function spawnShot(){if(dead||player.reloading)return;let i=player.weapon,w=weapons[i],now=Date.now();if(now-lastShot<w.delay)return;lastShot=now;if(player.ammo[i]<=0){reload();return}player.ammo[i]--;updateUI();let count=i===1?3:1;for(let n=0;n<count;n++){let spread=count===1?0:(n-1)*.13;let a=player.angle+spread;let shot={owner:myId,x:player.x+Math.cos(a)*23,y:player.y+Math.sin(a)*23,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,damage:w.damage,size:w.size,color:w.color,created:Date.now()};let newRef=push(shotsRef);set(newRef,shot).catch(()=>{})}}
-function damageLocal(amount,owner){if(dead||Date.now()<(lastDamage[owner]||0))return;lastDamage[owner]=Date.now()+300;if(Date.now()<shieldUntil)return;player.hp=Math.max(0,player.hp-amount);if(player.hp<=0){dead=true;respawnAt=Date.now()+2600;if(owner!==myId){kills+=0}setStatus("Você foi atingido! Aguarde o respawn.")}updateUI()}
+function damageLocal(amount,owner){if(dead||Date.now()<(lastDamage[owner]||0))return;lastDamage[owner]=Date.now()+300;if(Date.now()<shieldUntil)return;player.hp=Math.max(0,player.hp-amount);if(player.hp<=0){dead=true;respawnAt=Date.now()+2600;if(owner!==myId){runTransaction(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+owner),value=>(Number(value)||0)+1).catch(()=>{})}setStatus("Você foi atingido! Aguarde o respawn.")}updateUI()}
 function respawn(){dead=false;player.hp=100;player.x=100+Math.random()*180;player.y=100+Math.random()*400;player.ammo=[30,18,6];player.reserve=[90,72,30];player.reloading=false;updateUI()}
 function step(now){
  let dt=Math.min((now-(step.last||now))/16.67,2);step.last=now;
@@ -117,7 +117,7 @@ document.querySelectorAll("[data-d]").forEach(b=>{let k={up:"w",down:"s",left:"a
 $("fire").addEventListener("pointerdown",e=>{e.preventDefault();shooting=true});["pointerup","pointercancel","pointerleave"].forEach(ev=>$("fire").addEventListener(ev,()=>shooting=false));
 $("reload").onclick=reload;$("respawn").onclick=respawn;document.querySelectorAll(".weapon").forEach(b=>b.onclick=()=>chooseWeapon(Number(b.dataset.weapon)));
 onValue(playersRef,s=>{players=s.val()||{};updateUI();if(!connected){connected=true;setStatus("Multiplayer conectado · entre na arena e encontre outros jogadores!")}},e=>setStatus("Falha no multiplayer: "+e.message+" · confira as regras do Firebase"));
-onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));
+onValue(shotsRef,s=>{shots=s.val()||{}},e=>setStatus("Falha ao carregar disparos: "+e.message));\nonValue(ref(db,"spaceExplorersArena/rooms/"+room+"/scores/"+myId),s=>{kills=Number(s.val())||0;updateUI()});
 onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));
 set(myRef,{x:player.x,y:player.y,angle:0,nick,hp:100,ts:Date.now()}).catch(e=>setStatus("Não foi possível entrar na sala: "+e.message+" · verifique as regras do Firebase"));
 window.addEventListener("beforeunload",()=>remove(myRef).catch(()=>{}));
