@@ -264,12 +264,14 @@ if (!allowed) {
     status.textContent = "Consultando o Firebase...";
     document.getElementById("refresh-users").disabled = true;
     try {
-      const [usersSnap, profilesSnap] = await Promise.all([
+      const [usersSnap, profilesSnap, followingSnap] = await Promise.all([
         get(ref(db, "users")),
-        get(ref(db, "profiles"))
+        get(ref(db, "profiles")),
+        get(ref(db, "following/henrydev77"))
       ]);
       const users = usersSnap.exists() ? usersSnap.val() : {};
-      const profiles = profilesSnap.exists() ? profilesSnap.val() : {};\n      const following = followingSnap.exists() ? followingSnap.val() : {};
+      const profiles = profilesSnap.exists() ? profilesSnap.val() : {};
+      const following = followingSnap.exists() ? followingSnap.val() : {};
       rows = Object.entries(users).map(([username]) => {
         const key = encodeURIComponent(username.trim().toLowerCase()).replace(/\./g, "%2E");
         const profile = profiles[key] || {};
