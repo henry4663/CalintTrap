@@ -27,6 +27,12 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
   <h1 class="text-3xl md:text-4xl font-black mt-2">Painel administrativo</h1>
   <p class="text-slate-400 mt-2">Bem-vindo à equipe administrativa. Visão geral das contas cadastradas no Goblox.</p>
  </div>
+ <nav class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6" aria-label="Seções do painel">
+  <button type="button" data-tab="contas" class="tab-btn rounded-xl px-4 py-3 font-bold bg-violet-600 text-white">Contas</button>
+  <button type="button" data-tab="cargos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Cargos</button>
+  <button type="button" data-tab="banimentos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Banimentos</button>
+  <button type="button" data-tab="zx" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Zx</button>
+ </nav>
  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Contas cadastradas</p><p id="stat-users" class="text-3xl font-black mt-2">—</p></section>
   <section class="panel rounded-2xl p-5"><p class="text-slate-400 text-sm">Perfis públicos</p><p id="stat-profiles" class="text-3xl font-black mt-2">—</p></section>
@@ -34,7 +40,7 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
  </div>
  <section class="panel rounded-2xl p-5">
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-   <div><h2 class="text-xl font-black">Gerenciar contas</h2><p class="text-sm text-slate-400 mt-1">Pesquise a conta, gerencie o cargo ou aplique uma suspensão temporária/permanente.</p></div>
+   <div><h2 id="section-title" class="text-xl font-black">Lista de contas</h2><p id="section-description" class="text-sm text-slate-400 mt-1">Consulte os jogadores cadastrados no Goblox.</p></div>
    <button id="refresh-users" class="bg-violet-600 hover:bg-violet-500 rounded-xl px-4 py-3 font-bold">↻ Atualizar lista</button>
   </div>
   <label for="user-filter" class="block text-sm font-bold mb-2">Buscar usuário</label>
@@ -62,6 +68,25 @@ if (!allowed) {
   const list = document.getElementById("users-list");
   const status = document.getElementById("admin-status");
   let rows = [];
+  let activeTab = "contas";
+  const tabInfo = {
+    contas: ["Lista de contas", "Consulte os jogadores cadastrados no Goblox."],
+    cargos: ["Gerenciar cargos", "Escolha e salve o cargo de cada jogador."],
+    banimentos: ["Central de banimentos", "Aplique suspensão temporária ou permanente e remova banimentos."],
+    zx: ["Gerenciar Zx", "Adicione moedas ao saldo de um jogador."]
+  };
+  document.querySelectorAll("[data-tab]").forEach(button => {
+    button.addEventListener("click", () => {
+      activeTab = button.dataset.tab;
+      document.getElementById("section-title").textContent = tabInfo[activeTab][0];
+      document.getElementById("section-description").textContent = tabInfo[activeTab][1];
+      document.querySelectorAll("[data-tab]").forEach(tab => {
+        tab.className = "tab-btn rounded-xl px-4 py-3 font-bold " +
+          (tab.dataset.tab === activeTab ? "bg-violet-600 text-white" : "panel text-slate-300 hover:bg-violet-950");
+      });
+      render();
+    });
+  });
 
   function render() {
     const term = document.getElementById("user-filter").value.trim().toLowerCase();
@@ -256,7 +281,15 @@ if (!allowed) {
         }
       });
       actions.append(profile, save);
-      card.append(heading, label, select, banTitle, banStatus, banReason, banType, banActions, extraTitle, followButton, zxRow, actions);
+      if (activeTab === "contas") {
+        card.append(heading, profile, followButton);
+      } else if (activeTab === "cargos") {
+        card.append(heading, label, select, save);
+      } else if (activeTab === "banimentos") {
+        card.append(heading, banTitle, banStatus, banReason, banType, banActions);
+      } else if (activeTab === "zx") {
+        card.append(heading, zxRow);
+      }
       list.appendChild(card);
     }
   }
