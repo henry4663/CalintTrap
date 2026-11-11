@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Space Explorers | Goblox</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090d18;color:#fff;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px;touch-action:pan-y}
+header{width:min(100%,1000px);display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}a,button{color:white}a{font-weight:bold;text-decoration:none;background:#25213c;padding:10px 14px;border-radius:10px}h1{font-size:clamp(20px,4vw,30px);margin:0}.wrap{width:min(100%,1000px);background:#121a2a;border:1px solid #ffffff20;border-radius:18px;padding:14px;box-shadow:0 20px 50px #0008}
+.info{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;color:#dbeafe;font-weight:bold}.desc{color:#b9c4d8;font-size:14px;margin:0 0 12px}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#101735;border:1px solid #ffffff24;touch-action:none}
+#actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}.action{border:0;border-radius:10px;background:#7dd3fc;color:#111827;padding:12px 16px;font-weight:900;cursor:pointer;min-height:44px}.action:active{transform:scale(.96)}
+#mobile{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:12px;user-select:none}.pad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:5px}.pad button,.jump{border:1px solid #ffffff44;border-radius:12px;background:#252e45;color:white;font-size:20px;font-weight:bold;touch-action:none}.pad button[data-d="up"]{grid-column:2}.pad button[data-d="left"]{grid-column:1;grid-row:2}.pad button[data-d="down"]{grid-column:2;grid-row:2}.pad button[data-d="right"]{grid-column:3;grid-row:2}.jump{width:82px;height:82px;background:#5637a6}.hint{text-align:center;color:#93a4bd;font-size:12px;margin:10px 0 0}
+#message{font-weight:bold;color:#7dd3fc;text-align:center;min-height:22px;margin-top:8px}
+@media(min-width:800px){#mobile{max-width:320px;margin-left:auto;margin-right:auto}.pad button,.jump{opacity:.75}}
+</style></head><body>
+<header><a href="lobby.html">← Goblox</a><h1>Space Explorers</h1><span style="color:#7dd3fc;font-weight:900">GOBLOX</span></header>
+<main class="wrap"><div class="info"><span id="score">Progresso: 0/15</span><span id="time">Tempo: 0s</span></div><p class="desc">Pilote sua nave, colete 15 estrelas e evite os meteoros.</p>
+<canvas id="game" width="960" height="540" aria-label="Área do jogo"></canvas>
+<div id="actions"></div><div id="mobile"><div class="pad"><button data-d="up">▲</button><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div><button class="jump" id="jump">PULAR</button></div>
+<div id="message" role="status">Pronto! Use WASD/setas ou os controles de celular.</div><p class="hint">PC: WASD / setas + espaço. Celular: use os botões abaixo.</p></main>
+<script>
+(()=>{
+const C={"title":"Space Explorers","file":"spaceExplorers.html","mode":"collect","goal":15,"player":"🚀","item":"⭐","hazard":"☄️","desc":"Pilote sua nave, colete 15 estrelas e evite os meteoros.","bg":"#101735","accent":"#7dd3fc"},cv=document.getElementById('game'),ctx=cv.getContext('2d'),scoreEl=document.getElementById('score'),timeEl=document.getElementById('time'),msg=document.getElementById('message'),actions=document.getElementById('actions');
+let keys={},player={x:100,y:270,r:22,vx:0,vy:0},items=[],hazards=[],score=0,elapsed=0,started=Date.now(),running=true,won=false,buildings=0,order=0,platforms=[],last=0;
+const W=cv.width,H=cv.height,rand=(a,b)=>Math.random()*(b-a)+a;
+function spawn(){items=[];hazards=[];for(let i=0;i<C.goal+8;i++)items.push({x:rand(70,W-70),y:rand(70,H-70),r:18});for(let i=0;i<7;i++)hazards.push({x:rand(180,W-80),y:rand(60,H-60),r:24,vx:rand(-1.8,1.8),vy:rand(-1.4,1.4)});}
+function say(t){msg.textContent=t}
+function finish(ok){if(!running)return;running=false;won=ok;say(ok?'Você conseguiu! Parabéns!':'Fim de jogo. Toque em Reiniciar para tentar de novo.');}
+function reset(){player={x:90,y:270,r:22,vx:0,vy:0};score=0;elapsed=0;started=Date.now();running=true;won=false;buildings=0;order=0;spawn();renderActions();say('Boa sorte!');}
+function renderActions(){actions.innerHTML='';if(C.mode==='build'){for(let i=0;i<3;i++){let b=document.createElement('button');b.className='action';b.textContent=['Casa 🏠','Loja 🏪','Parque 🌳'][i];b.onclick=()=>{if(!running)return;if(buildings>=C.goal)return;buildings++;score=buildings;update();if(score>=C.goal)finish(true)};actions.append(b)}}if(C.mode==='cook'){['🍞 Pão','🥬 Alface','🍅 Tomate','🧀 Queijo','🍔 Carne','✅ Servir'].forEach((t,i)=>{let b=document.createElement('button');b.className='action';b.textContent=t;b.onclick=()=>{if(!running)return;if(i===5){if(order>=3){score++;order=0;update();if(score>=C.goal)finish(true);say('Pedido servido! Próximo cliente.')}else say('Complete o pedido: pão, alface e tomate!')}else{order++;say('Ingrediente adicionado: '+t)}};actions.append(b)})}let r=document.createElement('button');r.className='action';r.textContent='Reiniciar';r.onclick=reset;actions.append(r)}
+function update(){scoreEl.textContent='Progresso: '+score+'/'+C.goal}
+function drawText(t,x,y,size=24){ctx.font='bold '+size+'px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(t,x,y)}
+function loop(now){let dt=Math.min((now-last)/16||1,2);last=now;if(running){elapsed=(Date.now()-started)/1000;timeEl.textContent='Tempo: '+Math.floor(elapsed)+'s';
+if(C.mode==='collect'||C.mode==='survive'||C.mode==='platform'){let dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),dy=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0);player.x+=dx*4*dt;player.y+=dy*4*dt;player.x=Math.max(25,Math.min(W-25,player.x));player.y=Math.max(25,Math.min(H-25,player.y));
+if(C.mode==='platform'&&keys[' ']){player.y-=5*dt}
+hazards.forEach(h=>{h.x+=h.vx*dt;h.y+=h.vy*dt;if(h.x<30||h.x>W-30)h.vx*=-1;if(h.y<30||h.y>H-30)h.vy*=-1});
+if(C.mode==='survive'){if(elapsed>=C.goal)finish(true);hazards.forEach(h=>{let a=Math.atan2(player.y-h.y,player.x-h.x);h.x+=Math.cos(a)*.35*dt;h.y+=Math.sin(a)*.35*dt})}
+else if(C.mode==='platform'){player.y=Math.min(480,Math.max(70,player.y));if(player.x>W-80){score=C.goal;update();finish(true)}}
+else{items=items.filter(it=>{if(Math.hypot(player.x-it.x,player.y-it.y)<player.r+it.r){score++;update();if(score>=C.goal)finish(true);return false}return true});if(hazards.some(h=>Math.hypot(player.x-h.x,player.y-h.y)<player.r+h.r-5)){player.x=90;player.y=270;say('Cuidado! Você voltou ao início.')}}}
+}
+ctx.clearRect(0,0,W,H);ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H);
+ctx.globalAlpha=.12;for(let x=0;x<W;x+=48)for(let y=0;y<H;y+=48){ctx.strokeStyle='#fff';ctx.strokeRect(x,y,48,48)}ctx.globalAlpha=1;
+if(C.mode==='build'){for(let y=0;y<5;y++)for(let x=0;x<8;x++){let xx=90+x*110,yy=65+y*95;ctx.fillStyle=((x+y)%2)?'#315b4b':'#3b6a52';ctx.fillRect(xx,yy,82,68);ctx.strokeStyle='#ffffff55';ctx.strokeRect(xx,yy,82,68);if((y*8+x)<buildings)drawText(['🏠','🏪','🌳'][((y*8+x)%3)],xx+41,yy+43,32);else drawText('＋',xx+41,yy+43,24)}}
+else if(C.mode==='cook'){drawText('PEDIDO: 🍞 + 🥬 + 🍅',W/2,160,44);drawText('Ingredientes: '+order+'/3',W/2,240,32);drawText('Escolha os botões abaixo e sirva!',W/2,310,26);drawText('🍽️',W/2,410,90)}
+else{if(C.mode==='platform'){ctx.fillStyle='#426b78';for(let i=0;i<8;i++)ctx.fillRect(i*130+20,470-(i%2)*45,95,22);drawText('CHEGADA 🏁',W-110,420,24)}
+items.forEach(it=>drawText(C.item,it.x,it.y+10,30));hazards.forEach(h=>drawText(C.hazard,h.x,h.y+10,32));drawText(C.player,player.x,player.y+12,38);
+if(C.mode==='survive')drawText('SOBREVIVA: '+Math.max(0,C.goal-Math.floor(elapsed))+'s',W/2,48,28)}
+if(!running){ctx.fillStyle='#050816bb';ctx.fillRect(0,0,W,H);drawText(won?'VITÓRIA!':'TENTE NOVAMENTE',W/2,H/2,54);drawText('Toque em Reiniciar',W/2,H/2+55,24)}
+requestAnimationFrame(loop)}
+cv.addEventListener('pointerdown',e=>{if(C.mode!=='build')return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;if(x>55&&x<W-55&&y>45&&y<H-20&&buildings<C.goal){buildings++;score=buildings;update();if(score>=C.goal)finish(true)}});
+window.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault()});window.addEventListener('keyup',e=>keys[e.key]=false);
+document.querySelectorAll('[data-d]').forEach(b=>{let k={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[b.dataset.d];b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();keys[' ']=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>document.getElementById('jump').addEventListener(ev,()=>keys[' ']=false));
+reset();requestAnimationFrame(loop);
+})();
+</script></body></html>
