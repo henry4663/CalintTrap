@@ -219,7 +219,7 @@ body {
 
     <div class="links">
         <a id="btnCriarDireto">Criar nova conta</a>
-        <a id="btnRecuperar" href="#" role="button">Esqueci minha senha</a>
+        <a id="btnRecuperar" href="recovery.html" role="button">Esqueci minha senha</a>
     </div>
     <section id="recoveryBox" style="display:none;margin-top:22px;text-align:left;background:#170b2b;border:1px solid #7655a7;border-radius:16px;padding:18px">
       <h2 style="font-size:20px;margin-bottom:8px">Recuperar conta</h2>
@@ -333,8 +333,8 @@ body {
   const resetArea=document.getElementById("resetArea");
   let recoveryKey="", recoveryUsername="", recoveryTimer=null;
   document.getElementById("btnRecuperar").addEventListener("click",e=>{
-    e.preventDefault(); recoveryBox.style.display=recoveryBox.style.display==="none"?"block":"none";
-    const n=document.getElementById("username").value.trim(); if(n) document.getElementById("recoveryUser").value=n;
+    e.preventDefault();
+    window.location.href = "recovery.html";
   });
   function watchRecovery(username){
     recoveryUsername=username;
