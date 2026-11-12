@@ -358,13 +358,20 @@ body {
   const recoveryStatus=document.getElementById("recoveryStatus");
   const resetArea=document.getElementById("resetArea");
   let recoveryKey="", recoveryUsername="", recoveryTimer=null;
-  document.getElementById("btnRecuperar").addEventListener("click",e=>{
+  // Recuperação no próprio login (fluxo antigo), sem trocar de página.
+  document.getElementById("btnRecuperar").addEventListener("click", e => {
     e.preventDefault();
-    window.location.href = "recovery.html";
+    const open = recoveryBox.style.display !== "block";
+    recoveryBox.style.display = open ? "block" : "none";
+    if (open) {
+      recoveryBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("recoveryUser").focus();
+      recoveryStatus.textContent = "Digite seu nickname para solicitar a recuperação.";
+    }
   });
   function watchRecovery(username){
     recoveryUsername=username;
-    recoveryKey=encodeURIComponent(username.toLowerCase()).replace(/\\./g,"%2E");
+    recoveryKey=username.toLowerCase();
     onValue(ref(db,"recoveryAccess/"+recoveryKey),snap=>{
       const grant=snap.exists()?snap.val():null;
       if(!grant||grant.username!==username||Number(grant.expiresAt)<=Date.now()){
@@ -382,12 +389,14 @@ body {
     try{
       const account=await get(ref(db,"users/"+username));
       if(!account.exists()){recoveryStatus.textContent="Conta não encontrada. Confira o nickname.";return;}
-      const key=encodeURIComponent(username.toLowerCase()).replace(/\\./g,"%2E");
+      const key=username.toLowerCase();
       await set(ref(db,"recoveryRequests/"+key),{username,status:"pending",requestedAt:Date.now()});
-      recoveryStatus.textContent="Pedido enviado! Aguarde um administrador aprovar.";
+      recoveryStatus.textContent="Pedido enviado! Abra ADM → Recuperação para aprovar. Esta tela avisará quando liberar.";
       watchRecovery(username);
-    }catch(err){console.error(err);recoveryStatus.textContent="Erro ao enviar pedido. Verifique a conexão.";}
-    finally{button.disabled=false;}
+    }catch(err){
+      console.error("Falha na recuperação:",err);
+      recoveryStatus.textContent="Falha: "+(err.code||err.message||"erro desconhecido")+". Verifique as permissões do Firebase.";
+    }finally{button.disabled=false;}
   });
   document.getElementById("saveRecoveryPassword").addEventListener("click",async()=>{
     const password=document.getElementById("newRecoveryPassword").value;
