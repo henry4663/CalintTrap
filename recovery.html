@@ -49,67 +49,134 @@ button:disabled{opacity:.55;cursor:wait}
   </section>
 </main>
 <script>
-const $=id=>document.getElementById(id);
-const sendButton=$("sendRecovery");
-const statusBox=$("status");
-sendButton.addEventListener("click",()=>{statusBox.textContent="Botão funcionando. Conectando ao Goblox...";});
-(async()=>{
- try{
-  const firebase=await import("./firebase.js");
-  const {db,ref,get,set,onValue}=firebase;
-  if(!db) throw new Error("Banco de dados não inicializado no firebase.js");
-  let currentName="",currentKey="",timer=null,stopWatch=null;
-  function watchGrant(name){
-   currentName=name;currentKey=name.toLowerCase();
-   if(stopWatch)stopWatch();
-   stopWatch=onValue(ref(db,"recoveryAccess/"+currentKey),snap=>{
-    const grant=snap.exists()?snap.val():null;
-    if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now()){
-     $("resetArea").style.display="none";
-     if(grant)statusBox.textContent="A autorização expirou. Solicite novamente.";
-     return;
-    }
-    $("resetArea").style.display="block";clearInterval(timer);
-    const tick=()=>{const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));$("countdown").textContent="Tempo para trocar a senha: "+left+"s";if(!left){clearInterval(timer);$("resetArea").style.display="none";statusBox.textContent="Tempo encerrado. Faça uma nova solicitação.";}};
-    tick();timer=setInterval(tick,200);
-   },err=>{console.error(err);statusBox.textContent="Erro ao acompanhar aprovação: "+(err.code||err.message);});
+const $ = id => document.getElementById(id);
+const sendButton = $("sendRecovery");
+const statusBox = $("status");
+let firebaseReady = null;
+let currentName = "";
+let currentKey = "";
+let timer = null;
+let stopWatch = null;
+
+// O clique é registrado imediatamente. Se o Firebase ainda estiver carregando,
+// o próprio botão aguarda a conexão em vez de parecer que não faz nada.
+firebaseReady = import("./firebase.js").then(firebase => {
+  const { db, ref, get, set, onValue } = firebase;
+  if (!db || !ref || !get || !set || !onValue) {
+    throw new Error("firebase.js não exportou db/ref/get/set/onValue.");
   }
-  sendButton.addEventListener("click",async()=>{
-   const name=$("recoveryUser").value.trim();
-   if(!/^[a-zA-Z0-9_]{3,20}$/.test(name)){statusBox.textContent="Nickname inválido. Use de 3 a 20 letras, números ou _.";return;}
-   sendButton.disabled=true;statusBox.textContent="Consultando conta no Goblox...";
-   try{
-    const account=await get(ref(db,"users/"+name));
-    if(!account.exists()){statusBox.textContent="Conta não encontrada. Confira o nickname exatamente como foi cadastrado.";return;}
-    const key=name.toLowerCase();
-    statusBox.textContent="Enviando solicitação...";
-    await set(ref(db,"recoveryRequests/"+key),{username:name,status:"pending",requestedAt:Date.now()});
-    statusBox.textContent="SOLICITAÇÃO ENVIADA! Agora ela deve aparecer em ADM → Recuperação.";
-    watchGrant(name);
-   }catch(err){console.error("Falha na solicitação:",err);statusBox.textContent="Falha no Firebase ("+(err.code||"sem código")+"): "+(err.message||"erro desconhecido");}
-   finally{sendButton.disabled=false;}
+  return { db, ref, get, set, onValue };
+});
+
+function watchGrant(firebase, name) {
+  const { db, ref, onValue } = firebase;
+  currentName = name;
+  currentKey = name.toLowerCase();
+  if (stopWatch) stopWatch();
+  stopWatch = onValue(ref(db, "recoveryAccess/" + currentKey), snap => {
+    const grant = snap.exists() ? snap.val() : null;
+    if (!grant || grant.username !== currentName || Number(grant.expiresAt) <= Date.now()) {
+      $("resetArea").style.display = "none";
+      if (grant) statusBox.textContent = "A autorização expirou. Solicite novamente.";
+      return;
+    }
+    $("resetArea").style.display = "block";
+    clearInterval(timer);
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((Number(grant.expiresAt) - Date.now()) / 1000));
+      $("countdown").textContent = "Tempo para trocar a senha: " + left + "s";
+      if (!left) {
+        clearInterval(timer);
+        $("resetArea").style.display = "none";
+        statusBox.textContent = "Tempo encerrado. Faça uma nova solicitação.";
+      }
+    };
+    tick();
+    timer = setInterval(tick, 200);
+  }, error => {
+    console.error(error);
+    statusBox.textContent = "Erro ao acompanhar aprovação: " + (error.code || error.message);
   });
-  $("savePassword").addEventListener("click",async()=>{
-   const password=$("newPassword").value,btn=$("savePassword");
-   if(password.length<6){statusBox.textContent="Use pelo menos 6 caracteres.";return;}
-   btn.disabled=true;
-   try{
-    const snap=await get(ref(db,"recoveryAccess/"+currentKey)),grant=snap.exists()?snap.val():null;
-    if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now())throw Error("Autorização expirada. Solicite outra liberação.");
-    await set(ref(db,"users/"+currentName+"/senha"),password);
-    await set(ref(db,"recoveryRequests/"+currentKey+"/status),"completed");
-    await set(ref(db,"recoveryAccess/"+currentKey),null);
-    statusBox.textContent="Senha alterada! Volte à tela de login para entrar.";
-    $("resetArea").style.display="none";$("newPassword").value="";
-   }catch(err){console.error(err);statusBox.textContent=err.message||"Não foi possível trocar a senha.";}
-   finally{btn.disabled=false;}
-  });
-  statusBox.textContent="Sistema de recuperação carregado. Digite seu nickname.";
- }catch(err){
-  console.error("Falha ao carregar recuperação:",err);
-  statusBox.textContent="A tela abriu, mas o Firebase não carregou: "+(err.message||err);
- }
-})();
+}
+
+sendButton.addEventListener("click", async () => {
+  const name = $("recoveryUser").value.trim();
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(name)) {
+    statusBox.textContent = "Digite um nickname válido (3 a 20 letras, números ou _).";
+    $("recoveryUser").focus();
+    return;
+  }
+
+  sendButton.disabled = true;
+  sendButton.textContent = "Conectando...";
+  statusBox.textContent = "Conectando ao Goblox. Aguarde...";
+  try {
+    const firebase = await firebaseReady;
+    const { db, ref, get, set } = firebase;
+    statusBox.textContent = "Verificando a conta...";
+    const account = await get(ref(db, "users/" + name));
+    if (!account.exists()) {
+      statusBox.textContent = "Conta não encontrada. Digite o nickname exatamente como foi cadastrado.";
+      return;
+    }
+
+    const key = name.toLowerCase();
+    statusBox.textContent = "Enviando solicitação...";
+    await set(ref(db, "recoveryRequests/" + key), {
+      username: name,
+      status: "pending",
+      requestedAt: Date.now()
+    });
+    statusBox.textContent = "Pedido enviado! A equipe pode aprovar em ADM → Recuperação.";
+    watchGrant(firebase, name);
+  } catch (error) {
+    console.error("Erro no botão de recuperação:", error);
+    statusBox.textContent = "NÃO FOI POSSÍVEL ENVIAR: " +
+      (error.code || error.message || "erro desconhecido") +
+      ". Confira a conexão e as regras do Firebase.";
+  } finally {
+    sendButton.disabled = false;
+    sendButton.textContent = "Enviar solicitação";
+  }
+});
+
+$("savePassword").addEventListener("click", async () => {
+  const password = $("newPassword").value;
+  const button = $("savePassword");
+  if (password.length < 6) {
+    statusBox.textContent = "Use pelo menos 6 caracteres.";
+    return;
+  }
+  button.disabled = true;
+  try {
+    const firebase = await firebaseReady;
+    const { db, ref, get, set } = firebase;
+    if (!currentName || !currentKey) throw new Error("Solicite a recuperação novamente.");
+    const snap = await get(ref(db, "recoveryAccess/" + currentKey));
+    const grant = snap.exists() ? snap.val() : null;
+    if (!grant || grant.username !== currentName || Number(grant.expiresAt) <= Date.now()) {
+      throw new Error("Autorização expirada. Solicite outra liberação.");
+    }
+    await set(ref(db, "users/" + currentName + "/senha"), password);
+    await set(ref(db, "recoveryRequests/" + currentKey + "/status"), "completed");
+    await set(ref(db, "recoveryAccess/" + currentKey), null);
+    statusBox.textContent = "Senha alterada! Volte para a tela de login.";
+    $("resetArea").style.display = "none";
+    $("newPassword").value = "";
+  } catch (error) {
+    console.error("Erro ao salvar senha:", error);
+    statusBox.textContent = error.code || error.message || "Não foi possível trocar a senha.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+firebaseReady.then(() => {
+  statusBox.textContent = "Conectado ao Goblox. Digite seu nickname.";
+}).catch(error => {
+  console.error("Falha ao carregar Firebase:", error);
+  statusBox.textContent = "Falha ao conectar com Firebase: " + (error.message || error);
+});
 </script>
 </body>
 </html>
