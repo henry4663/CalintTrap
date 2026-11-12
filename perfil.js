@@ -13,6 +13,19 @@ async function carregarPerfil(){
  $("edit-panel").hidden=!souDono;$("profile-username").textContent="@"+nickAlvo;$("profile-avatar").src=avatarPadrao(nickAlvo);
  try{
   const snapshot=await get(ref(db,"profiles/"+profileKey(nickAlvo)));const dados=snapshot.exists()?snapshot.val():{};
+  if(souDono && dados.influencerThankYouPending === true){
+   const thanks=$("influencer-thanks");
+   if(thanks){thanks.hidden=false;thanks.style.display="flex";}
+   $("close-influencer-thanks")?.addEventListener("click",async()=>{
+    const button=$("close-influencer-thanks");if(button)button.disabled=true;
+    try{
+     const profileRef=ref(db,"profiles/"+profileKey(nickLogado));
+     const latest=await get(profileRef);const current=latest.exists()?latest.val():{};
+     if(current.influencerThankYouPending===true){current.influencerThankYouPending=false;await set(profileRef,current);}
+     if(thanks){thanks.style.display="none";thanks.hidden=true;}
+    }catch(error){console.error(error);if(button)button.disabled=false;mensagem("Não foi possível confirmar a notificação. Tente novamente.",true);}
+   },{once:true});
+  }
   $("profile-title").textContent=String(dados.displayName||nickAlvo).slice(0,24);
   const usernameLine=$("profile-username");
   usernameLine.replaceChildren();
