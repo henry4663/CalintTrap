@@ -48,60 +48,68 @@ button:disabled{opacity:.55;cursor:wait}
     <a class="back" href="lock.html">Voltar para entrar</a>
   </section>
 </main>
-<script type="module">
-import {db,ref,get,set,onValue} from "./firebase.js";
+<script>
 const $=id=>document.getElementById(id);
-let currentName="",currentKey="",timer=null,stopWatch=null;
-function keyFor(name){return name.toLowerCase();}
-function watchGrant(name){
-  currentName=name;currentKey=keyFor(name);
-  if(stopWatch)stopWatch();
-  stopWatch=onValue(ref(db,"recoveryAccess/"+currentKey),snap=>{
+const sendButton=$("sendRecovery");
+const statusBox=$("status");
+sendButton.addEventListener("click",()=>{statusBox.textContent="Botão funcionando. Conectando ao Goblox...";});
+(async()=>{
+ try{
+  const firebase=await import("./firebase.js");
+  const {db,ref,get,set,onValue}=firebase;
+  if(!db) throw new Error("Banco de dados não inicializado no firebase.js");
+  let currentName="",currentKey="",timer=null,stopWatch=null;
+  function watchGrant(name){
+   currentName=name;currentKey=name.toLowerCase();
+   if(stopWatch)stopWatch();
+   stopWatch=onValue(ref(db,"recoveryAccess/"+currentKey),snap=>{
     const grant=snap.exists()?snap.val():null;
     if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now()){
-      $("resetArea").style.display="none";
-      if(grant)$("status").textContent="A autorização expirou. Solicite novamente.";
-      return;
+     $("resetArea").style.display="none";
+     if(grant)statusBox.textContent="A autorização expirou. Solicite novamente.";
+     return;
     }
-    $("resetArea").style.display="block";
-    clearInterval(timer);
-    const tick=()=>{
-      const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));
-      $("countdown").textContent="Tempo para trocar a senha: "+left+"s";
-      if(!left){clearInterval(timer);$("resetArea").style.display="none";$("status").textContent="Tempo encerrado. Faça uma nova solicitação.";}
-    };
+    $("resetArea").style.display="block";clearInterval(timer);
+    const tick=()=>{const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));$("countdown").textContent="Tempo para trocar a senha: "+left+"s";if(!left){clearInterval(timer);$("resetArea").style.display="none";statusBox.textContent="Tempo encerrado. Faça uma nova solicitação.";}};
     tick();timer=setInterval(tick,200);
-  },err=>{console.error(err);$("status").textContent="Não foi possível acompanhar a aprovação. Verifique as regras do Firebase.";});
-}
-$("sendRecovery").addEventListener("click",async()=>{
-  const name=$("recoveryUser").value.trim(),btn=$("sendRecovery");
-  if(!/^[a-zA-Z0-9_]{3,20}$/.test(name)){$("status").textContent="Nickname inválido. Use de 3 a 20 letras, números ou _.";return;}
-  btn.disabled=true;$("status").textContent="Enviando solicitação...";
-  try{
+   },err=>{console.error(err);statusBox.textContent="Erro ao acompanhar aprovação: "+(err.code||err.message);});
+  }
+  sendButton.addEventListener("click",async()=>{
+   const name=$("recoveryUser").value.trim();
+   if(!/^[a-zA-Z0-9_]{3,20}$/.test(name)){statusBox.textContent="Nickname inválido. Use de 3 a 20 letras, números ou _.";return;}
+   sendButton.disabled=true;statusBox.textContent="Consultando conta no Goblox...";
+   try{
     const account=await get(ref(db,"users/"+name));
-    if(!account.exists()){$("status").textContent="Conta não encontrada. Confira o nickname.";return;}
-    const key=keyFor(name);
+    if(!account.exists()){statusBox.textContent="Conta não encontrada. Confira o nickname exatamente como foi cadastrado.";return;}
+    const key=name.toLowerCase();
+    statusBox.textContent="Enviando solicitação...";
     await set(ref(db,"recoveryRequests/"+key),{username:name,status:"pending",requestedAt:Date.now()});
-    $("status").textContent="Pedido enviado! Aguarde um administrador aprovar.";
+    statusBox.textContent="SOLICITAÇÃO ENVIADA! Agora ela deve aparecer em ADM → Recuperação.";
     watchGrant(name);
-  }catch(err){console.error("Falha ao solicitar recuperação:",err);const code=err?.code||"sem código";const detail=err?.message||"erro desconhecido";$("status").textContent="Falha no Firebase ("+code+"): "+detail;}
-  finally{btn.disabled=false;}
-});
-$("savePassword").addEventListener("click",async()=>{
-  const password=$("newPassword").value,btn=$("savePassword");
-  if(password.length<6){$("status").textContent="Use pelo menos 6 caracteres.";return;}
-  btn.disabled=true;
-  try{
+   }catch(err){console.error("Falha na solicitação:",err);statusBox.textContent="Falha no Firebase ("+(err.code||"sem código")+"): "+(err.message||"erro desconhecido");}
+   finally{sendButton.disabled=false;}
+  });
+  $("savePassword").addEventListener("click",async()=>{
+   const password=$("newPassword").value,btn=$("savePassword");
+   if(password.length<6){statusBox.textContent="Use pelo menos 6 caracteres.";return;}
+   btn.disabled=true;
+   try{
     const snap=await get(ref(db,"recoveryAccess/"+currentKey)),grant=snap.exists()?snap.val():null;
     if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now())throw Error("Autorização expirada. Solicite outra liberação.");
     await set(ref(db,"users/"+currentName+"/senha"),password);
     await set(ref(db,"recoveryRequests/"+currentKey+"/status),"completed");
     await set(ref(db,"recoveryAccess/"+currentKey),null);
-    $("status").textContent="Senha alterada! Volte à tela de login para entrar.";
+    statusBox.textContent="Senha alterada! Volte à tela de login para entrar.";
     $("resetArea").style.display="none";$("newPassword").value="";
-  }catch(err){console.error(err);$("status").textContent=err.message||"Não foi possível trocar a senha.";}
-  finally{btn.disabled=false;}
-});
+   }catch(err){console.error(err);statusBox.textContent=err.message||"Não foi possível trocar a senha.";}
+   finally{btn.disabled=false;}
+  });
+  statusBox.textContent="Sistema de recuperação carregado. Digite seu nickname.";
+ }catch(err){
+  console.error("Falha ao carregar recuperação:",err);
+  statusBox.textContent="A tela abriu, mas o Firebase não carregou: "+(err.message||err);
+ }
+})();
 </script>
 </body>
 </html>
