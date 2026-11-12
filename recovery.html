@@ -84,7 +84,7 @@ $("sendRecovery").addEventListener("click",async()=>{
     await set(ref(db,"recoveryRequests/"+key),{username:name,status:"pending",requestedAt:Date.now()});
     $("status").textContent="Pedido enviado! Aguarde um administrador aprovar.";
     watchGrant(name);
-  }catch(err){console.error("Falha ao solicitar recuperação:",err);$("status").textContent="Erro ao enviar pedido. O Firebase recusou a gravação ou está indisponível. Verifique as regras do banco.";}
+  }catch(err){console.error("Falha ao solicitar recuperação:",err);const code=err?.code||"sem código";const detail=err?.message||"erro desconhecido";$("status").textContent="Falha no Firebase ("+code+"): "+detail;}
   finally{btn.disabled=false;}
 });
 $("savePassword").addEventListener("click",async()=>{
