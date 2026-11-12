@@ -282,12 +282,26 @@ if (!allowed) {
           const roleRef = ref(db, "profiles/" + user.key);
           const snap = await get(roleRef);
           const current = snap.exists() ? snap.val() : {};
+          const wasInfluencer = current.role === "influencer";
           if (select.value === "none") delete current.role;
           else current.role = select.value;
+          let bonusMessage = "";
+          // Recompensa única ao receber o cargo de influenciador.
+          if (select.value === "influencer" && !wasInfluencer && !current.influencerRewardClaimed) {
+            const balance = Number(current.zxBalance || 0);
+            if (!Number.isSafeInteger(balance) || balance < 0 || balance + 6000 > Number.MAX_SAFE_INTEGER) {
+              throw new Error("Saldo Zx inválido; cargo não foi alterado.");
+            }
+            current.zxBalance = balance + 6000;
+            current.influencerRewardClaimed = true;
+            current.influencerThankYouPending = true;
+            current.influencerRewardAt = Date.now();
+            bonusMessage = " + 6.000 Zx de bônus!";
+          }
           current.updatedAt = Date.now();
           await set(roleRef, current);
           user.role = select.value;
-          status.textContent = "✓ Cargo de @" + user.username + " salvo com sucesso.";
+          status.textContent = "✓ Cargo de @" + user.username + " salvo com sucesso." + bonusMessage;
           save.textContent = "✓ Salvo";
         } catch (error) {
           console.error(error);
