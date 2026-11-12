@@ -27,13 +27,20 @@ body{background:#090914;color:#f4f2ff}.panel{background:#151426;border:1px solid
   <h1 class="text-3xl md:text-4xl font-black mt-2">Painel administrativo</h1>
   <p class="text-slate-400 mt-2">Bem-vindo à equipe administrativa. Visão geral das contas cadastradas no Goblox.</p>
  </div>
- <nav class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6" aria-label="Seções do painel">
+ <nav class="grid grid-cols-2 sm:grid-cols-6 gap-2 mb-6" aria-label="Seções do painel">
   <button type="button" data-tab="contas" class="tab-btn rounded-xl px-4 py-3 font-bold bg-violet-600 text-white">Contas</button>
   <button type="button" data-tab="cargos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Cargos</button>
   <button type="button" data-tab="banimentos" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Banimentos</button>
   <button type="button" data-tab="zx" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Zx</button>
   <button type="button" data-tab="torneio" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Torneio Speed Run</button>
+  <button type="button" data-tab="recuperacao" class="tab-btn rounded-xl px-4 py-3 font-bold panel text-slate-300">Recuperação</button>
  </nav>
+ <section id="recovery-panel" class="panel rounded-2xl p-5 mb-6 hidden">
+  <h2 class="text-2xl font-black">Recuperação de contas</h2>
+  <p class="text-slate-400 text-sm mt-2">Solicitações aguardando análise.</p>
+  <p id="recovery-admin-status" class="text-sm text-slate-300 mt-4" role="status">Carregando...</p>
+  <div id="recovery-list" class="grid sm:grid-cols-2 gap-3 mt-4"></div>
+ </section>
  <section id="tournament-panel" class="panel rounded-2xl p-5 mb-6 hidden">
   <p class="text-violet-300 text-xs font-black tracking-widest">SPEED RUN ARENA</p>
   <h2 class="text-2xl font-black mt-2">Controle de torneio</h2>
@@ -87,7 +94,8 @@ if (!allowed) {
     cargos: ["Gerenciar cargos", "Escolha e salve o cargo de cada jogador."],
     banimentos: ["Central de banimentos", "Aplique suspensão temporária ou permanente e remova banimentos."],
     zx: ["Gerenciar Zx", "Adicione moedas ao saldo de um jogador."],
-    torneio: ["Torneio Speed Run", "Crie e controle uma sala competitiva de seis jogadores."]
+    torneio: ["Torneio Speed Run", "Crie e controle uma sala competitiva de seis jogadores."],
+    recuperacao: ["Recuperação de contas", "Aprove pedidos e libere a troca de senha por 10 segundos."]
   };
   document.querySelectorAll("[data-tab]").forEach(button => {
     button.addEventListener("click", () => {
@@ -99,9 +107,10 @@ if (!allowed) {
           (tab.dataset.tab === activeTab ? "bg-violet-600 text-white" : "panel text-slate-300 hover:bg-violet-950");
       });
       document.getElementById("tournament-panel").classList.toggle("hidden", activeTab !== "torneio");
-      document.getElementById("users-panel").classList.toggle("hidden", activeTab === "torneio");
-      document.getElementById("admin-stats").classList.toggle("hidden", activeTab === "torneio");
-      render();
+      document.getElementById("recovery-panel").classList.toggle("hidden", activeTab !== "recuperacao");
+      document.getElementById("users-panel").classList.toggle("hidden", activeTab === "torneio" || activeTab === "recuperacao");
+      document.getElementById("admin-stats").classList.toggle("hidden", activeTab === "torneio" || activeTab === "recuperacao");
+      if (activeTab === "recuperacao") loadRecoveryRequests(); else render();
     });
   });
 
@@ -325,6 +334,35 @@ if (!allowed) {
     }
   }
 
+
+  async function loadRecoveryRequests() {
+    const box=document.getElementById("recovery-list"), info=document.getElementById("recovery-admin-status");
+    box.replaceChildren();info.textContent="Consultando solicitações...";
+    try{
+      const snap=await get(ref(db,"recoveryRequests")), data=snap.exists()?snap.val():{};
+      const pending=Object.entries(data).filter(([,r])=>r&&r.status==="pending");
+      if(!pending.length){info.textContent="Nenhuma solicitação pendente.";return;}
+      info.textContent=pending.length+" pedido(s) pendente(s).";
+      for(const [key,r] of pending){
+        const card=document.createElement("article");card.className="user-card";
+        const name=document.createElement("p");name.className="font-black text-lg";name.textContent="@"+r.username;
+        const date=document.createElement("p");date.className="text-xs text-slate-400";date.textContent="Pedido: "+new Date(Number(r.requestedAt||0)).toLocaleString("pt-BR");
+        const actions=document.createElement("div");actions.className="flex gap-2";
+        const ok=document.createElement("button");ok.type="button";ok.className="save-btn flex-1 bg-emerald-700 rounded-xl px-3 py-3 font-bold";ok.textContent="Aprovar (10s)";
+        ok.addEventListener("click",async()=>{
+          ok.disabled=true;
+          try{await set(ref(db,"recoveryAccess/"+key),{username:r.username,expiresAt:Date.now()+10000,approvedBy:nick,approvedAt:Date.now()});await set(ref(db,"recoveryRequests/"+key+"/status"),"approved");info.textContent="Liberado para @"+r.username+" por 10 segundos.";loadRecoveryRequests();}
+          catch(e){console.error(e);info.textContent="Erro ao aprovar. Confira as regras do Firebase.";ok.disabled=false;}
+        });
+        const no=document.createElement("button");no.type="button";no.className="save-btn bg-red-800 rounded-xl px-3 py-3 font-bold";no.textContent="Recusar";
+        no.addEventListener("click",async()=>{
+          no.disabled=true;try{await set(ref(db,"recoveryRequests/"+key+"/status"),"rejected");info.textContent="Pedido recusado.";loadRecoveryRequests();}
+          catch(e){console.error(e);info.textContent="Erro ao recusar.";no.disabled=false;}
+        });
+        actions.append(ok,no);card.append(name,date,actions);box.append(card);
+      }
+    }catch(e){console.error(e);info.textContent="Falha ao carregar. Verifique as regras do Firebase.";}
+  }
   async function loadUsers() {
     status.textContent = "Consultando o Firebase...";
     document.getElementById("refresh-users").disabled = true;
