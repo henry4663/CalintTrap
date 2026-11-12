@@ -245,7 +245,7 @@ body {
 
     <div class="links">
         <a id="btnCriarDireto">Criar nova conta</a>
-        <a id="btnRecuperar" href="recovery.html" role="button">Esqueci minha senha</a>
+        <a id="btnRecuperar" href="#recoveryBox" role="button">Esqueci minha senha</a>
     </div>
     <section id="recoveryBox" style="display:none;margin-top:22px;text-align:left;background:#170b2b;border:1px solid #7655a7;border-radius:16px;padding:18px">
       <h2 style="font-size:20px;margin-bottom:8px">Recuperar conta</h2>
@@ -261,6 +261,16 @@ body {
     </section>
 
 </div>
+
+<script>
+  // O painel abre mesmo se o módulo do Firebase demorar ou falhar ao carregar.
+  document.getElementById("btnRecuperar").addEventListener("click", function () {
+    const box = document.getElementById("recoveryBox");
+    box.style.display = "block";
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("recoveryUser").focus();
+  });
+</script>
 
 <script type="module">
   import { db, ref, get, set, onValue } from "./firebase.js";
@@ -358,17 +368,6 @@ body {
   const recoveryStatus=document.getElementById("recoveryStatus");
   const resetArea=document.getElementById("resetArea");
   let recoveryKey="", recoveryUsername="", recoveryTimer=null;
-  // Recuperação no próprio login (fluxo antigo), sem trocar de página.
-  document.getElementById("btnRecuperar").addEventListener("click", e => {
-    e.preventDefault();
-    const open = recoveryBox.style.display !== "block";
-    recoveryBox.style.display = open ? "block" : "none";
-    if (open) {
-      recoveryBox.scrollIntoView({ behavior: "smooth", block: "center" });
-      document.getElementById("recoveryUser").focus();
-      recoveryStatus.textContent = "Digite seu nickname para solicitar a recuperação.";
-    }
-  });
   function watchRecovery(username){
     recoveryUsername=username;
     recoveryKey=username.toLowerCase();
@@ -380,6 +379,9 @@ body {
       resetArea.style.display="block"; clearInterval(recoveryTimer);
       const tick=()=>{const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));document.getElementById("resetCountdown").textContent="Tempo para trocar a senha: "+left+"s";if(!left){clearInterval(recoveryTimer);resetArea.style.display="none";recoveryStatus.textContent="Tempo encerrado. Faça uma nova solicitação.";}};
       tick();recoveryTimer=setInterval(tick,200);
+    },error=>{
+      console.error("Falha ao acompanhar autorização:",error);
+      recoveryStatus.textContent="Não foi possível acompanhar a aprovação: "+(error.code||error.message);
     });
   }
   document.getElementById("sendRecovery").addEventListener("click",async()=>{
