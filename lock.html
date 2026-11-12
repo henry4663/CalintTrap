@@ -402,22 +402,39 @@ body {
   });
   document.getElementById("saveRecoveryPassword").addEventListener("click",async()=>{
     const password=document.getElementById("newRecoveryPassword").value;
-    if(password.length<6){recoveryStatus.textContent="Use pelo menos 6 caracteres.";return;}
-    const button=document.getElementById("saveRecoveryPassword");button.disabled=true;
+    if(password.length<6){recoveryStatus.textContent="A nova senha precisa ter pelo menos 6 caracteres.";return;}
+    if(password!==password.trim()){recoveryStatus.textContent="A senha não pode começar ou terminar com espaços.";return;}
+    if(!recoveryUsername||!recoveryKey){recoveryStatus.textContent="Peça a recuperação novamente antes de salvar.";return;}
+    const button=document.getElementById("saveRecoveryPassword");
+    button.disabled=true;
+    button.textContent="Salvando senha...";
     try{
-      const snap=await get(ref(db,"recoveryAccess/"+recoveryKey));
-      const grant=snap.exists()?snap.val():null;
-      if(!grant||grant.username!==recoveryUsername||Number(grant.expiresAt)<=Date.now())throw Error("Autorização expirada. Solicite outra liberação.");
-      await set(ref(db,"users/"+recoveryUsername+"/senha"),password);
+      const accessRef=ref(db,"recoveryAccess/"+recoveryKey);
+      const grantSnap=await get(accessRef);
+      const grant=grantSnap.exists()?grantSnap.val():null;
+      if(!grant||grant.username!==recoveryUsername||Number(grant.expiresAt)<=Date.now()){
+        throw new Error("A autorização de 10 segundos expirou. Solicite outra liberação no ADM.");
+      }
+      const passwordRef=ref(db,"users/"+recoveryUsername+"/senha");
+      await set(passwordRef,password);
+      const verifySnap=await get(passwordRef);
+      if(!verifySnap.exists()||verifySnap.val()!==password){
+        throw new Error("O Firebase não confirmou a gravação da nova senha.");
+      }
       await set(ref(db,"recoveryRequests/"+recoveryKey+"/status"),"completed");
-      await set(ref(db,"recoveryAccess/"+recoveryKey),null);
-      recoveryStatus.textContent="Senha alterada! Você já pode entrar.";
+      await set(accessRef,null);
+      recoveryStatus.textContent="SENHA ALTERADA E CONFIRMADA. Agora entre usando a nova senha.";
       resetArea.style.display="none";
       document.getElementById("username").value=recoveryUsername;
       document.getElementById("password").value="";
       document.getElementById("newRecoveryPassword").value="";
-    }catch(err){console.error(err);recoveryStatus.textContent=err.message||"Não foi possível trocar a senha.";}
-    finally{button.disabled=false;}
+    }catch(err){
+      console.error("Falha ao trocar a senha:",err);
+      recoveryStatus.textContent="NÃO FOI POSSÍVEL ALTERAR: "+(err.code||err.message||"erro desconhecido");
+    }finally{
+      button.disabled=false;
+      button.textContent="Salvar nova senha";
+    }
   });
 </script>
 
