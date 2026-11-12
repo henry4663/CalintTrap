@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goblox — Recuperar conta</title>
+<style>
+:root{color-scheme:dark;--purple:#8b5cf6;--line:#7655a7}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#080012;color:#fff}
+body{min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:24px;overflow-y:auto;background:radial-gradient(ellipse at 15% 10%,#390080 0,transparent 42%),radial-gradient(ellipse at 90% 90%,#30006e 0,transparent 40%),#080012}
+.wrap{width:min(100%,520px);margin:auto}
+.brand{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:22px}
+.logo{width:54px;height:54px;display:grid;place-items:center;background:#fff;color:#18002d;border-radius:9px;font-size:30px;font-weight:900;transform:rotate(10deg)}
+.brand h1{font-size:clamp(34px,7vw,54px);margin:0;letter-spacing:-2px}
+.card{width:100%;padding:clamp(20px,5vw,34px);background:rgba(23,11,43,.96);border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 70px #0008}
+h2{font-size:clamp(23px,5vw,29px);margin:0 0 9px}
+.desc{color:#c5b6e5;line-height:1.55;margin:0 0 24px;font-size:15px}
+label{display:block;margin:15px 0 8px;color:#e9ddff;font-size:14px;font-weight:bold}
+input{display:block;width:100%;height:54px;border:1px solid var(--line);border-radius:12px;background:#0b0317;color:white;padding:0 15px;font-size:16px;outline:none;min-width:0}
+input:focus{border-color:#c18aff;box-shadow:0 0 0 3px #8b5cf633}
+button,.back{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:12px;background:linear-gradient(110deg,#8b5cf6,#7138d4);color:white;font-weight:bold;font-size:16px;text-decoration:none;cursor:pointer;margin-top:14px;padding:12px}
+button:disabled{opacity:.55;cursor:wait}
+#status{min-height:22px;color:#d8c8ff;font-size:14px;line-height:1.45;margin:14px 0 0;overflow-wrap:anywhere}
+#resetArea{display:none;margin-top:22px;padding-top:18px;border-top:1px solid #493263}
+#countdown{color:#86efac;font-weight:bold;margin:0 0 12px}
+.back{background:#28163f;border:1px solid #604080;margin-top:18px}
+@media(max-width:480px){body{padding:14px;place-items:center}.brand{margin-bottom:16px}.logo{width:45px;height:45px}.card{border-radius:17px}.desc{font-size:14px}}
+@media(min-width:800px){.card{padding:38px}.wrap{width:min(100%,540px)}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="brand"><div class="logo">◈</div><h1>Goblox</h1></header>
+  <section class="card">
+    <h2>Recuperar conta</h2>
+    <p class="desc">Informe seu nickname para pedir ajuda à equipe Goblox. Quando um administrador aprovar, você terá 10 segundos para cadastrar uma nova senha.</p>
+    <label for="recoveryUser">Seu nickname</label>
+    <input id="recoveryUser" type="text" maxlength="20" autocomplete="username" placeholder="Digite seu nickname">
+    <button id="sendRecovery" type="button">Enviar solicitação</button>
+    <p id="status" role="status" aria-live="polite"></p>
+    <div id="resetArea">
+      <p id="countdown"></p>
+      <label for="newPassword">Nova senha</label>
+      <input id="newPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Mínimo de 6 caracteres">
+      <button id="savePassword" type="button">Salvar nova senha</button>
+    </div>
+    <a class="back" href="lock.html">Voltar para entrar</a>
+  </section>
+</main>
+<script type="module">
+import {db,ref,get,set,onValue} from "./firebase.js";
+const $=id=>document.getElementById(id);
+let currentName="",currentKey="",timer=null,stopWatch=null;
+function keyFor(name){return name.toLowerCase();}
+function watchGrant(name){
+  currentName=name;currentKey=keyFor(name);
+  if(stopWatch)stopWatch();
+  stopWatch=onValue(ref(db,"recoveryAccess/"+currentKey),snap=>{
+    const grant=snap.exists()?snap.val():null;
+    if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now()){
+      $("resetArea").style.display="none";
+      if(grant)$("status").textContent="A autorização expirou. Solicite novamente.";
+      return;
+    }
+    $("resetArea").style.display="block";
+    clearInterval(timer);
+    const tick=()=>{
+      const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));
+      $("countdown").textContent="Tempo para trocar a senha: "+left+"s";
+      if(!left){clearInterval(timer);$("resetArea").style.display="none";$("status").textContent="Tempo encerrado. Faça uma nova solicitação.";}
+    };
+    tick();timer=setInterval(tick,200);
+  },err=>{console.error(err);$("status").textContent="Não foi possível acompanhar a aprovação. Verifique as regras do Firebase.";});
+}
+$("sendRecovery").addEventListener("click",async()=>{
+  const name=$("recoveryUser").value.trim(),btn=$("sendRecovery");
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(name)){$("status").textContent="Nickname inválido. Use de 3 a 20 letras, números ou _.";return;}
+  btn.disabled=true;$("status").textContent="Enviando solicitação...";
+  try{
+    const account=await get(ref(db,"users/"+name));
+    if(!account.exists()){$("status").textContent="Conta não encontrada. Confira o nickname.";return;}
+    const key=keyFor(name);
+    await set(ref(db,"recoveryRequests/"+key),{username:name,status:"pending",requestedAt:Date.now()});
+    $("status").textContent="Pedido enviado! Aguarde um administrador aprovar.";
+    watchGrant(name);
+  }catch(err){console.error("Falha ao solicitar recuperação:",err);$("status").textContent="Erro ao enviar pedido. O Firebase recusou a gravação ou está indisponível. Verifique as regras do banco.";}
+  finally{btn.disabled=false;}
+});
+$("savePassword").addEventListener("click",async()=>{
+  const password=$("newPassword").value,btn=$("savePassword");
+  if(password.length<6){$("status").textContent="Use pelo menos 6 caracteres.";return;}
+  btn.disabled=true;
+  try{
+    const snap=await get(ref(db,"recoveryAccess/"+currentKey)),grant=snap.exists()?snap.val():null;
+    if(!grant||grant.username!==currentName||Number(grant.expiresAt)<=Date.now())throw Error("Autorização expirada. Solicite outra liberação.");
+    await set(ref(db,"users/"+currentName+"/senha"),password);
+    await set(ref(db,"recoveryRequests/"+currentKey+"/status),"completed");
+    await set(ref(db,"recoveryAccess/"+currentKey),null);
+    $("status").textContent="Senha alterada! Volte à tela de login para entrar.";
+    $("resetArea").style.display="none";$("newPassword").value="";
+  }catch(err){console.error(err);$("status").textContent=err.message||"Não foi possível trocar a senha.";}
+  finally{btn.disabled=false;}
+});
+</script>
+</body>
+</html>
