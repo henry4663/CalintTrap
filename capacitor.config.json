@@ -1,0 +1,10 @@
+{
+  "appId": "com.goblox.platform",
+  "appName": "Goblox",
+  "webDir": "app",
+  "server": {
+    "url": "https://henry4663.github.io/CalintTrap/",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}
