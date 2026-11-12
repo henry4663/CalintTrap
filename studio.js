@@ -1,6 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/TransformControls.js";
+import { downloadCompiledGame } from "./goblox-compiler.js";
 
 const $ = id => document.getElementById(id);
 const canvas=$("view"), scene=new THREE.Scene();
@@ -62,6 +63,7 @@ function setTool(mode){gizmo.setMode(mode);["move","rotate","scale"].forEach(k=>
 $("tool-move").onclick=()=>setTool("translate");$("tool-rotate").onclick=()=>setTool("rotate");$("tool-scale").onclick=()=>setTool("scale");setTool("translate");
 $("focus-object").onclick=()=>{if(!selected)return status("Selecione um objeto primeiro.");controls.target.copy(selected.position);camera.position.set(selected.position.x+7,selected.position.y+6,selected.position.z+8);controls.update();};
 $("save-project").onclick=save;$("open-project").onclick=()=>$("file-input").click();
+$("compile-project").onclick=()=>{try{const data=exportData();const bytes=downloadCompiledGame(data);status("Compilação concluída! Jogo HTML gerado ("+bytes+" bytes).");}catch(error){console.error(error);status("Erro ao compilar: "+error.message);}};
 $("file-input").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{load(JSON.parse(await file.text()));}catch(err){status("Não consegui abrir esse arquivo .gog.");console.error(err);}e.target.value="";};
 $("new-project").onclick=()=>{if(objects.length&&!confirm("Começar um projeto novo? Os objetos atuais serão removidos."))return;objects.splice(0).forEach(o=>scene.remove(o));selected=null;$("script-editor").value="";renderList();renderProperties();status("Projeto novo criado.");};
 $("tab-script").onclick=()=>{$("script-editor").hidden=false;$("editor-info").hidden=true;$("tab-script").classList.add("active");$("tab-scene").classList.remove("active");};
