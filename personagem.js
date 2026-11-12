@@ -26,6 +26,7 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   player.add(head);
   
   const hatGroup = new THREE.Group();
+  hatGroup.name = 'hatGroup';
   hatGroup.position.set(0, 2.08, -0.05);
   
   const brimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
@@ -47,18 +48,21 @@ export function criarPersonagem(nick = 'Jogador', opcoes = {}) {
   player.add(hatGroup);
   
   const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  eyeL.name = 'eyeL';
   eyeL.position.set(-0.13, 1.9, -0.3);
   player.add(eyeL);
   const pL = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+  pL.name = 'pupilL';
   pL.position.set(-0.13, 1.9, -0.38);
   player.add(pL);
-  const eyeR = eyeL.clone(); eyeR.position.x = 0.13; player.add(eyeR);
-  const pR = pL.clone(); pR.position.x = 0.13; player.add(pR);
+  const eyeR = eyeL.clone(); eyeR.name = 'eyeR'; eyeR.position.x = 0.13; player.add(eyeR);
+  const pR = pL.clone(); pR.name = 'pupilR'; pR.position.x = 0.13; player.add(pR);
   
   const smile = new THREE.Mesh(
     new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI),
     new THREE.MeshBasicMaterial({ color: 0x000000 })
   );
+  smile.name = 'smile';
   smile.position.set(0, 1.73, -0.32);
   smile.rotation.z = Math.PI;
   smile.rotation.y = Math.PI;
