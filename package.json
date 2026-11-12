@@ -1,0 +1,27 @@
+{
+  "name": "goblox-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicativo Goblox para Windows e Android",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build:windows": "electron-builder --win nsis",
+    "build:android": "cap sync android && cap open android",
+    "android:add": "cap add android"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/android": "^7.4.3",
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.goblox.platform",
+    "productName": "Goblox",
+    "directories": { "output": "dist" },
+    "files": ["desktop/**/*", "app/**/*", "package.json"],
+    "win": { "target": ["nsis"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}
