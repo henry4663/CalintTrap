@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090014">
+  <title>Goblox</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#090014;color:white;font:16px Arial,sans-serif}
+    #status{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;gap:12px}
+    #status strong{font-size:30px;letter-spacing:2px}#status span{color:#b9a9d1}
+    iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#090014}
+  </style>
+</head>
+<body>
+  <div id="status"><strong>GOBLOX</strong><span>Conectando à plataforma...</span></div>
+  <iframe id="platform" title="Goblox" allow="fullscreen; autoplay; clipboard-read; clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <script>
+    const target = "https://henry4663.github.io/CalintTrap/";
+    const frame = document.getElementById("platform");
+    frame.src = target;
+    frame.addEventListener("load", () => document.getElementById("status").remove());
+    setTimeout(() => {
+      const status = document.getElementById("status");
+      if (status) status.innerHTML = "<strong>GOBLOX</strong><span>Não foi possível conectar. Verifique a internet e se o GitHub Pages está ativado no repositório.</span>";
+    }, 15000);
+  </script>
+</body>
+</html>
