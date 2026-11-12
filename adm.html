@@ -335,34 +335,78 @@ if (!allowed) {
   }
 
 
-  async function loadRecoveryRequests() {
-    const box=document.getElementById("recovery-list"), info=document.getElementById("recovery-admin-status");
-    box.replaceChildren();info.textContent="Consultando solicitações...";
-    try{
-      const snap=await get(ref(db,"recoveryRequests")), data=snap.exists()?snap.val():{};
-      const pending=Object.entries(data).filter(([,r])=>r&&r.status==="pending");
-      if(!pending.length){info.textContent="Nenhuma solicitação pendente.";return;}
-      info.textContent=pending.length+" pedido(s) pendente(s).";
-      for(const [key,r] of pending){
-        const card=document.createElement("article");card.className="user-card";
-        const name=document.createElement("p");name.className="font-black text-lg";name.textContent="@"+r.username;
-        const date=document.createElement("p");date.className="text-xs text-slate-400";date.textContent="Pedido: "+new Date(Number(r.requestedAt||0)).toLocaleString("pt-BR");
-        const actions=document.createElement("div");actions.className="flex gap-2";
-        const ok=document.createElement("button");ok.type="button";ok.className="save-btn flex-1 bg-emerald-700 rounded-xl px-3 py-3 font-bold";ok.textContent="Aprovar (10s)";
-        ok.addEventListener("click",async()=>{
-          ok.disabled=true;
-          try{await set(ref(db,"recoveryAccess/"+key),{username:r.username,expiresAt:Date.now()+10000,approvedBy:nick,approvedAt:Date.now()});await set(ref(db,"recoveryRequests/"+key+"/status"),"approved");info.textContent="Liberado para @"+r.username+" por 10 segundos.";loadRecoveryRequests();}
-          catch(e){console.error(e);info.textContent="Erro ao aprovar. Confira as regras do Firebase.";ok.disabled=false;}
-        });
-        const no=document.createElement("button");no.type="button";no.className="save-btn bg-red-800 rounded-xl px-3 py-3 font-bold";no.textContent="Recusar";
-        no.addEventListener("click",async()=>{
-          no.disabled=true;try{await set(ref(db,"recoveryRequests/"+key+"/status"),"rejected");info.textContent="Pedido recusado.";loadRecoveryRequests();}
-          catch(e){console.error(e);info.textContent="Erro ao recusar.";no.disabled=false;}
-        });
-        actions.append(ok,no);card.append(name,date,actions);box.append(card);
+  let stopRecoveryListener = null;
+  function loadRecoveryRequests() {
+    const box = document.getElementById("recovery-list");
+    const info = document.getElementById("recovery-admin-status");
+    if (stopRecoveryListener) stopRecoveryListener();
+    box.replaceChildren();
+    info.textContent = "Aguardando solicitações em tempo real...";
+    stopRecoveryListener = onValue(ref(db, "recoveryRequests"), snap => {
+      box.replaceChildren();
+      const data = snap.exists() ? snap.val() : {};
+      const requests = Object.entries(data)
+        .filter(([, request]) => request && request.status === "pending")
+        .sort((a, b) => Number(b[1].requestedAt || 0) - Number(a[1].requestedAt || 0));
+      if (!requests.length) {
+        info.textContent = "Nenhuma solicitação pendente. Esta lista atualiza automaticamente.";
+        return;
       }
-    }catch(e){console.error(e);info.textContent="Falha ao carregar. Verifique as regras do Firebase.";}
+      info.textContent = requests.length + " pedido(s) aguardando aprovação.";
+      for (const [key, request] of requests) {
+        const card = document.createElement("article");
+        card.className = "user-card";
+        const name = document.createElement("p");
+        name.className = "font-black text-lg break-all";
+        name.textContent = "@" + String(request.username || key);
+        const date = document.createElement("p");
+        date.className = "text-xs text-slate-400";
+        date.textContent = "Pedido: " + new Date(Number(request.requestedAt || 0)).toLocaleString("pt-BR");
+        const actions = document.createElement("div");
+        actions.className = "flex flex-wrap gap-2 mt-3";
+        const approve = document.createElement("button");
+        approve.type = "button";
+        approve.className = "save-btn flex-1 bg-emerald-700 rounded-xl px-3 py-3 font-bold";
+        approve.textContent = "Aprovar (10s)";
+        approve.addEventListener("click", async () => {
+          approve.disabled = true;
+          try {
+            const expiresAt = Date.now() + 10000;
+            await set(ref(db, "recoveryAccess/" + key), {
+              username: request.username, expiresAt, approvedBy: nick, approvedAt: Date.now()
+            });
+            await set(ref(db, "recoveryRequests/" + key + "/status"), "approved");
+            info.textContent = "Acesso liberado para @" + request.username + " por 10 segundos.";
+          } catch (error) {
+            console.error("Erro ao aprovar recuperação:", error);
+            info.textContent = "Falha ao aprovar: " + (error.code || error.message || "erro desconhecido");
+            approve.disabled = false;
+          }
+        });
+        const reject = document.createElement("button");
+        reject.type = "button";
+        reject.className = "save-btn bg-red-800 rounded-xl px-3 py-3 font-bold";
+        reject.textContent = "Recusar";
+        reject.addEventListener("click", async () => {
+          reject.disabled = true;
+          try {
+            await set(ref(db, "recoveryRequests/" + key + "/status"), "rejected");
+          } catch (error) {
+            console.error("Erro ao recusar recuperação:", error);
+            info.textContent = "Falha ao recusar: " + (error.code || error.message || "erro desconhecido");
+            reject.disabled = false;
+          }
+        });
+        actions.append(approve, reject);
+        card.append(name, date, actions);
+        box.append(card);
+      }
+    }, error => {
+      console.error("Erro ao consultar pedidos de recuperação:", error);
+      info.textContent = "Não foi possível ler os pedidos: " + (error.code || error.message || "verifique as regras do Firebase");
+    });
   }
+
   async function loadUsers() {
     status.textContent = "Consultando o Firebase...";
     document.getElementById("refresh-users").disabled = true;
