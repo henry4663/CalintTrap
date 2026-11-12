@@ -8,4 +8,18 @@
 <form id="profile-form"><label for="display-name">Nome de exibição</label><input id="display-name" maxlength="24" placeholder="Como querem te chamar">
 <label for="bio-input">Biografia</label><textarea id="bio-input" maxlength="160" rows="4" placeholder="Conte um pouco sobre você..."></textarea><small class="counter"><span id="bio-count">0</span>/160</small>
 <label for="avatar-url">URL da foto de perfil</label><input id="avatar-url" type="url" maxlength="500" placeholder="https://..."><small>Use um endereço público de imagem. Se deixar vazio, será usado um avatar padrão.</small><button id="save-profile" type="submit">Salvar alterações</button></form></section>
-</main><script type="module" src="perfil.js"></script></body></html>
+</main>
+<div id="influencer-thanks" hidden style="position:fixed;inset:0;z-index:9999;background:#05020ddd;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px">
+ <section style="width:min(100%,520px);text-align:center;padding:34px 24px;border-radius:26px;border:1px solid #c084fc;background:radial-gradient(circle at top,#51218a 0%,#1b1030 48%,#0b0815 100%);box-shadow:0 25px 90px #000b;color:white">
+  <div style="font-size:58px;line-height:1;margin-bottom:18px">★</div>
+  <p style="font-size:12px;letter-spacing:3px;font-weight:900;color:#d8b4fe">CONQUISTA DESBLOQUEADA</p>
+  <h2 style="font-size:clamp(28px,7vw,42px);font-weight:1000;margin:12px 0">VOCÊ É INFLUENCIADOR!</h2>
+  <p style="color:#e9d5ff;line-height:1.6">Obrigado por fazer parte da comunidade Goblox e ajudar a plataforma a crescer.</p>
+  <div style="margin:24px auto;padding:16px;border:1px solid #facc15;border-radius:16px;background:#713f122e;max-width:260px">
+   <strong style="display:block;font-size:34px;color:#fde68a">+6.000 Zx</strong>
+   <span style="font-size:11px;color:#fef3c7;font-weight:800;letter-spacing:1px">BÔNUS DE INFLUENCIADOR</span>
+  </div>
+  <button id="close-influencer-thanks" type="button" style="width:100%;padding:14px;border:0;border-radius:13px;background:linear-gradient(90deg,#a855f7,#7c3aed);color:white;font-weight:900;font-size:16px;cursor:pointer">CONTINUAR NO GOBLOX</button>
+ </section>
+</div>
+<script type="module" src="perfil.js"></script></body></html>
