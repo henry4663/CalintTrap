@@ -219,7 +219,20 @@ body {
 
     <div class="links">
         <a id="btnCriarDireto">Criar nova conta</a>
+        <a id="btnRecuperar" href="#" role="button">Esqueci minha senha</a>
     </div>
+    <section id="recoveryBox" style="display:none;margin-top:22px;text-align:left;background:#170b2b;border:1px solid #7655a7;border-radius:16px;padding:18px">
+      <h2 style="font-size:20px;margin-bottom:8px">Recuperar conta</h2>
+      <p style="color:#c5b6e5;font-size:14px;margin-bottom:12px">Informe seu nickname para solicitar ajuda à equipe Goblox.</p>
+      <input id="recoveryUser" type="text" maxlength="20" placeholder="Seu nickname" style="width:100%;height:48px;border-radius:10px;padding:10px;background:#080012;color:white;border:1px solid #7655a7">
+      <button id="sendRecovery" type="button" style="width:100%;margin-top:10px;padding:13px;border:0;border-radius:10px;background:#8b5cf6;color:white;font-weight:bold">Enviar solicitação</button>
+      <p id="recoveryStatus" role="status" style="font-size:13px;color:#d8c8ff;margin-top:10px"></p>
+      <div id="resetArea" style="display:none;margin-top:12px">
+        <p id="resetCountdown" style="color:#86efac;font-weight:bold;margin-bottom:8px"></p>
+        <input id="newRecoveryPassword" type="password" minlength="6" placeholder="Nova senha (mínimo 6 caracteres)" style="width:100%;height:48px;border-radius:10px;padding:10px;background:#080012;color:white;border:1px solid #7655a7">
+        <button id="saveRecoveryPassword" type="button" style="width:100%;margin-top:10px;padding:13px;border:0;border-radius:10px;background:#16a34a;color:white;font-weight:bold">Salvar nova senha</button>
+      </div>
+    </section>
 
 </div>
 
@@ -314,6 +327,61 @@ body {
     } catch (err) {
       alert("Erro ao criar conta.");
     }
+  });
+
+  const recoveryBox=document.getElementById("recoveryBox");
+  const recoveryStatus=document.getElementById("recoveryStatus");
+  const resetArea=document.getElementById("resetArea");
+  let recoveryKey="", recoveryUsername="", recoveryTimer=null;
+  document.getElementById("btnRecuperar").addEventListener("click",e=>{
+    e.preventDefault(); recoveryBox.style.display=recoveryBox.style.display==="none"?"block":"none";
+    const n=document.getElementById("username").value.trim(); if(n) document.getElementById("recoveryUser").value=n;
+  });
+  function watchRecovery(username){
+    recoveryUsername=username;
+    recoveryKey=encodeURIComponent(username.toLowerCase()).replace(/\\./g,"%2E");
+    onValue(ref(db,"recoveryAccess/"+recoveryKey),snap=>{
+      const grant=snap.exists()?snap.val():null;
+      if(!grant||grant.username!==username||Number(grant.expiresAt)<=Date.now()){
+        resetArea.style.display="none"; if(grant) recoveryStatus.textContent="A autorização expirou. Solicite novamente."; return;
+      }
+      resetArea.style.display="block"; clearInterval(recoveryTimer);
+      const tick=()=>{const left=Math.max(0,Math.ceil((Number(grant.expiresAt)-Date.now())/1000));document.getElementById("resetCountdown").textContent="Tempo para trocar a senha: "+left+"s";if(!left){clearInterval(recoveryTimer);resetArea.style.display="none";recoveryStatus.textContent="Tempo encerrado. Faça uma nova solicitação.";}};
+      tick();recoveryTimer=setInterval(tick,200);
+    });
+  }
+  document.getElementById("sendRecovery").addEventListener("click",async()=>{
+    const username=document.getElementById("recoveryUser").value.trim();
+    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){recoveryStatus.textContent="Nickname inválido.";return;}
+    const button=document.getElementById("sendRecovery");button.disabled=true;
+    try{
+      const account=await get(ref(db,"users/"+username));
+      if(!account.exists()){recoveryStatus.textContent="Conta não encontrada. Confira o nickname.";return;}
+      const key=encodeURIComponent(username.toLowerCase()).replace(/\\./g,"%2E");
+      await set(ref(db,"recoveryRequests/"+key),{username,status:"pending",requestedAt:Date.now()});
+      recoveryStatus.textContent="Pedido enviado! Aguarde um administrador aprovar.";
+      watchRecovery(username);
+    }catch(err){console.error(err);recoveryStatus.textContent="Erro ao enviar pedido. Verifique a conexão.";}
+    finally{button.disabled=false;}
+  });
+  document.getElementById("saveRecoveryPassword").addEventListener("click",async()=>{
+    const password=document.getElementById("newRecoveryPassword").value;
+    if(password.length<6){recoveryStatus.textContent="Use pelo menos 6 caracteres.";return;}
+    const button=document.getElementById("saveRecoveryPassword");button.disabled=true;
+    try{
+      const snap=await get(ref(db,"recoveryAccess/"+recoveryKey));
+      const grant=snap.exists()?snap.val():null;
+      if(!grant||grant.username!==recoveryUsername||Number(grant.expiresAt)<=Date.now())throw Error("Autorização expirada. Solicite outra liberação.");
+      await set(ref(db,"users/"+recoveryUsername+"/senha"),password);
+      await set(ref(db,"recoveryRequests/"+recoveryKey+"/status"),"completed");
+      await set(ref(db,"recoveryAccess/"+recoveryKey),null);
+      recoveryStatus.textContent="Senha alterada! Você já pode entrar.";
+      resetArea.style.display="none";
+      document.getElementById("username").value=recoveryUsername;
+      document.getElementById("password").value="";
+      document.getElementById("newRecoveryPassword").value="";
+    }catch(err){console.error(err);recoveryStatus.textContent=err.message||"Não foi possível trocar a senha.";}
+    finally{button.disabled=false;}
   });
 </script>
 
