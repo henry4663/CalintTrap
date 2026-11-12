@@ -167,6 +167,18 @@
       white-space: nowrap;
     }
 
+    #pauseBtn{position:fixed;top:112px;left:20px;z-index:30;padding:9px 14px;border:1px solid #7c3aed;border-radius:12px;background:#160b2de8;color:#fff;font-weight:800;display:none}
+    #mobileControls{position:fixed;left:0;right:0;bottom:max(18px,env(safe-area-inset-bottom));z-index:35;display:none;justify-content:space-between;align-items:flex-end;padding:0 18px;pointer-events:none}
+    .control-cluster{display:grid;grid-template-columns:repeat(2,58px);gap:8px;pointer-events:auto}
+    .control-cluster button{width:58px;height:58px;border:1px solid #a78bfa;border-radius:16px;background:#170b32df;color:#fff;font-size:22px;font-weight:900;box-shadow:0 5px 18px #0008;touch-action:none}
+    .control-cluster button:active{transform:scale(.92);background:#6d28d9}
+    #mobileControls .move{grid-template-columns:repeat(2,58px)}
+    #mobileControls .action{grid-template-columns:1fr}
+    #pauseScreen{display:none;z-index:150;gap:12px}
+    #pauseScreen h1{font-size:42px}
+    #pauseScreen button{margin-top:8px}
+    @media(max-width:700px),(pointer:coarse){#mobileControls{display:flex}#pauseBtn{display:block;top:12px;left:auto;right:12px}#hint{bottom:154px;font-size:11px}#distance{top:12px;left:12px;font-size:18px}#pointsHud{top:42px;left:12px;font-size:17px}#globalLeaderboardCorner{top:76px;right:10px;width:150px;padding:6px;transform:none}#globalLeaderboardCorner .corner-title{font-size:10px}#globalLeaderboardCorner .corner-item{font-size:10px;padding:3px}}
+    @media(max-width:380px){.control-cluster button{width:52px;height:52px}.control-cluster{grid-template-columns:repeat(2,52px)}}
     .toast {
       position: absolute;
       bottom: -60px;
@@ -225,6 +237,22 @@
   </div>
 
   <div id="hint">← → mover | ↑ pular | ↓ abaixar</div>
+  <button id="pauseBtn" type="button" aria-label="Pausar jogo">Ⅱ PAUSAR</button>
+  <div id="mobileControls" aria-label="Controles do jogo">
+    <div class="control-cluster move">
+      <button type="button" data-control="left" aria-label="Mover para esquerda">←</button>
+      <button type="button" data-control="right" aria-label="Mover para direita">→</button>
+    </div>
+    <div class="control-cluster action">
+      <button type="button" data-control="jump" aria-label="Pular">↑</button>
+      <button type="button" data-control="duck" aria-label="Abaixar">↓</button>
+    </div>
+  </div>
+  <div id="pauseScreen" class="screen">
+    <h1>PAUSADO</h1>
+    <p>Seu progresso está guardado nesta partida.</p>
+    <button id="resumeBtn" type="button">CONTINUAR</button>
+  </div>
 
   <div id="startScreen" class="screen">
     <h1>ENDLESS RUNNER</h1>
@@ -935,6 +963,7 @@
 
       const G = {
         running: false,
+        paused: false,
         speed: 0.035,
         baseSpeed: 0.035,
         maxSpeed: 0.22,
@@ -980,8 +1009,41 @@
           String(calcularPontuacao(G.distance, G.coins));
       }
 
+      function alternarPausa(force) {
+        if (tournamentJoined || !G.running) return;
+        const next = typeof force === "boolean" ? force : !G.paused;
+        G.paused = next;
+        document.getElementById("pauseScreen").style.display = next ? "flex" : "none";
+        document.getElementById("pauseBtn").textContent = next ? "▶ CONTINUAR" : "Ⅱ PAUSAR";
+      }
+
+      document.getElementById("pauseBtn").addEventListener("click", () => alternarPausa());
+      document.getElementById("resumeBtn").addEventListener("click", () => alternarPausa(false));
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && G.running && !tournamentJoined) alternarPausa(true);
+      });
+
+      document.querySelectorAll("[data-control]").forEach(button => {
+        button.addEventListener("touchstart", event => event.stopPropagation(), { passive:true });
+        button.addEventListener("touchend", event => event.stopPropagation(), { passive:true });
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          if (!G.running || G.paused) return;
+          const action = button.dataset.control;
+          if (action === "left" && G.targetLane > 0) G.targetLane--;
+          else if (action === "right" && G.targetLane < 2) G.targetLane++;
+          else if (action === "jump") jumpPressed = true;
+          else if (action === "duck") duckPressed = true;
+        });
+      });
+
       function onKeyDown(event) {
-        if (!G.running) return;
+        if (event.key === "Escape" || event.key.toLowerCase() === "p") {
+          if (!tournamentJoined && G.running) alternarPausa();
+          event.preventDefault();
+          return;
+        }
+        if (!G.running || G.paused) return;
         const key = event.key.toLowerCase();
 
         if ((key === "arrowleft" || key === "a") && G.targetLane > 0) {
@@ -1056,6 +1118,9 @@
         player.scale.set(1, 1, 1);
 
         G.running = true;
+        G.paused = false;
+        document.getElementById("pauseScreen").style.display = "none";
+        document.getElementById("pauseBtn").textContent = "Ⅱ PAUSAR";
         G.speed = G.baseSpeed;
         G.distance = 0;
         G.coins = 0;
@@ -1085,6 +1150,8 @@
         if (!G.running) return;
 
         G.running = false;
+        G.paused = false;
+        document.getElementById("pauseScreen").style.display = "none";
         jumpPressed = false;
         duckPressed = false;
         shatterPlayer();
@@ -1131,7 +1198,7 @@
         const dt = Math.min((now - G.lastTime) / 16.67, 3);
         G.lastTime = now;
 
-        if (G.running) {
+        if (G.running && !G.paused) {
           G.speed = Math.min(G.speed + 0.000004 * dt, G.maxSpeed);
           G.distance += G.speed * dt * 1.8;
           G.currentLane += (G.targetLane - G.currentLane) * 0.4 * dt;
