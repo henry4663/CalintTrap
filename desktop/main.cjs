@@ -82,17 +82,21 @@ async function prepareMinecraft() {
   await downloadFile(index.url, indexPath);
   const assetIndex = JSON.parse(await fs.promises.readFile(indexPath, "utf8"));
   const assetEntries = Object.entries(assetIndex.objects || {});
-  for (let i = 0; i < assetEntries.length; i++) {
-    const [assetName, asset] = assetEntries[i];
-    const hash = asset.hash;
-    const objectPath = path.join(ASSET_DIR(), "objects", hash.slice(0, 2), hash);
-    await downloadFile("https://resources.download.minecraft.net/" + hash.slice(0, 2) + "/" + hash, objectPath);
-    if (assetIndex.virtual) {
-      const legacyPath = path.join(ASSET_DIR(), "virtual", assetIndex.virtual === true ? "legacy" : assetIndex.virtual, ...assetName.split("/"));
-      await fs.promises.mkdir(path.dirname(legacyPath), { recursive: true });
-      try { await fs.promises.access(legacyPath); } catch { await fs.promises.copyFile(objectPath, legacyPath); }
+  let nextAsset = 0;
+  const workers = Array.from({ length: 12 }, async () => {
+    while (nextAsset < assetEntries.length) {
+      const [assetName, asset] = assetEntries[nextAsset++];
+      const hash = asset.hash;
+      const objectPath = path.join(ASSET_DIR(), "objects", hash.slice(0, 2), hash);
+      await downloadFile("https://resources.download.minecraft.net/" + hash.slice(0, 2) + "/" + hash, objectPath);
+      if (assetIndex.virtual) {
+        const legacyPath = path.join(ASSET_DIR(), "virtual", assetIndex.virtual === true ? "legacy" : assetIndex.virtual, ...assetName.split("/"));
+        await fs.promises.mkdir(path.dirname(legacyPath), { recursive: true });
+        try { await fs.promises.access(legacyPath); } catch { await fs.promises.copyFile(objectPath, legacyPath); }
+      }
     }
-  }
+  });
+  await Promise.all(workers);
 
   return { manifest, classpath, nativeDir, assetDir: ASSET_DIR(), gameDir: path.join(DATA_DIR(), "game") };
 }
