@@ -52,7 +52,11 @@ function findJava() {
     execFile(command, ["java"], { windowsHide: true }, (error, stdout) => {
       if (error) return resolve(null);
       const candidate = String(stdout).split(/\r?\n/).map(s => s.trim()).find(Boolean);
-      resolve(candidate || null);
+      if (!candidate) return resolve(null);
+      execFile(candidate, ["-version"], { windowsHide: true }, (versionError, versionOut, versionErr) => {
+        const versionText = String(versionOut || "") + String(versionErr || "");
+        resolve(!versionError && /version "1\.8|version "8(?:[+.\-"])/i.test(versionText) ? candidate : null);
+      });
     });
   });
 }
@@ -111,6 +115,7 @@ ipcMain.handle("goblox:minecraft:launch", async event => {
   await fs.promises.mkdir(prepared.gameDir, { recursive: true });
   const args = [
     "-Djava.library.path=" + prepared.nativeDir,
+    "-Dorg.lwjgl.librarypath=" + prepared.nativeDir,
     "-cp", prepared.classpath.join(path.delimiter),
     prepared.manifest.mainClass || "net.minecraft.launchwrapper.Launch",
     "GobloxPlayer", "-", "--gameDir", prepared.gameDir,
