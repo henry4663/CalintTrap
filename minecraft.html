@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Goblox Blocks</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101820;color:#fff;font:14px system-ui,Arial;overflow:hidden}
+#game{position:fixed;inset:0}canvas{display:block}
+.top{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:none}
+.brand,.panel,.controls,.hint{background:#101820d9;border:1px solid #ffffff25;border-radius:12px;padding:10px 13px;backdrop-filter:blur(8px)}
+.brand{font-weight:900;color:#9de5a5;text-decoration:none;pointer-events:auto}.panel{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{border:0;border-radius:8px;padding:9px 12px;background:#32834c;color:white;font-weight:800;cursor:pointer}
+button.secondary{background:#334155}button.active{outline:2px solid #a7f3d0;background:#176b3b}
+#crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;text-shadow:0 1px 4px #000;pointer-events:none}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);text-align:center;color:#dbeafe}
+#start{position:fixed;inset:0;display:grid;place-items:center;background:#07111dcc;z-index:5}
+.startbox{width:min(440px,calc(100% - 28px));padding:26px;background:#142333;border:1px solid #ffffff30;border-radius:18px;text-align:center}
+.startbox h1{font-size:30px;margin:0 0 8px;color:#a7f3d0}.startbox p{color:#cbd5e1;line-height:1.5}
+#touch{display:none;position:fixed;bottom:78px;left:12px;right:12px;justify-content:space-between;pointer-events:none}
+.touchgroup{display:flex;gap:8px;pointer-events:auto}.touchgroup button{width:48px;height:48px;background:#172b3ddd;border:1px solid #ffffff40}
+@media(max-width:700px){.hint{bottom:8px;font-size:11px}.top{top:7px;left:7px;right:7px}.panel{gap:5px;padding:7px}.panel button{padding:8px}.brand{padding:8px}#touch{display:flex}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="top"><a class="brand" href="lobby.html">← GOBLOX</a><div class="panel"><span id="selected">Bloco: Grama</span><button id="next">Trocar bloco</button><button id="reset" class="secondary">Novo mundo</button></div></div>
+<div id="crosshair">+</div>
+<div class="hint">WASD: mover · Espaço: subir · Mouse: olhar · Clique: colocar · Shift + clique: remover · 1–4: escolher bloco</div>
+<div id="touch"><div class="touchgroup"><button data-move="forward">▲</button><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div class="touchgroup"><button id="up">＋</button><button id="down">－</button></div></div>
+<div id="start"><div class="startbox"><h1>Goblox Blocks</h1><p>Um mundo de blocos original dentro do Goblox. Explore e construa usando blocos coloridos.</p><p>Computador: clique em Entrar e use WASD + mouse.<br>Celular: use os controles na tela.</p><button id="enter">Entrar no mundo</button></div></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const root=document.querySelector('#game'),scene=new THREE.Scene();scene.background=new THREE.Color(0x8bc9ee);scene.fog=new THREE.Fog(0x8bc9ee,18,55);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);camera.position.set(0,3,8);
+const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x647b52,2));const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(-8,15,7);sun.castShadow=true;scene.add(sun);
+const materials=[0x65a84d,0x8a6544,0x888f99,0xd9bd76];const names=['Grama','Terra','Pedra','Areia'];let selected=0;
+const geo=new THREE.BoxGeometry(1,1,1),blocks=new Map(),meshes=[];const key=(x,y,z)=>x+','+y+','+z;
+function addBlock(x,y,z,type=0){const k=key(x,y,z);if(blocks.has(k))return;const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:materials[type],roughness:1}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;m.userData={x,y,z,type};scene.add(m);blocks.set(k,m);meshes.push(m)}
+function removeBlock(m){if(!m)return;scene.remove(m);blocks.delete(key(m.userData.x,m.userData.y,m.userData.z));const i=meshes.indexOf(m);if(i>=0)meshes.splice(i,1)}
+function makeWorld(){for(const m of [...meshes])removeBlock(m);for(let x=-12;x<=12;x++)for(let z=-12;z<=12;z++){const h=Math.floor(1+Math.sin(x*.42)*.7+Math.cos(z*.35)*.6);for(let y=-1;y<=h;y++)addBlock(x,y,z,y===h?0:(y>-1?1:2));}}
+makeWorld();const floor=new THREE.GridHelper(50,50,0x38546a,0x38546a);floor.position.y=-1.51;scene.add(floor);
+const keys={},touch={};let yaw=0,pitch=0,locked=false;const ray=new THREE.Raycaster();
+function select(n){selected=(n+4)%4;document.querySelector('#selected').textContent='Bloco: '+names[selected];document.querySelectorAll('[data-block]').forEach(b=>b.classList.toggle('active',Number(b.dataset.block)===selected))}
+document.querySelector('#next').onclick=()=>select(selected+1);document.querySelector('#reset').onclick=()=>{makeWorld();camera.position.set(0,3,8)};
+document.querySelector('#enter').onclick=()=>{document.querySelector('#start').style.display='none';if(innerWidth>700)renderer.domElement.requestPointerLock?.()};
+document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
+document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.002;pitch-=e.movementY*.002;pitch=Math.max(-1.45,Math.min(1.45,pitch));camera.rotation.set(pitch,yaw,0,'YXZ')});
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Digit1','Digit2','Digit3','Digit4'].includes(e.code))select(Number(e.code.slice(-1))-1)});document.addEventListener('keyup',e=>keys[e.code]=false);
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('mousedown',e=>{if(!locked&&innerWidth>700)return;ray.setFromCamera(new THREE.Vector2(0,0),camera);const hit=ray.intersectObjects(meshes,false)[0];if(!hit)return;if(e.shiftKey||e.button===2){removeBlock(hit.object);return}const p=hit.object.position.clone().add(hit.face.normal);addBlock(Math.round(p.x),Math.round(p.y),Math.round(p.z),selected)});
+document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.addEventListener('touchstart',e=>{e.preventDefault();touch[k]=true});b.addEventListener('touchend',()=>touch[k]=false)});
+document.querySelector('#up').ontouchstart=e=>{e.preventDefault();touch.up=true};document.querySelector('#up').ontouchend=()=>touch.up=false;document.querySelector('#down').ontouchstart=e=>{e.preventDefault();touch.down=true};document.querySelector('#down').ontouchend=()=>touch.down=false;
+let prev=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-prev)/1000,.04);prev=now;const forward=Number(keys.KeyW||touch.forward)-Number(keys.KeyS||touch.back),side=Number(keys.KeyD||touch.right)-Number(keys.KeyA||touch.left);const dir=new THREE.Vector3(side,0,-forward);if(dir.lengthSq())dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);camera.position.addScaledVector(dir,dt*6);if(keys.Space||touch.up)camera.position.y+=dt*4;if(keys.ShiftLeft||touch.down)camera.position.y-=dt*4;camera.position.y=Math.max(.8,Math.min(15,camera.position.y));renderer.render(scene,camera)}requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+select(0);
+</script>
+</body></html>
