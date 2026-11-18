@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
-        with:
-          node-version: 24
 
       - name: Instalar Node.js
         uses: actions/setup-node@v4
