@@ -132,7 +132,6 @@
           <i data-lucide="gamepad-2" class="w-5 h-5"></i>
           <span>Jogos</span>
         </a>
-        <a href="minecraft.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition"><i data-lucide="blocks" class="w-5 h-5"></i><span>Mundo de Blocos</span></a>
         <a href="catalogo.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">
           <i data-lucide="shopping-bag" class="w-5 h-5"></i>
           <span>Catálogo Zx</span>
@@ -324,7 +323,7 @@
 
     // Lista de Jogos (Com Speed Run Arena, Zombie Escape e Futibol mapeados)
     const games = [
-      { id: 14, title: 'Goblox Blocks', creator: 'Goblox Studios', players: 'Novo', rating: '—', color: 'from-green-500 to-emerald-800', file: 'minecraft.html' },
+      { id: 14, title: 'Minecraft 1.1', creator: 'Mojang / Goblox', players: 'Versão clássica', rating: 'Java 8', color: 'from-green-700 to-lime-600', minecraft: true },
       { id: 13, title: 'Crystal Rush', creator: 'Goblox Studios', players: 'Novo', rating: '—', color: 'from-cyan-400 to-violet-700', file: 'crystalRush.html' },
       { id: 1, title: 'Speed Run ', creator: 'goblox', players: '12.4k', rating: '94%', color: 'from-sky-500 to-blue-600', file: 'speedRunArena.html' },
       { id: 2, title: 'Zombie Escape', creator: 'goblox', players: '8.1k', rating: '88%', color: 'from-emerald-600 to-teal-800', file: 'zombieAtaque.html' },
@@ -420,6 +419,25 @@
 
     // Botão JOGAR (Redirecionamento dinâmico para cada ficheiro de jogo)
     playBtn.onclick = () => {
+      if (jogoSelecionado && jogoSelecionado.minecraft) {
+        if (!window.gobloxMinecraft || typeof window.gobloxMinecraft.launch !== "function") {
+          alert("Para iniciar o Minecraft 1.1, abra o aplicativo Goblox para Windows. A versão do navegador não consegue executar arquivos Java locais.");
+          return;
+        }
+        playBtn.disabled = true;
+        playBtn.textContent = "PREPARANDO MINECRAFT...";
+        window.gobloxMinecraft.launch().then(result => {
+          modal.classList.add('hidden');
+          alert(result.message || "Minecraft iniciado.");
+        }).catch(error => {
+          alert(error.message || "Não foi possível iniciar o Minecraft.");
+        }).finally(() => {
+          playBtn.disabled = false;
+          playBtn.innerHTML = '<i data-lucide="play" class="w-6 h-6 fill-current"></i> JOGAR';
+          lucide.createIcons();
+        });
+        return;
+      }
       if (jogoSelecionado && jogoSelecionado.file) {
         modal.classList.add('hidden');
         window.location.href = jogoSelecionado.file;
