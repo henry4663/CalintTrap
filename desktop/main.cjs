@@ -5,7 +5,6 @@ const path = require("node:path");
 const https = require("node:https");
 const http = require("node:http");
 
-const APP_URL = "https://henry4663.github.io/CalintTrap/";
 const VERSION_DIR = () => app.isPackaged
   ? path.join(process.resourcesPath, "1.1")
   : path.resolve(__dirname, "../1.1");
@@ -170,7 +169,7 @@ function createWindow() {
       sandbox: true
     }
   });
-  win.loadURL(APP_URL);
+  win.loadFile(path.join(__dirname, "../lock.html"));
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https://") || url.startsWith("http://")) shell.openExternal(url);
     return { action: "deny" };
