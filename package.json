@@ -25,6 +25,10 @@
     "files": [
       "desktop/**/*",
       "app/**/*",
+      "*.html",
+      "*.js",
+      "*.css",
+      "*.json",
       "package.json"
     ],
     "win": {
