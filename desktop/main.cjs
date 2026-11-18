@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const https = require("node:https");
 const http = require("node:http");
+let platformServer = null;
 
 const VERSION_DIR = () => app.isPackaged
   ? path.join(process.resourcesPath, "1.1")
@@ -153,7 +154,31 @@ ipcMain.handle("goblox:minecraft:launch", async event => {
   return { ok: true, message: "Minecraft 1.1 iniciado. Aguarde a janela do jogo aparecer." };
 });
 
-function createWindow() {
+
+function startLocalPlatform() {
+  return new Promise((resolve, reject) => {
+    const root = path.resolve(__dirname, "..");
+    const mime = { ".html":"text/html; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".css":"text/css; charset=utf-8", ".json":"application/json; charset=utf-8", ".svg":"image/svg+xml", ".png":"image/png", ".jpg":"image/jpeg", ".jpeg":"image/jpeg", ".webp":"image/webp", ".ico":"image/x-icon", ".woff2":"font/woff2" };
+    platformServer = http.createServer(async (req, res) => {
+      try {
+        const pathname = decodeURIComponent(new URL(req.url, "http://127.0.0.1").pathname);
+        const relative = pathname === "/" ? "lock.html" : pathname.replace(/^\\/+/, "");
+        const filePath = path.resolve(root, relative);
+        if (!filePath.startsWith(root + path.sep)) { res.writeHead(403); res.end("Forbidden"); return; }
+        const data = await fs.promises.readFile(filePath);
+        res.writeHead(200, { "Content-Type": mime[path.extname(filePath).toLowerCase()] || "application/octet-stream", "Cache-Control":"no-cache", "X-Content-Type-Options":"nosniff" });
+        res.end(data);
+      } catch {
+        res.writeHead(404, { "Content-Type":"text/plain; charset=utf-8" });
+        res.end("Arquivo não encontrado no Goblox.");
+      }
+    });
+    platformServer.once("error", reject);
+    platformServer.listen(0, "127.0.0.1", () => resolve("http://127.0.0.1:" + platformServer.address().port + "/"));
+  });
+}
+
+async function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -169,7 +194,8 @@ function createWindow() {
       sandbox: true
     }
   });
-  win.loadFile(path.join(__dirname, "../lock.html"));
+  const localUrl = await startLocalPlatform();
+  win.loadURL(localUrl);
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https://") || url.startsWith("http://")) shell.openExternal(url);
     return { action: "deny" };
