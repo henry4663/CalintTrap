@@ -50,13 +50,22 @@ function findJava() {
   return new Promise(resolve => {
     const command = process.platform === "win32" ? "where.exe" : "which";
     execFile(command, ["java"], { windowsHide: true }, (error, stdout) => {
-      if (error) return resolve(null);
-      const candidate = String(stdout).split(/\r?\n/).map(s => s.trim()).find(Boolean);
-      if (!candidate) return resolve(null);
-      execFile(candidate, ["-version"], { windowsHide: true }, (versionError, versionOut, versionErr) => {
-        const versionText = String(versionOut || "") + String(versionErr || "");
-        resolve(!versionError && /version "1\.8|version "8(?:[+.\-"])/i.test(versionText) ? candidate : null);
-      });
+      const candidates = [
+        process.env.JAVA_HOME && path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "java.exe" : "java"),
+        ...String(stdout || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+      ].filter(Boolean);
+      let index = 0;
+      const checkNext = () => {
+        if (index >= candidates.length) return resolve(null);
+        const candidate = candidates[index++];
+        execFile(candidate, ["-version"], { windowsHide: true }, (versionError, versionOut, versionErr) => {
+          const versionText = String(versionOut || "") + String(versionErr || "");
+          if (!versionError && /version "1\.8|version "8(?:[+\.\-"])/i.test(versionText)) return resolve(candidate);
+          checkNext();
+        });
+      };
+      if (error && candidates.length === 0) return resolve(null);
+      checkNext();
     });
   });
 }
@@ -121,12 +130,28 @@ ipcMain.handle("goblox:minecraft:launch", async event => {
     "GobloxPlayer", "-", "--gameDir", prepared.gameDir,
     "--assetsDir", prepared.assetDir, "--assetIndex", prepared.manifest.assets || "pre-1.6"
   ];
-  const child = spawn(java, args, { cwd: prepared.gameDir, detached: true, stdio: "ignore", windowsHide: false });
-  child.once("error", error => {
-    dialog.showErrorBox("Minecraft 1.1", "Não foi possível iniciar o Minecraft: " + error.message);
+  const child = spawn(java, args, {
+    cwd: prepared.gameDir,
+    detached: true,
+    stdio: "ignore",
+    windowsHide: false
+  });
+
+  await new Promise((resolve, reject) => {
+    child.once("spawn", resolve);
+    child.once("error", reject);
+  });
+
+  child.once("exit", code => {
+    if (code && code !== 0) {
+      dialog.showErrorBox(
+        "Minecraft 1.1",
+        "O Java fechou o Minecraft com código " + code + ". Confira se o Java 8 é de 64 bits e se a pasta 1.1 está completa."
+      );
+    }
   });
   child.unref();
-  return { ok: true, message: "Minecraft 1.1 iniciado." };
+  return { ok: true, message: "Minecraft 1.1 iniciado. Aguarde a janela do jogo aparecer." };
 });
 
 function createWindow() {
