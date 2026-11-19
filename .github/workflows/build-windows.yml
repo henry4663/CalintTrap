@@ -11,7 +11,7 @@ on:
       - ".github/workflows/build-windows.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -31,10 +31,23 @@ jobs:
       - name: Criar instalador do Goblox
         run: npm run build:windows -- --publish never
 
-      - name: Disponibilizar instalador
+      - name: Disponibilizar instalador como artifact
         uses: actions/upload-artifact@v4
         with:
           name: Goblox-Windows
           path: dist/*.exe
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publicar instalador no GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view desktop-latest >/dev/null 2>&1; then
+            gh release upload desktop-latest dist/*.exe --clobber
+          else
+            gh release create desktop-latest dist/*.exe \
+              --title "Goblox para Windows - Última versão" \
+              --notes "Instalador Windows gerado automaticamente pelo GitHub Actions. Baixe o arquivo .exe em Assets."
+          fi
