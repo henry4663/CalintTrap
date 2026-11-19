@@ -240,7 +240,7 @@ body {
             <span class="eye" id="btnEye">◉</span>
         </div>
 
-        <button class="login-button" type="submit">Entrar / Criar</button>
+        <button class="login-button" type="submit">Entrar</button>
     </form>
 
     <div class="links">
@@ -292,56 +292,56 @@ body {
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
+    const pass = document.getElementById("password").value;
 
-    if (!user || !pass) {
-      alert("Preencha o usuário e a senha!");
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(user) || !pass) {
+      alert("Usuário: 3 a 20 caracteres (letras, números e _). Preencha a senha.");
       return;
     }
 
+    const button = document.querySelector(".login-button");
+    button.disabled = true;
+    button.textContent = "Entrando...";
     try {
+      if (!db) throw new Error("Firebase não inicializado. Confira firebase.js e as permissões do banco.");
       const userRef = ref(db, `users/${user}`);
       const snap = await get(userRef);
 
       if (!snap.exists()) {
-        // Se a conta não existe, cria na hora
-        await set(userRef, {
-          senha: pass,
-          fbux: 500,
-          moedas: 200,
-          criadoEm: Date.now()
-        });
-        alert("Conta criada com sucesso!");
-        entrarNoLobby(user);
+        alert("Essa conta não existe. Use 'Criar nova conta'.");
         return;
       }
 
-      // Se existe, valida a senha
       const dados = snap.val();
-      if (dados.senha !== pass) {
+      if (!dados || dados.senha !== pass) {
         alert("Senha incorreta!");
         return;
       }
-
       entrarNoLobby(user);
-
     } catch (err) {
-      console.error(err);
-      alert("Erro ao conectar com o Firebase. Verifique o console (F12).");
+      console.error("Erro no login:", err);
+      alert("Não foi possível entrar: " + (err.code || err.message || "erro desconhecido"));
+    } finally {
+      button.disabled = false;
+      button.textContent = "Entrar";
     }
   });
 
   // Botão rápido de criar conta
   document.getElementById("btnCriarDireto").addEventListener("click", async () => {
     const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
+    const pass = document.getElementById("password").value;
 
-    if (!user || !pass) {
-      alert("Digite um usuário e senha nos campos acima para criar a conta!");
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(user) || pass.length < 6) {
+      alert("Use um usuário de 3 a 20 caracteres (letras, números e _) e senha com pelo menos 6 caracteres.");
       return;
     }
 
+    const button = document.getElementById("btnCriarDireto");
+    button.style.pointerEvents = "none";
+    button.textContent = "Criando...";
     try {
+      if (!db) throw new Error("Firebase não inicializado.");
       const userRef = ref(db, `users/${user}`);
       const snap = await get(userRef);
 
@@ -360,7 +360,11 @@ body {
       alert("Conta criada com sucesso!");
       entrarNoLobby(user);
     } catch (err) {
-      alert("Erro ao criar conta.");
+      console.error("Erro ao criar conta:", err);
+      alert("Não foi possível criar a conta: " + (err.code || err.message || "erro desconhecido"));
+    } finally {
+      button.style.pointerEvents = "";
+      button.textContent = "Criar nova conta";
     }
   });
 
