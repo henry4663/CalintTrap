@@ -420,22 +420,8 @@
     // Botão JOGAR (Redirecionamento dinâmico para cada ficheiro de jogo)
     playBtn.onclick = () => {
       if (jogoSelecionado && jogoSelecionado.minecraft) {
-        if (!window.gobloxMinecraft || typeof window.gobloxMinecraft.launch !== "function") {
-          alert("Para iniciar o Minecraft 1.1, abra o aplicativo Goblox para Windows. A versão do navegador não consegue executar arquivos Java locais.");
-          return;
-        }
-        playBtn.disabled = true;
-        playBtn.textContent = "PREPARANDO MINECRAFT...";
-        window.gobloxMinecraft.launch().then(result => {
-          modal.classList.add('hidden');
-          alert(result.message || "Minecraft iniciado.");
-        }).catch(error => {
-          alert(error.message || "Não foi possível iniciar o Minecraft.");
-        }).finally(() => {
-          playBtn.disabled = false;
-          playBtn.innerHTML = '<i data-lucide="play" class="w-6 h-6 fill-current"></i> JOGAR';
-          lucide.createIcons();
-        });
+        modal.classList.add('hidden');
+        window.location.href = "1.1/browser.html";
         return;
       }
       if (jogoSelecionado && jogoSelecionado.file) {
