@@ -296,6 +296,7 @@
   <!-- JAVASCRIPT -->
   <script type="module">
     import { getCurrentNick, logout } from "./authLocal.js";
+    import { markAction } from "./evento8bits-core.js";
     import { db, ref, get } from "./firebase.js";
     import { initFriendsTab } from "./friends.js";
 
@@ -433,6 +434,7 @@
 
     // Botão JOGAR (Redirecionamento dinâmico para cada ficheiro de jogo)
     playBtn.onclick = () => {
+      if (jogoSelecionado && (jogoSelecionado.minecraft || jogoSelecionado.file)) markAction("game");
       if (jogoSelecionado && jogoSelecionado.minecraft) {
         modal.classList.add('hidden');
         window.location.href = "1.1/browser.html";
