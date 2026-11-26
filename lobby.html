@@ -510,5 +510,29 @@ onValue(ref(db,"speedRunTournament/current"),snap=>{
  });
 });
 </script>
+
+<script>
+(() => {
+  const end = new Date("2026-12-26T12:13:00-03:00").getTime();
+  const el = document.getElementById("home-8bits-countdown");
+  if (!el) return;
+  function tick() {
+    const left = end - Date.now();
+    if (left <= 0) {
+      el.textContent = "EVENTO ENCERRADO";
+      const section = document.getElementById("event-8bits-home");
+      if (section) section.querySelector("a").textContent = "EVENTO ENCERRADO";
+      return;
+    }
+    const d = Math.floor(left / 86400000);
+    const h = Math.floor(left % 86400000 / 3600000);
+    const m = Math.floor(left % 3600000 / 60000);
+    const s = Math.floor(left % 60000 / 1000);
+    el.textContent = "⏳ " + d + "d " + String(h).padStart(2,"0") + "h " + String(m).padStart(2,"0") + "m " + String(s).padStart(2,"0") + "s restantes";
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 </body>
 </html>
