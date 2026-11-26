@@ -48,6 +48,7 @@ function timer(){
 }
 if(!getEventNick())window.location.replace("index.html");
 else{
+ markAction("visit");
  $("event-catalog-link").addEventListener("click",()=>markAction("catalog"));
  render();timer();setInterval(timer,1000);
  window.addEventListener("goblox8bits:update",render);
