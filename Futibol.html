@@ -125,5 +125,6 @@ requestAnimationFrame(frame);
 window.addEventListener("pagehide",()=>{alive=false;remove(myRef).catch(()=>{});});
 publishPlayer().catch(e=>{$("status").textContent="Não conectou ao Firebase. Confira as regras do Realtime Database.";console.error(e);});
 </script>
+<script src="goblox-overlay.js"></script>
 </body>
 </html>
