@@ -523,7 +523,15 @@ onValue(ref(db,"speedRunTournament/current"),snap=>{
     if (left <= 0) {
       el.textContent = "EVENTO ENCERRADO";
       const section = document.getElementById("event-8bits-home");
-      if (section) section.querySelector("a").textContent = "EVENTO ENCERRADO";
+      if (section) {
+        const link = section.querySelector("a");
+        if (link) {
+          link.textContent = "EVENTO ENCERRADO";
+          link.setAttribute("aria-disabled", "true");
+          link.style.opacity = ".55";
+          link.style.pointerEvents = "none";
+        }
+      }
       return;
     }
     const d = Math.floor(left / 86400000);
