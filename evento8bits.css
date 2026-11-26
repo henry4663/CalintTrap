@@ -17,5 +17,5 @@
 .event-actions a:hover{background:#6d42d4}
 .mission-state{font-size:10px;letter-spacing:.08em;color:var(--cyan)}
 .event-feedback{color:#a5f3fc;font-weight:800}
-.inventory-item button{margin-left:8px;padding:8px 10px;border:1px solid #8b5cf6;background:#28194a;color:#fff;font:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.inventory-item button{margin-left:8px;padding:8px 10px;border:1px solid #8b5cf6;background:#28194a;color:#fff;font-family:inherit;font-size:10px;font-weight:900;cursor:pointer}
 .inventory-item button:hover{background:#493078}
