@@ -94,4 +94,5 @@ onValue(scoreRef,s=>{score=Number(s.val())||0;updateUI()});
 onDisconnect(myRef).remove().catch(()=>{});window.addEventListener("pagehide",()=>remove(myRef).catch(()=>{}));set(myRef,{x:ship.x,y:ship.y,angle:ship.angle,nick,ts:Date.now(),lives:ship.lives}).catch(e=>status("Não entrou na sala: "+e.message));
 updateUI();requestAnimationFrame(tick);
 </script>
+<script src="goblox-overlay.js"></script>
 </body></html>
