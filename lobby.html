@@ -65,6 +65,24 @@
       background: #a8a8a8;
     }
   </style>
+
+  <style id="goblox-settings-styles">
+    body[data-goblox-theme="dark"]{background:#090a10!important;color:#f3f4f6!important}
+    body[data-goblox-theme="dark"] header,body[data-goblox-theme="dark"] #sidebar,body[data-goblox-theme="dark"] footer{background:#11131d!important;color:#f3f4f6!important;border-color:#292b3a!important}
+    body[data-goblox-theme="dark"] main{background:#090a10!important}
+    body[data-goblox-theme="dark"] #games-grid>div,body[data-goblox-theme="dark"] #friends-panel>div,body[data-goblox-theme="dark"] #friends-panel .bg-white{background:#151827!important;color:#f3f4f6!important;border-color:#303348!important}
+    body[data-goblox-theme="dark"] #games-grid h3,body[data-goblox-theme="dark"] #friends-panel h1,body[data-goblox-theme="dark"] #friends-panel h2{color:#f3f4f6!important}
+    body[data-goblox-theme="dark"] #search-input{background:#202334!important;color:#fff!important;border-color:#383b50!important}
+    body[data-goblox-theme="8bits"]{background:#0c0718!important;color:#f5edff!important;font-family:monospace!important}
+    body[data-goblox-theme="8bits"] header,body[data-goblox-theme="8bits"] #sidebar,body[data-goblox-theme="8bits"] footer{background:#160d2b!important;color:#f5edff!important;border-color:#7046b8!important}
+    body[data-goblox-theme="8bits"] main{background:#0c0718!important}
+    body[data-goblox-theme="8bits"] #games-grid>div,body[data-goblox-theme="8bits"] #friends-panel>div,body[data-goblox-theme="8bits"] #friends-panel .bg-white{background:#1b1032!important;color:#f5edff!important;border:1px solid #8b5cf6!important;box-shadow:4px 4px 0 #080410!important}
+    body[data-goblox-theme="8bits"] #games-grid h3,body[data-goblox-theme="8bits"] #friends-panel h1,body[data-goblox-theme="8bits"] #friends-panel h2{color:#fff!important}
+    body[data-goblox-theme="8bits"] #search-input{background:#24143e!important;color:#fff!important;border-color:#8b5cf6!important}
+    body[data-goblox-theme="8bits"] #mobile-bottom-nav{background:#160d2b!important;border-color:#7046b8!important}
+    .theme-choice[aria-pressed="true"]{border-color:#7c3aed;background:#f3e8ff;color:#5b21b6}
+    @media(max-width:767px){#settings-open-btn{padding:7px!important}}
+  </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 flex flex-col min-h-screen">
 <div id="speed-tournament-banner" style="display:none;position:sticky;top:0;z-index:9999;padding:12px 16px;background:linear-gradient(90deg,#713f12,#422006);border-bottom:2px solid #facc15;color:#fff7cc;text-align:center;font-weight:900">🏆 TORNEIO SPEED RUN</div>
@@ -113,6 +131,7 @@
           </div>
           <span id="nomeUsuarioDisplay" class="font-bold text-sm hidden sm:inline-block">PlayerOne</span>
         </a>
+        <button id="settings-open-btn" type="button" aria-label="Configurações" title="Configurações" class="p-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700"><i data-lucide="settings" class="w-5 h-5"></i></button>
       </div>
 
     </div>
@@ -230,6 +249,21 @@
     <a href="catalogo.html"><i data-lucide="shopping-bag"></i><span>Catálogo</span></a>
     <a href="perfil.html"><i data-lucide="user-round"></i><span>Perfil</span></a>
   </nav>
+
+  <!-- CONFIGURAÇÕES DO GOBLOX -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="w-full max-w-md rounded-2xl bg-white text-gray-900 shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-5"><h2 id="settings-title" class="text-2xl font-black">Configurações</h2><button id="settings-close-btn" class="p-2 rounded-lg hover:bg-gray-100" aria-label="Fechar">✕</button></div>
+      <p class="font-bold mb-3">Tema do lobby</p>
+      <div class="grid grid-cols-3 gap-2 mb-6">
+        <button type="button" data-theme-choice="light" class="theme-choice rounded-xl border-2 p-3 font-bold">Branco</button>
+        <button type="button" data-theme-choice="dark" class="theme-choice rounded-xl border-2 p-3 font-bold">Preto</button>
+        <button type="button" data-theme-choice="8bits" class="theme-choice rounded-xl border-2 p-3 font-bold">8 Bits</button>
+      </div>
+      <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-4"><span><strong>Contador de FPS</strong><small class="block text-gray-500">Mostrar e arrastar pela tela</small></span><input id="fps-toggle" type="checkbox" class="w-5 h-5 accent-violet-600" checked></label>
+      <p class="text-xs text-gray-500 mt-4">As preferências ficam salvas neste navegador.</p>
+    </div>
+  </div>
 
   <!-- RODAPÉ -->
   <footer class="bg-white border-t border-gray-200 mt-auto py-6">
@@ -542,6 +576,32 @@ onValue(ref(db,"speedRunTournament/current"),snap=>{
   }
   tick();
   setInterval(tick, 1000);
+})();
+</script>
+
+<script src="goblox-overlay.js"></script>
+<script>
+(() => {
+ const modal=document.getElementById("settings-modal");
+ const open=document.getElementById("settings-open-btn");
+ const close=document.getElementById("settings-close-btn");
+ const toggle=document.getElementById("fps-toggle");
+ const choices=[...document.querySelectorAll("[data-theme-choice]")];
+ function applyTheme(theme){
+   const valid=["light","dark","8bits"].includes(theme)?theme:"light";
+   document.body.dataset.gobloxTheme=valid;
+   localStorage.setItem("goblox_theme",valid);
+   choices.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.themeChoice===valid)));
+ }
+ applyTheme(localStorage.getItem("goblox_theme")||"light");
+ toggle.checked=localStorage.getItem("goblox_fps_enabled")!=="false";
+ open.addEventListener("click",()=>{modal.classList.remove("hidden");modal.classList.add("flex");});
+ function closeModal(){modal.classList.add("hidden");modal.classList.remove("flex");}
+ close.addEventListener("click",closeModal);
+ modal.addEventListener("click",e=>{if(e.target===modal)closeModal();});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+ choices.forEach(b=>b.addEventListener("click",()=>applyTheme(b.dataset.themeChoice)));
+ toggle.addEventListener("change",()=>window.GobloxFPS?.setEnabled(toggle.checked));
 })();
 </script>
 </body>
