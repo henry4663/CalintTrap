@@ -39,6 +39,19 @@
       body[data-goblox-theme="8bits"] #settings-modal label { border-color:#7046b8!important; }
       body[data-goblox-theme="8bits"] .theme-choice { background:#24143e!important; color:#f5edff!important; border-color:#7046b8!important; border-radius:4px!important; }
       body[data-goblox-theme="8bits"] .theme-choice[aria-pressed="true"] { background:#6d28d9!important; color:#fff!important; border-color:#c4b5fd!important; }
+
+      body[data-goblox-theme="dark"] header a,body[data-goblox-theme="dark"] #sidebar a,body[data-goblox-theme="dark"] #sidebar button,body[data-goblox-theme="dark"] footer a { color:#d9dced!important; }
+      body[data-goblox-theme="dark"] #sidebar a:hover,body[data-goblox-theme="dark"] #sidebar button:hover,body[data-goblox-theme="dark"] #mobile-bottom-nav a:hover { background:#24283b!important; }
+      body[data-goblox-theme="dark"] main h1,body[data-goblox-theme="dark"] main h2,body[data-goblox-theme="dark"] main h3 { color:#f3f4f6!important; }
+      body[data-goblox-theme="dark"] #friends-panel input { background:#202438!important; color:#fff!important; border-color:#454b66!important; }
+      body[data-goblox-theme="dark"] #friends-panel button { background:#5b43bd!important; color:#fff!important; }
+      body[data-goblox-theme="dark"] #friends-panel button:hover { background:#7655ff!important; }
+      body[data-goblox-theme="8bits"] header a,body[data-goblox-theme="8bits"] #sidebar a,body[data-goblox-theme="8bits"] #sidebar button,body[data-goblox-theme="8bits"] footer a { color:#e9ddff!important; }
+      body[data-goblox-theme="8bits"] #sidebar a:hover,body[data-goblox-theme="8bits"] #sidebar button:hover { background:#2b174b!important; }
+      body[data-goblox-theme="8bits"] main h1,body[data-goblox-theme="8bits"] main h2,body[data-goblox-theme="8bits"] main h3 { color:#fff!important; }
+      body[data-goblox-theme="8bits"] #friends-panel input { background:#24143e!important; color:#fff!important; border-color:#8b5cf6!important; border-radius:4px!important; }
+      body[data-goblox-theme="8bits"] #friends-panel button { background:#6d28d9!important; color:#fff!important; border:1px solid #c4b5fd!important; border-radius:4px!important; }
+      body[data-goblox-theme="8bits"] #friends-panel button:hover { background:#7c3aed!important; }
       #goblox-fps-counter { box-sizing:border-box; }
       @media(max-width:767px) {
         #settings-modal { align-items:flex-end!important; padding:10px!important; }
