@@ -61,4 +61,3 @@ export function equipItem(id){
  if(!state.inventory.includes(id))return {ok:false,reason:"Item não encontrado na coleção."};
  state.equipped=state.equipped===id?null:id;save();return {ok:true,equipped:state.equipped};
 }
-if(getCurrentNick())markAction("visit");
