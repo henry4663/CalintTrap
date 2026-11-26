@@ -50,4 +50,5 @@ document.querySelectorAll('[data-d]').forEach(b=>{let k={up:'ArrowUp',down:'Arro
 document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();keys[' ']=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>document.getElementById('jump').addEventListener(ev,()=>keys[' ']=false));
 reset();requestAnimationFrame(loop);
 })();
-</script></body></html>
+</script><script src="goblox-overlay.js"></script>
+</body></html>
