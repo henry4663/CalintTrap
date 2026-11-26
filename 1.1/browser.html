@@ -48,4 +48,5 @@ document.querySelector('#status').textContent='Blocos: '+blocks.size+' • '+ite
 renderer.render(scene,camera);requestAnimationFrame(loop)}
 document.querySelector('#startBtn').onclick=()=>{document.querySelector('#start').classList.add('hidden');canvas.requestPointerLock();requestAnimationFrame(loop)};
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-</script></body></html>
+</script><script src="../goblox-overlay.js"></script>
+</body></html>
