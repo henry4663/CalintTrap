@@ -19,7 +19,14 @@
     style.id = "goblox-settings-fix-styles";
     style.textContent = `
       #settings-open-btn { display:inline-flex!important; align-items:center!important; justify-content:center!important; gap:7px!important; min-width:44px!important; min-height:42px!important; border:2px solid #7655ff!important; border-radius:11px!important; background:#211638!important; color:#fff!important; font-weight:800!important; cursor:pointer!important; z-index:10001!important; transition:transform .16s,background .16s!important; }
-      #settings-open-btn:hover { background:#352254!important; transform:translateY(-1px); }
+
+      body:not([data-goblox-theme="dark"]):not([data-goblox-theme="8bits"]) #settings-open-btn { background:#fff!important; color:#4b5563!important; border-color:#d1d5db!important; box-shadow:0 1px 3px #00000012!important; }
+      body:not([data-goblox-theme="dark"]):not([data-goblox-theme="8bits"]) #settings-open-btn:hover { background:#f3f4f6!important; border-color:#9ca3af!important; }
+      body[data-goblox-theme="dark"] #settings-open-btn { background:#202438!important; color:#f3f4f6!important; border-color:#454b66!important; box-shadow:none!important; }
+      body[data-goblox-theme="dark"] #settings-open-btn:hover { background:#2b3048!important; border-color:#7655ff!important; }
+      body[data-goblox-theme="8bits"] #settings-open-btn { background:#24143e!important; color:#f5edff!important; border-color:#8b5cf6!important; border-radius:4px!important; box-shadow:3px 3px 0 #080410!important; font-family:monospace!important; }
+      body[data-goblox-theme="8bits"] #settings-open-btn:hover { background:#35205a!important; border-color:#c4b5fd!important; }
+      #settings-open-btn:hover { transform:translateY(-1px); }
       #settings-open-btn:focus-visible,#settings-close-btn:focus-visible,.theme-choice:focus-visible { outline:3px solid #a78bfa!important; outline-offset:3px!important; }
       #settings-modal { z-index:10000!important; }
       #settings-modal > div { max-height:min(88dvh,560px); overflow-y:auto; border:1px solid #e5e7eb; }
