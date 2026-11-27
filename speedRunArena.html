@@ -47,6 +47,8 @@
     }
     #noCoinLeaderboard .corner-title { color:#d8b4fe; }
     #noCoinLeaderboard .corner-score { color:#d8b4fe; }
+    /* Rankings ficam fora da tela de jogo; os registros continuam funcionando. */
+    #globalLeaderboardCorner, #noCoinLeaderboard { display:none !important; }
     #noCoinOptIn { display:flex; align-items:flex-start; gap:9px; max-width:440px; margin-top:16px; padding:11px 14px; border:1px solid #7c3aed; border-radius:12px; background:#170b32; text-align:left; font-size:14px; line-height:1.4; }
     .menu-screen { justify-content:center; background:linear-gradient(90deg,rgba(5,3,15,.93),rgba(8,4,22,.72) 58%,rgba(5,3,15,.35)); }
     .menu-panel { width:min(1040px,100%); display:grid; grid-template-columns:minmax(280px,1fr) minmax(220px,.8fr); grid-template-areas:"copy character" "settings settings"; gap:18px 30px; align-items:center; padding:30px; border:1px solid #8b5cf6aa; border-radius:24px; background:linear-gradient(135deg,rgba(17,9,36,.94),rgba(28,10,55,.86)); box-shadow:0 20px 70px #0009; text-align:left; }
