@@ -1615,11 +1615,18 @@
               const dy = Math.abs(player.position.y - coin.position.y);
 
               if (dx < 0.8 && dz < 1 && dy < 1.2) {
+                scene.remove(coin);
+                coins.splice(i, 1);
+
+                // Na modalidade No Coin, encostar em uma moeda encerra a partida.
+                if (noCoinOptInCheck.checked) {
+                  gameOver();
+                  break;
+                }
+
                 G.coins++;
                 G.timeWithoutCoin = 0;
                 adicionarZxPorMoeda();
-                scene.remove(coin);
-                coins.splice(i, 1);
               }
             }
           }
