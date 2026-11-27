@@ -325,7 +325,7 @@
         <label for="moveResponse">Tempo de resposta <output id="moveResponseValue">100 ms</output></label>
         <input id="moveResponse" type="range" min="50" max="300" step="10" value="100">
         <p class="settings-note">A sensibilidade ajusta o gesto de desvio. O tempo de resposta controla a rapidez com que o personagem troca de faixa.</p>
-        <label id="noCoinOptIn"><input id="noCoinOptInCheck" type="checkbox"><span>Quero participar do ranking de maior tempo sem coletar moedas. Meu recorde desta modalidade ficará visível no ranking.</span></label>
+        <label id="noCoinOptIn"><input id="noCoinOptInCheck" type="checkbox"><span>Ativar modo NO COIN: se pegar uma moeda, você é eliminado. O cronômetro conta seu tempo sem moedas.</span></label>
       </section>
     </section>
   </div>
@@ -1619,7 +1619,10 @@
                 coins.splice(i, 1);
 
                 // Na modalidade No Coin, encostar em uma moeda encerra a partida.
-                if (noCoinOptInCheck.checked) {
+                const modoNoCoinAtivo =
+                  noCoinOptInCheck.checked ||
+                  localStorage.getItem("goblox_no_coin_opt_in") === "true";
+                if (modoNoCoinAtivo) {
                   gameOver();
                   break;
                 }
