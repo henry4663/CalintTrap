@@ -546,12 +546,22 @@
       const noCoinOptInCheck = document.getElementById("noCoinOptInCheck");
       const noCoinTimer = document.getElementById("noCoinTimer");
       function atualizarVisibilidadeNoCoin() {
-        noCoinTimer.style.display = noCoinOptInCheck.checked ? "block" : "none";
+        const ativo = noCoinOptInCheck.checked === true;
+        noCoinTimer.hidden = !ativo;
+        noCoinTimer.style.setProperty("display", ativo ? "block" : "none", "important");
+        noCoinTimer.style.setProperty("z-index", "99999");
       }
-      try { noCoinOptInCheck.checked = localStorage.getItem("goblox_no_coin_opt_in") === "true"; } catch (_) {}
+      try {
+        noCoinOptInCheck.checked = localStorage.getItem("goblox_no_coin_opt_in") === "true";
+      } catch (_) {
+        noCoinOptInCheck.checked = false;
+      }
       atualizarVisibilidadeNoCoin();
+      noCoinOptInCheck.addEventListener("input", atualizarVisibilidadeNoCoin);
       noCoinOptInCheck.addEventListener("change", () => {
-        try { localStorage.setItem("goblox_no_coin_opt_in", noCoinOptInCheck.checked ? "true" : "false"); } catch (_) {}
+        try {
+          localStorage.setItem("goblox_no_coin_opt_in", noCoinOptInCheck.checked ? "true" : "false");
+        } catch (_) {}
         atualizarVisibilidadeNoCoin();
       });
 
