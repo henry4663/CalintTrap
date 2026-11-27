@@ -20,7 +20,7 @@
     #goblox-gfx-panel label{display:block;margin-bottom:7px;color:#ddd}
     #goblox-gfx-select{width:100%;padding:9px;border-radius:8px;background:#090711;color:#fff;border:1px solid #7652b8}
     #goblox-gfx-note{display:block;margin-top:8px;color:#b9a5e9;font-size:11px;line-height:1.4}
-    .goblox-gfx-wrap{position:relative!important;isolation:isolate}
+    .goblox-gfx-wrap{position:relative!important;display:block;isolation:isolate;max-width:100%}
     .goblox-gfx-texture{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;mix-blend-mode:soft-light;background-image:repeating-linear-gradient(0deg,#fff 0px,#fff 1px,transparent 1px,transparent 4px),repeating-linear-gradient(90deg,#000 0px,#000 1px,transparent 1px,transparent 5px);border-radius:inherit}
     .goblox-gfx-wrap canvas{filter:none;transition:filter .2s}
     @media(max-width:600px){#goblox-gfx-control{top:8px;right:8px}#goblox-gfx-toggle{padding:8px 9px}}
@@ -39,11 +39,20 @@
   canvases.forEach(canvas => {
     const parent = canvas.parentElement;
     if (!parent) return;
-    parent.classList.add("goblox-gfx-wrap");
+    const wrap = document.createElement("div");
+    wrap.className = "goblox-gfx-wrap";
+    const computed = getComputedStyle(canvas);
+    wrap.style.width = computed.width;
+    wrap.style.maxWidth = computed.maxWidth;
+    wrap.style.height = computed.height === "auto" ? "auto" : computed.height;
+    parent.insertBefore(wrap, canvas);
+    wrap.appendChild(canvas);
+    canvas.style.width = "100%";
+    canvas.style.maxWidth = "100%";
     const layer = document.createElement("div");
     layer.className = "goblox-gfx-texture";
-    parent.appendChild(layer);
-    layers.push({canvas, layer});
+    wrap.appendChild(layer);
+    layers.push({canvas, layer, wrap});
   });
   function apply(value) {
     quality = valid.includes(value) ? value : "medium";
