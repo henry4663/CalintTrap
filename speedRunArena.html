@@ -33,6 +33,28 @@
     #pointsHud { top: 58px; left: 20px; color: #ffdd00; }
     #coinHud { top: 190px; right: 20px; }
     #coinCount { color: #ffdd00; }
+    #noCoinTimer {
+      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+      z-index:45; padding:8px 15px; border:1px solid #a855f7; border-radius:12px;
+      color:#fff; background:rgba(18,8,38,.88); font-size:14px; font-weight:800;
+      box-shadow:0 6px 22px #0008; pointer-events:none; white-space:nowrap;
+    }
+    #noCoinLeaderboard {
+      position:absolute; top:270px; right:20px; width:240px; padding:12px;
+      z-index:49; color:#fff; background:linear-gradient(135deg,rgba(26,0,51,.92),rgba(42,26,68,.92));
+      border:2px solid rgba(168,85,247,.55); border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.5); pointer-events:none; backdrop-filter:blur(6px);
+    }
+    #noCoinLeaderboard .corner-title { color:#d8b4fe; }
+    #noCoinLeaderboard .corner-score { color:#d8b4fe; }
+    #noCoinOptIn { display:flex; align-items:flex-start; gap:9px; max-width:440px; margin-top:16px; padding:11px 14px; border:1px solid #7c3aed; border-radius:12px; background:#170b32; text-align:left; font-size:14px; line-height:1.4; }
+    #noCoinOptIn input { width:18px; height:18px; flex:0 0 auto; accent-color:#a855f7; }
+    @media(max-width:700px),(pointer:coarse) {
+      #noCoinLeaderboard { top:250px; right:10px; width:150px; padding:6px; }
+      #noCoinLeaderboard .corner-title { font-size:10px; }
+      #noCoinLeaderboard .corner-item { font-size:10px; padding:3px; }
+      #noCoinTimer { bottom:100px; font-size:12px; }
+    }
 
     #globalLeaderboardCorner {
       position: absolute;
@@ -230,10 +252,15 @@
   <div id="distance">📍 <span id="dist">0</span>m</div>
   <div id="pointsHud">🏆 <span id="points">0</span> pontos</div>
   <div id="coinHud">🪙 <span id="coinCount">0</span></div>
+  <div id="noCoinTimer">Tempo sem moeda: <span id="noCoinTime">00:00</span></div>
 
   <div id="globalLeaderboardCorner">
-    <div class="corner-title">🏆 Top Global</div>
+    <div class="corner-title">🏆 Mais pontos</div>
     <div id="cornerList">Carregando...</div>
+  </div>
+  <div id="noCoinLeaderboard">
+    <div class="corner-title">⌛ Maior tempo sem moeda</div>
+    <div id="noCoinCornerList">Carregando...</div>
   </div>
 
   <div id="hint">← → mover | ↑ pular | ↓ abaixar</div>
@@ -263,6 +290,7 @@
     </p>
     <p><span class="key">↑</span> / <span class="key">W</span> / <span class="key">ESPAÇO</span> para pular</p>
     <p><span class="key">↓</span> / <span class="key">S</span> para abaixar</p>
+    <label id="noCoinOptIn"><input id="noCoinOptInCheck" type="checkbox"><span>Quero participar do ranking de maior tempo sem coletar moedas. Meu recorde desta modalidade ficará visível no ranking.</span></label>
     <button id="startBtn">JOGAR</button>
   </div>
 
@@ -478,6 +506,12 @@
       });
 
       const leaderboardRef = ref(db, "leaderboard");
+      const noCoinLeaderboardRef = ref(db, "leaderboardNoCoin");
+      const noCoinOptInCheck = document.getElementById("noCoinOptInCheck");
+      try { noCoinOptInCheck.checked = localStorage.getItem("goblox_no_coin_opt_in") === "true"; } catch (_) {}
+      noCoinOptInCheck.addEventListener("change", () => {
+        try { localStorage.setItem("goblox_no_coin_opt_in", noCoinOptInCheck.checked ? "true" : "false"); } catch (_) {}
+      });
 
       document.getElementById("displayNick").textContent = playerNick;
 
@@ -515,6 +549,76 @@
         return [...melhoresPorNome.values()]
           .sort((a, b) => b.score - a.score)
           .slice(0, 5);
+      }
+
+      function formatarTempoSemMoeda(segundos) {
+        const total = Math.max(0, Math.floor(Number(segundos) || 0));
+        const min = Math.floor(total / 60);
+        const sec = total % 60;
+        const horas = Math.floor(min / 60);
+        return horas > 0
+          ? String(horas).padStart(2,"0") + ":" + String(min % 60).padStart(2,"0") + ":" + String(sec).padStart(2,"0")
+          : String(min).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
+      }
+
+      function renderizarRankingSemMoeda(data) {
+        const lista = document.getElementById("noCoinCornerList");
+        lista.replaceChildren();
+        const melhores = new Map();
+        for (const item of Object.values(data || {})) {
+          if (!item || !item.name) continue;
+          const key = normalizarNome(item.name);
+          const seconds = Math.max(0, Number(item.seconds) || 0);
+          const old = melhores.get(key);
+          if (!old || seconds > old.seconds) melhores.set(key, { name:String(item.name).slice(0,12), seconds });
+        }
+        const top = [...melhores.values()].sort((a,b) => b.seconds - a.seconds).slice(0,5);
+        if (!top.length) {
+          const vazio = document.createElement("div");
+          vazio.textContent = "Ninguém no ranking ainda";
+          vazio.style.cssText = "text-align:center;opacity:.65;font-size:11px";
+          lista.appendChild(vazio);
+          return;
+        }
+        top.forEach((item,index) => {
+          const row = document.createElement("div");
+          row.className = "corner-item";
+          const rank = document.createElement("span");
+          rank.className = "corner-rank";
+          rank.textContent = "#" + (index + 1);
+          const name = document.createElement("span");
+          name.className = "corner-name";
+          name.textContent = item.name;
+          const time = document.createElement("span");
+          time.className = "corner-score";
+          time.textContent = formatarTempoSemMoeda(item.seconds);
+          row.append(rank,name,time);
+          lista.appendChild(row);
+        });
+      }
+
+      onValue(noCoinLeaderboardRef, snap => renderizarRankingSemMoeda(snap.val()), error => {
+        console.error("Erro ao carregar ranking sem moedas:", error);
+        document.getElementById("noCoinCornerList").textContent = "Ranking indisponível";
+      });
+
+      async function salvarRecordeSemMoeda(seconds) {
+        if (!noCoinOptInCheck.checked || seconds <= 0 || playerNick === "Anônimo") return;
+        try {
+          const playerRef = ref(db, "leaderboardNoCoin/" + profileKey);
+          const snap = await get(playerRef);
+          const old = snap.exists() ? snap.val() : {};
+          if (Number(old.seconds) >= seconds) return;
+          await set(playerRef, {
+            name: String(playerNick).trim().substring(0,12) || "Jogador",
+            seconds: Math.floor(seconds),
+            timestamp: Date.now()
+          });
+          toast("Novo recorde de tempo sem moeda salvo!", "sucesso");
+        } catch (error) {
+          console.error("Erro ao salvar recorde sem moeda:", error);
+          toast("Não foi possível salvar o recorde sem moeda.", "erro");
+        }
       }
 
       function renderizarRanking(data) {
@@ -983,7 +1087,9 @@
         spawnInterval: 75,
         lastTime: 0,
         animPhase: 0,
-        visualJumpY: 0
+        visualJumpY: 0,
+        timeWithoutCoin: 0,
+        bestTimeWithoutCoin: 0
       };
 
       let jumpPressed = false;
@@ -1005,6 +1111,7 @@
       function atualizarHUD() {
         document.getElementById("dist").textContent = String(Math.floor(G.distance));
         document.getElementById("coinCount").textContent = String(G.coins);
+        document.getElementById("noCoinTime").textContent = formatarTempoSemMoeda(G.timeWithoutCoin);
         document.getElementById("points").textContent =
           String(calcularPontuacao(G.distance, G.coins));
       }
@@ -1124,6 +1231,8 @@
         G.speed = G.baseSpeed;
         G.distance = 0;
         G.coins = 0;
+        G.timeWithoutCoin = 0;
+        G.bestTimeWithoutCoin = 0;
         G.currentLane = 1;
         G.targetLane = 1;
         G.isJumping = false;
@@ -1158,6 +1267,7 @@
 
         // Salva exatamente a mesma pontuação exibida na tela e no HUD.
         const pontuacaoFinal = calcularPontuacao(G.distance, G.coins);
+        salvarRecordeSemMoeda(G.bestTimeWithoutCoin);
         if (tournament && tournamentJoined && tournamentStatus === "running") {
           tournamentEliminated = true;
           set(ref(db, "speedRunTournament/rooms/" + tournament.roomId + "/players/" + tournamentPlayerKey), {
@@ -1201,6 +1311,8 @@
         if (G.running && !G.paused) {
           G.speed = Math.min(G.speed + 0.000004 * dt, G.maxSpeed);
           G.distance += G.speed * dt * 1.8;
+          G.timeWithoutCoin += dt / 60;
+          G.bestTimeWithoutCoin = Math.max(G.bestTimeWithoutCoin, G.timeWithoutCoin);
           G.currentLane += (G.targetLane - G.currentLane) * 0.4 * dt;
           player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
 
@@ -1383,6 +1495,7 @@
 
               if (dx < 0.8 && dz < 1 && dy < 1.2) {
                 G.coins++;
+                G.timeWithoutCoin = 0;
                 adicionarZxPorMoeda();
                 scene.remove(coin);
                 coins.splice(i, 1);
