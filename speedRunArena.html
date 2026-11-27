@@ -58,10 +58,8 @@
     .menu-kicker { color:#c4b5fd; font-size:11px!important; font-weight:800; letter-spacing:2px; }
     .menu-help { margin-top:20px!important; line-height:1.9; color:#ddd6fe; }
     .menu-copy #startBtn { margin-top:22px; min-width:210px; }
-    .menu-character { grid-area:character; min-height:260px; display:flex; align-items:flex-end; justify-content:center; position:relative; border-radius:20px; background:radial-gradient(ellipse at 50% 75%,#7c3aed66,transparent 58%); }
-    .character-orbit { width:190px; height:190px; border:1px solid #a78bfa66; border-radius:50%; box-shadow:0 0 50px #7c3aed55,inset 0 0 35px #7c3aed33; position:absolute; bottom:35px; }
-    .character-orbit:before { content:""; position:absolute; width:76px; height:145px; left:56px; bottom:20px; border-radius:34px 34px 18px 18px; background:linear-gradient(145deg,#ddd6fe,#7c3aed 60%,#2e1065); box-shadow:0 0 28px #a855f7aa; }
-    .character-orbit:after { content:""; position:absolute; width:58px; height:58px; left:65px; bottom:145px; border-radius:50%; background:linear-gradient(145deg,#f5f3ff,#8b5cf6); box-shadow:0 0 20px #a855f7aa; }
+    .menu-character { grid-area:character; min-height:260px; display:flex; align-items:stretch; justify-content:center; position:relative; overflow:hidden; border-radius:20px; background:radial-gradient(ellipse at 50% 75%,#7c3aed66,transparent 65%); }
+    #menuCharacterCanvas { display:block; width:100%; height:260px; }
     .character-caption { position:absolute; bottom:8px; color:#c4b5fd; font-size:10px; font-weight:800; letter-spacing:2px; }
     .menu-settings { grid-area:settings; display:grid; grid-template-columns:1fr 1fr; gap:9px 18px; padding-top:18px; border-top:1px solid #ffffff20; }
     .menu-settings h2 { grid-column:1/-1; color:#e9d5ff; font-size:16px; letter-spacing:1px; }
@@ -69,10 +67,11 @@
     .menu-settings output { color:#c4b5fd; }
     .menu-settings input[type=range] { width:100%; accent-color:#a855f7; }
     .settings-note { grid-column:1/-1; color:#c4b5fd; font-size:12px!important; margin:0!important; }
-    .menu-settings #noCoinOptIn { grid-column:1/-1; max-width:none; margin-top:4px; }
-    @media(max-width:700px) { .menu-panel { width:min(520px,100%); max-height:94vh; overflow:auto; grid-template-columns:1fr; grid-template-areas:"copy" "character" "settings"; gap:12px; padding:18px; } .menu-character { min-height:115px; } .character-orbit { width:100px; height:100px; bottom:12px; } .character-orbit:before { width:42px;height:78px;left:29px;bottom:10px; } .character-orbit:after { width:34px;height:34px;left:33px;bottom:78px; } .character-caption { bottom:0; } .menu-copy h1 { font-size:34px; } .menu-settings { grid-template-columns:1fr; } .menu-settings h2,.settings-note,.menu-settings #noCoinOptIn { grid-column:1; } .menu-copy #startBtn { margin-top:12px; } }
+    .menu-settings #noCoinOptIn { grid-column:1/-1; display:flex; align-items:center; gap:12px; width:100%; max-width:none; min-height:62px; box-sizing:border-box; margin:10px 0 0; padding:14px 16px; border:1px solid #8b5cf6; border-radius:14px; background:rgba(124,58,237,.16); color:#f5f3ff; line-height:1.5; }
+    .menu-settings #noCoinOptIn span { display:block; flex:1; }
+    @media(max-width:700px) { .menu-panel { width:min(520px,100%); max-height:94vh; overflow:auto; grid-template-columns:1fr; grid-template-areas:"copy" "character" "settings"; gap:12px; padding:18px; } .menu-character { min-height:190px; } #menuCharacterCanvas { height:190px; } .character-caption { bottom:0; } .menu-copy h1 { font-size:34px; } .menu-settings { grid-template-columns:1fr; } .menu-settings h2,.settings-note,.menu-settings #noCoinOptIn { grid-column:1; } .menu-copy #startBtn { margin-top:12px; } }
 
-    #noCoinOptIn input { width:18px; height:18px; flex:0 0 auto; accent-color:#a855f7; }
+    #noCoinOptIn input { width:20px; height:20px; margin:0; flex:0 0 20px; accent-color:#a855f7; }
     @media(max-width:700px),(pointer:coarse) {
       #noCoinLeaderboard { top:250px; right:10px; width:150px; padding:6px; }
       #noCoinLeaderboard .corner-title { font-size:10px; }
@@ -314,8 +313,8 @@
         <p class="menu-help">← → ou A/D para desviar<br>↑ / W / ESPAÇO para pular<br>↓ / S para abaixar</p>
         <button id="startBtn">JOGAR</button>
       </div>
-      <div class="menu-character" aria-label="Prévia do personagem">
-        <div class="character-orbit"></div>
+      <div class="menu-character" aria-label="Prévia 3D do personagem do jogo">
+        <canvas id="menuCharacterCanvas" aria-label="Personagem 3D"></canvas>
         <div class="character-caption">SEU PERSONAGEM</div>
       </div>
       <section class="menu-settings" aria-label="Configurações de movimento">
@@ -835,8 +834,50 @@
         scene.add(rail);
       }
 
-      const player = criarPersonagem("Jogador");
+      const player = criarPersonagem(playerNick);
       scene.add(player);
+
+      // Prévia 3D do mesmo personagem usado na corrida (não é PNG nem desenho CSS).
+      const menuPreviewCanvas = document.getElementById("menuCharacterCanvas");
+      const menuPreviewScene = new THREE.Scene();
+      menuPreviewScene.background = null;
+      const menuPreviewCamera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
+      menuPreviewCamera.position.set(3.2, 2.35, 5.2);
+      menuPreviewCamera.lookAt(0, 1.15, 0);
+      const menuPreviewRenderer = new THREE.WebGLRenderer({
+        canvas: menuPreviewCanvas,
+        alpha: true,
+        antialias: true
+      });
+      menuPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      menuPreviewRenderer.setSize(320, 260, false);
+      menuPreviewRenderer.outputEncoding = THREE.sRGBEncoding;
+      menuPreviewScene.add(new THREE.AmbientLight(0xffffff, 1.05));
+      const menuPreviewLight = new THREE.DirectionalLight(0xffffff, 1.25);
+      menuPreviewLight.position.set(3, 6, 4);
+      menuPreviewScene.add(menuPreviewLight);
+      const menuPreviewCharacter = criarPersonagem(playerNick);
+      menuPreviewCharacter.position.y = -0.05;
+      menuPreviewCharacter.rotation.y = -0.18;
+      menuPreviewScene.add(menuPreviewCharacter);
+      const menuPreviewBase = new THREE.Mesh(
+        new THREE.CircleGeometry(1.05, 40),
+        new THREE.MeshStandardMaterial({ color: 0x32105f, roughness: 0.85 })
+      );
+      menuPreviewBase.rotation.x = -Math.PI / 2;
+      menuPreviewBase.position.y = 0.015;
+      menuPreviewScene.add(menuPreviewBase);
+      function resizeMenuCharacterPreview() {
+        const width = Math.max(1, menuPreviewCanvas.clientWidth);
+        const height = Math.max(1, menuPreviewCanvas.clientHeight);
+        menuPreviewRenderer.setSize(width, height, false);
+        menuPreviewCamera.aspect = width / height;
+        menuPreviewCamera.updateProjectionMatrix();
+      }
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(resizeMenuCharacterPreview).observe(menuPreviewCanvas);
+      }
+      resizeMenuCharacterPreview();
 
       const body = player.getObjectByName("body");
       const parts = [
@@ -1578,6 +1619,10 @@
           shard.position.y = Math.max(0, shard.position.y);
         }
 
+        if (document.getElementById("startScreen").style.display !== "none") {
+          menuPreviewCharacter.rotation.y += 0.0035;
+          menuPreviewRenderer.render(menuPreviewScene, menuPreviewCamera);
+        }
         renderer.render(scene, camera);
       }
 
