@@ -74,7 +74,21 @@
       #leaderboardTabPanel .leaderboard-columns { grid-template-columns:1fr; }
     }
     #noCoinOptIn { display:flex; align-items:flex-start; gap:9px; max-width:440px; margin-top:16px; padding:11px 14px; border:1px solid #7c3aed; border-radius:12px; background:#170b32; text-align:left; font-size:14px; line-height:1.4; }
-    .menu-screen { justify-content:center; background:linear-gradient(90deg,rgba(5,3,15,.93),rgba(8,4,22,.72) 58%,rgba(5,3,15,.35)); }
+    .menu-screen {
+      justify-content:flex-start;
+      overflow-y:auto;
+      overflow-x:hidden;
+      overscroll-behavior:contain;
+      touch-action:pan-y;
+      padding: max(20px,4vh) 20px;
+      background:linear-gradient(90deg,rgba(5,3,15,.93),rgba(8,4,22,.72) 58%,rgba(5,3,15,.35));
+      scrollbar-width:thin;
+      scrollbar-color:#8b5cf6 #170b32;
+    }
+    .menu-screen::-webkit-scrollbar { width:10px; }
+    .menu-screen::-webkit-scrollbar-track { background:#170b32; border-radius:10px; }
+    .menu-screen::-webkit-scrollbar-thumb { background:#8b5cf6; border:2px solid #170b32; border-radius:10px; }
+    .menu-panel { flex-shrink:0; margin-block:auto; touch-action:pan-y; }
     .menu-panel { width:min(1040px,100%); display:grid; grid-template-columns:minmax(280px,1fr) minmax(220px,.8fr); grid-template-areas:"copy character" "settings settings"; gap:18px 30px; align-items:center; padding:30px; border:1px solid #8b5cf6aa; border-radius:24px; background:linear-gradient(135deg,rgba(17,9,36,.94),rgba(28,10,55,.86)); box-shadow:0 20px 70px #0009; text-align:left; }
     .menu-copy { grid-area:copy; }
     .menu-copy h1 { text-align:left; font-size:clamp(34px,5vw,54px); }
@@ -93,7 +107,7 @@
     .settings-note { grid-column:1/-1; color:#c4b5fd; font-size:12px!important; margin:0!important; }
     .menu-settings #noCoinOptIn { grid-column:1/-1; display:flex; align-items:center; gap:12px; width:100%; max-width:none; min-height:62px; box-sizing:border-box; margin:10px 0 0; padding:14px 16px; border:1px solid #8b5cf6; border-radius:14px; background:rgba(124,58,237,.16); color:#f5f3ff; line-height:1.5; }
     .menu-settings #noCoinOptIn span { display:block; flex:1; }
-    @media(max-width:700px) { .menu-panel { width:min(520px,100%); max-height:94vh; overflow:auto; grid-template-columns:1fr; grid-template-areas:"copy" "character" "settings"; gap:12px; padding:18px; } .menu-character { min-height:190px; } #menuCharacterCanvas { height:190px; } .character-caption { bottom:0; } .menu-copy h1 { font-size:34px; } .menu-settings { grid-template-columns:1fr; } .menu-settings h2,.settings-note,.menu-settings #noCoinOptIn { grid-column:1; } .menu-copy #startBtn { margin-top:12px; } }
+    @media(max-width:700px) { .menu-panel { width:min(520px,100%); max-height:none; overflow:visible; grid-template-columns:1fr; grid-template-areas:"copy" "character" "settings"; gap:12px; padding:18px; } .menu-character { min-height:190px; } #menuCharacterCanvas { height:190px; } .character-caption { bottom:0; } .menu-copy h1 { font-size:34px; } .menu-settings { grid-template-columns:1fr; } .menu-settings h2,.settings-note,.menu-settings #noCoinOptIn { grid-column:1; } .menu-copy #startBtn { margin-top:12px; } }
 
     #noCoinOptIn input { width:20px; height:20px; margin:0; flex:0 0 20px; accent-color:#a855f7; }
     @media(max-width:700px),(pointer:coarse) {
