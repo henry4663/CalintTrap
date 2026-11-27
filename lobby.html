@@ -261,6 +261,16 @@
         <button type="button" data-theme-choice="8bits" class="theme-choice rounded-xl border-2 p-3 font-bold">8 Bits</button>
       </div>
       <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-4"><span><strong>Contador de FPS</strong><small class="block text-gray-500">Mostrar e arrastar pela tela</small></span><input id="fps-toggle" type="checkbox" class="w-5 h-5 accent-violet-600" checked></label>
+      <div class="rounded-xl border border-gray-200 p-4 mt-3">
+        <label for="graphics-quality" class="block font-bold mb-2">Qualidade gráfica dos jogos</label>
+        <select id="graphics-quality" class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 p-3">
+          <option value="super-low">Super Low — visual original e efeitos extras desligados</option>
+          <option value="low">Low — efeitos reduzidos</option>
+          <option value="medium">Médio — visual equilibrado</option>
+          <option value="realista">Realista — filtros e camada visual avançados</option>
+        </select>
+        <small class="block text-gray-500 mt-2">A escolha fica salva e é compartilhada entre os jogos neste navegador.</small>
+      </div>
       <p class="text-xs text-gray-500 mt-4">As preferências ficam salvas neste navegador.</p>
     </div>
   </div>
@@ -586,6 +596,12 @@ onValue(ref(db,"speedRunTournament/current"),snap=>{
  const open=document.getElementById("settings-open-btn");
  const close=document.getElementById("settings-close-btn");
  const toggle=document.getElementById("fps-toggle");
+ const graphicsSelect=document.getElementById("graphics-quality");
+ const GRAPHICS_KEY="goblox_graphics_quality";
+ const validGraphics=["super-low","low","medium","realista"];
+ const savedGraphics=localStorage.getItem(GRAPHICS_KEY)||"medium";
+ graphicsSelect.value=validGraphics.includes(savedGraphics)?savedGraphics:"medium";
+ graphicsSelect.addEventListener("change",()=>localStorage.setItem(GRAPHICS_KEY,validGraphics.includes(graphicsSelect.value)?graphicsSelect.value:"medium"));
  const choices=[...document.querySelectorAll("[data-theme-choice]")];
  function applyTheme(theme){
    const valid=["light","dark","8bits"].includes(theme)?theme:"light";
