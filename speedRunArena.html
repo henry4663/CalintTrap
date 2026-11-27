@@ -34,6 +34,7 @@
     #coinHud { top: 190px; right: 20px; }
     #coinCount { color: #ffdd00; }
     #noCoinTimer {
+      display:none;
       position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
       z-index:45; padding:8px 15px; border:1px solid #a855f7; border-radius:12px;
       color:#fff; background:rgba(18,8,38,.88); font-size:14px; font-weight:800;
@@ -543,9 +544,15 @@
       const leaderboardRef = ref(db, "leaderboard");
       const noCoinLeaderboardRef = ref(db, "leaderboardNoCoin");
       const noCoinOptInCheck = document.getElementById("noCoinOptInCheck");
+      const noCoinTimer = document.getElementById("noCoinTimer");
+      function atualizarVisibilidadeNoCoin() {
+        noCoinTimer.style.display = noCoinOptInCheck.checked ? "block" : "none";
+      }
       try { noCoinOptInCheck.checked = localStorage.getItem("goblox_no_coin_opt_in") === "true"; } catch (_) {}
+      atualizarVisibilidadeNoCoin();
       noCoinOptInCheck.addEventListener("change", () => {
         try { localStorage.setItem("goblox_no_coin_opt_in", noCoinOptInCheck.checked ? "true" : "false"); } catch (_) {}
+        atualizarVisibilidadeNoCoin();
       });
 
       document.getElementById("displayNick").textContent = playerNick;
