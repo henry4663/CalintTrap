@@ -48,8 +48,16 @@
     }
     #noCoinLeaderboard .corner-title { color:#d8b4fe; }
     #noCoinLeaderboard .corner-score { color:#d8b4fe; }
-    /* Rankings ficam fora da tela de jogo; os registros continuam funcionando. */
-    #globalLeaderboardCorner, #noCoinLeaderboard { display:none !important; }
+    #leaderboardTabPanel { display:none; grid-column:1/-1; width:100%; max-height:55vh; overflow:auto; padding:16px; border:1px solid #8b5cf6; border-radius:16px; background:rgba(8,4,22,.97); color:#fff; }
+    #leaderboardTabPanel.open { display:block; }
+    #leaderboardTabPanel h2 { color:#e9d5ff; margin-bottom:12px; font-size:18px; }
+    #leaderboardTabPanel .leaderboard-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    #leaderboardTabPanel #globalLeaderboardCorner, #leaderboardTabPanel #noCoinLeaderboard { display:block !important; position:static !important; width:auto !important; top:auto !important; right:auto !important; transform:none !important; pointer-events:auto !important; margin:0; }
+    #leaderboardTabPanel .corner-item { display:flex; justify-content:space-between; gap:8px; padding:7px 4px; border-bottom:1px solid #ffffff20; color:#fff; font-size:13px; }
+    #leaderboardTabPanel .corner-name { overflow:hidden; text-overflow:ellipsis; }
+    #leaderboardTabPanel .corner-score { font-weight:800; }
+    #leaderboardTabPanel button { margin-top:12px; padding:10px 18px; font-size:14px; }
+    @media(max-width:700px) { #leaderboardTabPanel .leaderboard-columns { grid-template-columns:1fr; } #leaderboardTabPanel { max-height:48vh; } }
     #noCoinOptIn { display:flex; align-items:flex-start; gap:9px; max-width:440px; margin-top:16px; padding:11px 14px; border:1px solid #7c3aed; border-radius:12px; background:#170b32; text-align:left; font-size:14px; line-height:1.4; }
     .menu-screen { justify-content:center; background:linear-gradient(90deg,rgba(5,3,15,.93),rgba(8,4,22,.72) 58%,rgba(5,3,15,.35)); }
     .menu-panel { width:min(1040px,100%); display:grid; grid-template-columns:minmax(280px,1fr) minmax(220px,.8fr); grid-template-areas:"copy character" "settings settings"; gap:18px 30px; align-items:center; padding:30px; border:1px solid #8b5cf6aa; border-radius:24px; background:linear-gradient(135deg,rgba(17,9,36,.94),rgba(28,10,55,.86)); box-shadow:0 20px 70px #0009; text-align:left; }
@@ -278,15 +286,6 @@
   <div id="coinHud">🪙 <span id="coinCount">0</span></div>
   <div id="noCoinTimer">Tempo sem moeda: <span id="noCoinTime">00:00</span></div>
 
-  <div id="globalLeaderboardCorner">
-    <div class="corner-title">🏆 Mais pontos</div>
-    <div id="cornerList">Carregando...</div>
-  </div>
-  <div id="noCoinLeaderboard">
-    <div class="corner-title">⌛ Maior tempo sem moeda</div>
-    <div id="noCoinCornerList">Carregando...</div>
-  </div>
-
   <div id="hint">← → mover | ↑ pular | ↓ abaixar</div>
   <button id="pauseBtn" type="button" aria-label="Pausar jogo">Ⅱ PAUSAR</button>
   <div id="mobileControls" aria-label="Controles do jogo">
@@ -313,6 +312,7 @@
         <p>Jogando como: <span id="displayNick" class="welcome-nick">Carregando...</span></p>
         <p class="menu-help">← → ou A/D para desviar<br>↑ / W / ESPAÇO para pular<br>↓ / S para abaixar</p>
         <button id="startBtn">JOGAR</button>
+        <button id="openLeaderboardBtn" type="button">VER RANKING GLOBAL</button>
       </div>
       <div class="menu-character" aria-label="Prévia 3D do personagem do jogo">
         <canvas id="menuCharacterCanvas" aria-label="Personagem 3D"></canvas>
@@ -326,6 +326,20 @@
         <input id="moveResponse" type="range" min="50" max="300" step="10" value="100">
         <p class="settings-note">A sensibilidade ajusta o gesto de desvio. O tempo de resposta controla a rapidez com que o personagem troca de faixa.</p>
         <label id="noCoinOptIn"><input id="noCoinOptInCheck" type="checkbox"><span>Ativar modo NO COIN: se pegar uma moeda, você é eliminado. O cronômetro conta seu tempo sem moedas.</span></label>
+      </section>
+      <section id="leaderboardTabPanel" aria-label="Rankings globais">
+        <h2>RANKINGS GLOBAIS</h2>
+        <div class="leaderboard-columns">
+          <div id="globalLeaderboardCorner">
+            <div class="corner-title">🏆 Mais pontos</div>
+            <div id="cornerList">Carregando...</div>
+          </div>
+          <div id="noCoinLeaderboard">
+            <div class="corner-title">⌛ Maior tempo sem moeda</div>
+            <div id="noCoinCornerList">Carregando...</div>
+          </div>
+        </div>
+        <button id="closeLeaderboardBtn" type="button">VOLTAR AO MENU</button>
       </section>
     </section>
   </div>
@@ -566,6 +580,13 @@
       });
 
       document.getElementById("displayNick").textContent = playerNick;
+      const leaderboardTabPanel = document.getElementById("leaderboardTabPanel");
+      document.getElementById("openLeaderboardBtn").addEventListener("click", () => {
+        leaderboardTabPanel.classList.add("open");
+      });
+      document.getElementById("closeLeaderboardBtn").addEventListener("click", () => {
+        leaderboardTabPanel.classList.remove("open");
+      });
 
       // Fórmula única para HUD, tela final e Firebase:
       // 1 ponto por metro + 5 pontos por moeda.
