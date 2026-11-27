@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goblox Dev Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{background:#090914;color:#f5f3ff;font-family:Arial,sans-serif}
+.panel{background:#151426;border:1px solid #302b4b}
+input,textarea,select{background:#0d0c19;border:1px solid #393451;color:#fff}
+button{cursor:pointer}
+</style>
+</head>
+<body class="min-h-screen">
+<header class="border-b border-violet-900 bg-[#111020]">
+ <div class="max-w-screen-2xl mx-auto p-4 flex flex-wrap items-center justify-between gap-3">
+  <a href="../adm.html" class="font-black text-xl text-violet-300">GOBLOX / DEV STUDIO</a>
+  <span class="text-xs font-black tracking-widest text-amber-300 border border-amber-700 rounded-full px-3 py-2">AMBIENTE DE TESTE — NÃO É PRODUÇÃO</span>
+ </div>
+</header>
+<main class="max-w-screen-2xl mx-auto p-4 md:p-6">
+ <div class="mb-5"><h1 class="text-3xl font-black">Modo desenvolvedor</h1><p class="text-slate-400 mt-2">Teste alterações visuais em uma prévia isolada. Rascunhos ficam neste navegador e não alteram o Goblox publicado.</p></div>
+ <div class="grid xl:grid-cols-[320px_minmax(0,1fr)] gap-4">
+  <aside class="panel rounded-2xl p-4 space-y-4">
+   <div><label class="block text-sm font-bold mb-2" for="page">Página para visualizar</label>
+    <select id="page" class="w-full rounded-xl p-3">
+     <option value="../lobby.html">Lobby</option><option value="../perfil.html">Perfil</option><option value="../lock.html">Entrada</option><option value="../speedRunArena.html">Speed Run Arena</option>
+    </select>
+   </div>
+   <div><label class="block text-sm font-bold mb-2" for="css">CSS de teste</label>
+    <textarea id="css" rows="16" class="w-full rounded-xl p-3 font-mono text-sm" spellcheck="false" placeholder="/* Escreva CSS para testar a interface */"></textarea>
+   </div>
+   <div class="grid grid-cols-2 gap-2">
+    <button id="apply" class="bg-violet-600 hover:bg-violet-500 rounded-xl p-3 font-bold">Aplicar prévia</button>
+    <button id="save" class="panel rounded-xl p-3 font-bold">Salvar rascunho</button>
+    <button id="reset" class="panel rounded-xl p-3 font-bold col-span-2">Limpar rascunho</button>
+   </div>
+   <p id="status" class="text-sm text-slate-300" role="status">Pronto para testar.</p>
+   <div class="border-t border-violet-900 pt-4">
+    <h2 class="font-black">Publicação</h2>
+    <p class="text-xs text-slate-400 mt-2">A publicação real precisa passar pela revisão e pelo processo seguro do repositório. Este botão abre a comparação da cópia de desenvolvimento com a versão principal.</p>
+    <button id="publish" class="w-full mt-3 bg-emerald-700 hover:bg-emerald-600 rounded-xl p-3 font-black">Preparar publicação</button>
+   </div>
+  </aside>
+  <section class="panel rounded-2xl overflow-hidden min-h-[70vh]">
+   <div class="flex items-center justify-between gap-3 p-3 border-b border-violet-900"><strong>Pré-visualização</strong><button id="reload" class="panel rounded-lg px-3 py-2 text-sm">Recarregar</button></div>
+   <iframe id="preview" title="Prévia do Goblox em desenvolvimento" src="../lobby.html" class="w-full bg-white" style="height:75vh;border:0"></iframe>
+  </section>
+ </div>
+</main>
+<script>
+const page=document.getElementById('page'),css=document.getElementById('css'),frame=document.getElementById('preview'),status=document.getElementById('status');
+const KEY='goblox_dev_css_draft_v1';
+function inject(){try{const doc=frame.contentDocument;if(!doc)throw Error('Prévia não carregou');let style=doc.getElementById('goblox-dev-preview-style');if(!style){style=doc.createElement('style');style.id='goblox-dev-preview-style';doc.head.appendChild(style)}style.textContent=css.value;status.textContent='CSS aplicado somente à prévia.'}catch(e){status.textContent='Não foi possível aplicar. Confira se a página terminou de carregar.'}}
+page.addEventListener('change',()=>{frame.src=page.value;status.textContent='Carregando página de teste...'});
+frame.addEventListener('load',inject);
+document.getElementById('apply').addEventListener('click',inject);
+document.getElementById('save').addEventListener('click',()=>{localStorage.setItem(KEY,css.value);status.textContent='Rascunho salvo neste navegador.'});
+document.getElementById('reset').addEventListener('click',()=>{css.value='';localStorage.removeItem(KEY);inject();status.textContent='Rascunho apagado.'});
+document.getElementById('reload').addEventListener('click',()=>{frame.src=page.value});
+document.getElementById('publish').addEventListener('click',()=>{window.open('https://github.com/henry4663/CalintTrap/compare/main...goblox-dev?expand=1','_blank','noopener');status.textContent='Comparação aberta. Revise os arquivos da branch antes de criar uma publicação.'});
+css.value=localStorage.getItem(KEY)||'';
+</script>
+</body>
+</html>
