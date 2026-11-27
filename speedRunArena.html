@@ -1373,7 +1373,8 @@
           G.distance += G.speed * dt * 1.8;
           G.timeWithoutCoin += dt / 60;
           G.bestTimeWithoutCoin = Math.max(G.bestTimeWithoutCoin, G.timeWithoutCoin);
-          const movementBlend = 1 - Math.exp(-(dt * 16.67) / G.moveResponseMs);\n          G.currentLane += (G.targetLane - G.currentLane) * movementBlend;
+          const movementBlend = 1 - Math.exp(-(dt * 16.67) / G.moveResponseMs);
+          G.currentLane += (G.targetLane - G.currentLane) * movementBlend;
           player.position.x = LANES[0] + G.currentLane * LANE_WIDTH;
 
           if (duckPressed) {
