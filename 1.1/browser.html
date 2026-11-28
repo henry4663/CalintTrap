@@ -43,6 +43,13 @@ function targetBlock(){ray.setFromCamera(new THREE.Vector2(0,0),camera);return r
 addEventListener('mousedown',e=>{if(document.pointerLockElement!==canvas)return;const hit=targetBlock();if(!hit)return;if(e.button===0){const d=hit.object.userData;if(d.y<=-3)return;removeBlock(hit.object)}else if(e.button===2){const p=hit.object.position.clone().add(hit.face.normal);addBlock(Math.round(p.x),Math.round(p.y),Math.round(p.z),items[selected])}});
 function collide(pos){const px=Math.floor(pos.x),pz=Math.floor(pos.z),py=Math.floor(pos.y-.9);return blocks.has(key(px,py,pz))||blocks.has(key(px+1,py,pz))||blocks.has(key(px,py,pz+1))||blocks.has(key(px+1,py,pz+1))}
 
+// Inicia o mundo imediatamente; a conexão online não pode bloquear o botão de jogar.
+document.querySelector('#startBtn').addEventListener('click',()=>{
+ document.querySelector('#start').classList.add('hidden');
+ try{canvas.requestPointerLock()}catch(e){}
+ if(!window.__gobloxWorldStarted){window.__gobloxWorldStarted=true;requestAnimationFrame(loop)}
+});
+
 // Multiplayer: cada navegador publica sua posição e recebe os outros jogadores.
 const roomKey='minecraft_1_1';
 const nick=(localStorage.getItem('goblox_player_nick')||'Jogador').slice(0,24);
@@ -87,7 +94,7 @@ function checkTag(now,players){
   }
  }
 }
-onDisconnect(myPlayerRef).remove().catch(()=>{});
+try{onDisconnect(myPlayerRef).remove().catch(()=>{});}catch(e){statusEl.textContent='Modo local: '+e.message;}
 onValue(roomPlayersRef,snapshot=>{
  const players=snapshot.val()||{};
  for(const [id,mesh] of remotePlayers){if(!players[id]){scene.remove(mesh);remotePlayers.delete(id)}}
@@ -116,7 +123,7 @@ function loop(now){const dt=Math.min((now-last)/1000,.05);last=now;
  const currentPlayers={};for(const [id,mesh] of remotePlayers){currentPlayers[id]={x:mesh.position.x,y:mesh.position.y+.9,z:mesh.position.z}}
  if(multiplayerReady)checkTag(now,currentPlayers);
  renderer.render(scene,camera);requestAnimationFrame(loop)}
-document.querySelector('#startBtn').onclick=()=>{document.querySelector('#start').classList.add('hidden');canvas.requestPointerLock();requestAnimationFrame(loop)};
+// O botão já foi conectado antes da inicialização do multiplayer.
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script><script src="../goblox-overlay.js"></script>
 </body></html>
