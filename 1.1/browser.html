@@ -2,17 +2,21 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Goblox — Mundo de Blocos</title>
+<title>Goblox — Mundo de Blocos Multiplayer</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#87ceeb;font-family:Arial,sans-serif}#game{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;pointer-events:none;color:white;text-shadow:1px 2px 3px #000;font-weight:bold}.top{position:absolute;top:12px;left:12px;background:#1119;padding:10px 13px;border-radius:9px}.cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:24px}.hotbar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:5px}.slot{width:54px;height:54px;background:#2229;border:2px solid #aaa;display:grid;place-items:center;border-radius:5px;font-size:12px;text-align:center}.slot.sel{border:3px solid white;background:#555b}.help{position:absolute;bottom:82px;left:50%;transform:translateX(-50%);background:#1119;padding:8px 12px;border-radius:8px;text-align:center;font-size:13px;white-space:nowrap}.overlay{position:fixed;inset:0;background:#0008;display:grid;place-items:center;color:white;text-align:center}.panel{background:#17202beF;padding:26px;border-radius:14px;max-width:440px;margin:15px}.panel button{border:0;border-radius:8px;padding:12px 24px;background:#55a630;color:white;font-weight:bold;font-size:16px;cursor:pointer}.panel p{line-height:1.5}.hidden{display:none}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#87ceeb;font-family:Arial,sans-serif}#game{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;pointer-events:none;color:white;text-shadow:1px 2px 3px #000;font-weight:bold}.top{position:absolute;top:12px;left:12px;background:#111c;padding:10px 13px;border-radius:9px;line-height:1.55}.cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:24px}.hotbar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:5px}.slot{width:54px;height:54px;background:#2229;border:2px solid #aaa;display:grid;place-items:center;border-radius:5px;font-size:12px;text-align:center}.slot.sel{border:3px solid white;background:#555b}.help{position:absolute;bottom:82px;left:50%;transform:translateX(-50%);background:#111c;padding:8px 12px;border-radius:8px;text-align:center;font-size:13px;white-space:nowrap}.score{position:absolute;right:12px;top:12px;background:#111c;padding:10px 12px;border-radius:9px;min-width:165px;max-width:220px;font-size:12px}.score strong{display:block;font-size:14px;margin-bottom:5px}.score ol{margin:0;padding-left:20px;max-height:150px;overflow:hidden}.overlay{position:fixed;inset:0;background:#0009;display:grid;place-items:center;color:white;text-align:center;z-index:5}.panel{background:#17202bef;padding:26px;border-radius:14px;max-width:440px;margin:15px}.panel button{border:0;border-radius:8px;padding:12px 24px;background:#55a630;color:white;font-weight:bold;font-size:16px;cursor:pointer}.panel p{line-height:1.5}.hidden{display:none}.tag-note{position:absolute;top:50%;left:50%;transform:translate(-50%,45px);background:#111d;padding:8px 12px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s}.tag-note.show{opacity:1}
+@media(max-width:600px){.slot{width:43px;height:46px;font-size:10px}.help{font-size:10px;bottom:72px;max-width:94vw;white-space:normal}.score{top:auto;bottom:84px;right:8px;min-width:120px;max-width:145px}.top{font-size:11px}}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hud"><div class="top">Goblox Block World<br><span id="status">Carregando mundo...</span></div><div class="cross">+</div><div class="help">WASD mover • Espaço pular • Mouse olhar • Clique esquerdo quebrar • Direito colocar • 1–5 blocos</div><div class="hotbar" id="hotbar"></div></div>
-<div class="overlay" id="start"><div class="panel"><h1>Mundo de Blocos</h1><p>Um mundo 3D de blocos para jogar no navegador do Goblox.</p><p>WASD movimenta, espaço pula, mouse olha, clique esquerdo quebra blocos e clique direito coloca.</p><button id="startBtn">JOGAR</button></div></div>
+<div id="hud"><div class="top">Goblox Block World<br><span id="status">Carregando mundo...</span><br><span id="online">Conectando multiplayer...</span></div><div class="cross">+</div><div class="tag-note" id="tagNote">Ponto marcado!</div><div class="score"><strong>Placar da sala</strong><ol id="scoreList"><li>Aguardando jogadores...</li></ol></div><div class="help">WASD mover • Espaço pular • Mouse olhar • Clique esquerdo quebrar • Direito colocar • 1–5 blocos • Encoste para marcar ponto</div><div class="hotbar" id="hotbar"></div></div>
+<div class="overlay" id="start"><div class="panel"><h1>Mundo de Blocos</h1><p>Explore e construa no mesmo mundo com outras pessoas em tempo real.</p><p><b>Multiplayer:</b> veja os outros jogadores e dispute pontos encostando neles. Sem armas: é um modo de pega-pega.</p><p>WASD movimenta, espaço pula, mouse olha, clique esquerdo quebra blocos e clique direito coloca.</p><button id="startBtn">JOGAR ONLINE</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { db } from '../firebase.js';
+import { ref, set, onValue, onDisconnect, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
 const canvas=document.querySelector('#game'), scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,35,85);
 const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,1000);
 const renderer=new THREE.WebGLRenderer({canvas,antialias:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);
@@ -23,10 +27,11 @@ const geo=new THREE.BoxGeometry(1,1,1), blocks=new Map(), group=new THREE.Group(
 const key=(x,y,z)=>x+','+y+','+z;
 function addBlock(x,y,z,type){if(blocks.has(key(x,y,z)))return;const m=new THREE.Mesh(geo,mats[type]||mats.grass);m.position.set(x,y,z);m.userData={x,y,z,type};group.add(m);blocks.set(key(x,y,z),m)}
 function removeBlock(m){const d=m.userData;blocks.delete(key(d.x,d.y,d.z));group.remove(m)}
-for(let x=-18;x<=18;x++)for(let z=-18;z<=18;z++){const h=Math.floor(Math.sin(x*.3)*1.5+Math.cos(z*.25)*1.5);for(let y=-3;y<=h;y++)addBlock(x,y,z,y===h?'grass':y>-2?'dirt':'stone');}
+for(let x=-18;x<=18;x++)for(let z=-18;z<=18;z++){const h=Math.floor(Math.sin(x*.3)*1.5+Math.cos(z*.25)*1.5);for(let y=-3;y<=h;y++)addBlock(x,y,z,y===h?'grass':y>-2?'dirt':'stone')}
 for(let i=0;i<18;i++){let x=Math.floor(Math.random()*30-15),z=Math.floor(Math.random()*30-15);if(Math.abs(x)<3&&Math.abs(z)<3)continue;let h=3+Math.floor(Math.random()*3);for(let y=0;y<h;y++)addBlock(x,y+1,z,'wood');for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)for(let dy=0;dy<=2;dy++){if(Math.abs(dx)+Math.abs(dz)+dy<5)addBlock(x+dx,y+h,z+dz,'grass')}}
-const player={pos:new THREE.Vector3(0,4,0),vel:new THREE.Vector3(),yaw:0,pitch:0,ground:false};camera.position.copy(player.pos);
-const ray=new THREE.Raycaster(), keys={},items=['grass','dirt','stone','wood','sand'];let selected=0;
+const player={pos:new THREE.Vector3(0,4,0),vel:new THREE.Vector3(),yaw:0,pitch:0,ground:false};
+camera.position.copy(player.pos);
+const ray=new THREE.Raycaster(),keys={},items=['grass','dirt','stone','wood','sand'];let selected=0;
 const bar=document.querySelector('#hotbar');items.forEach((t,i)=>{const d=document.createElement('div');d.className='slot'+(i===0?' sel':'');d.textContent=(i+1)+' '+t;bar.append(d)});
 function select(i){selected=(i+5)%5;[...bar.children].forEach((e,j)=>e.classList.toggle('sel',j===selected))}
 addEventListener('keydown',e=>{keys[e.code]=true;if(/^Digit[1-5]$/.test(e.code))select(Number(e.code.slice(5))-1);if(e.code==='Space')e.preventDefault()});
@@ -37,15 +42,80 @@ addEventListener('contextmenu',e=>e.preventDefault());
 function targetBlock(){ray.setFromCamera(new THREE.Vector2(0,0),camera);return ray.intersectObjects(group.children,false).find(h=>h.distance<6)}
 addEventListener('mousedown',e=>{if(document.pointerLockElement!==canvas)return;const hit=targetBlock();if(!hit)return;if(e.button===0){const d=hit.object.userData;if(d.y<=-3)return;removeBlock(hit.object)}else if(e.button===2){const p=hit.object.position.clone().add(hit.face.normal);addBlock(Math.round(p.x),Math.round(p.y),Math.round(p.z),items[selected])}});
 function collide(pos){const px=Math.floor(pos.x),pz=Math.floor(pos.z),py=Math.floor(pos.y-.9);return blocks.has(key(px,py,pz))||blocks.has(key(px+1,py,pz))||blocks.has(key(px,py,pz+1))||blocks.has(key(px+1,py,pz+1))}
+
+// Multiplayer: cada navegador publica sua posição e recebe os outros jogadores.
+const roomKey='minecraft_1_1';
+const nick=(localStorage.getItem('goblox_player_nick')||'Jogador').slice(0,24);
+const playerId='p_'+Math.random().toString(36).slice(2,11);
+const roomPlayersRef=ref(db,'rooms/'+roomKey+'/players');
+const myPlayerRef=ref(db,'rooms/'+roomKey+'/players/'+playerId);
+const remotePlayers=new Map();
+let multiplayerReady=false,score=0,lastPublish=0;
+const lastTagByTarget=new Map();
+const statusEl=document.querySelector('#online');
+function makeAvatar(name,color){
+ const root=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.38),new THREE.MeshLambertMaterial({color}));
+ body.position.y=.15;root.add(body);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.48,.48,.48),new THREE.MeshLambertMaterial({color:0xf0c9a0}));
+ head.position.y=.9;root.add(head);
+ const label=document.createElement('canvas');label.width=256;label.height=64;
+ const ctx=label.getContext('2d');ctx.fillStyle='#101827';ctx.fillRect(0,0,256,64);ctx.fillStyle='white';ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText(String(name).slice(0,18),128,42);
+ const tex=new THREE.CanvasTexture(label),tag=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+ tag.scale.set(2.1,.52,1);tag.position.y=1.55;root.add(tag);
+ scene.add(root);return root;
+}
+function updateScoreboard(players){
+ const entries=Object.entries(players||{}).map(([id,p])=>({id,nick:p.nick||'Jogador',score:Number(p.score)||0}));
+ entries.sort((a,b)=>b.score-a.score);
+ document.querySelector('#scoreList').innerHTML=entries.slice(0,6).map(p=>'<li>'+String(p.nick).replace(/[&<>"]/g,'')+' — '+p.score+'</li>').join('')||'<li>Aguardando jogadores...</li>';
+ document.querySelector('#online').textContent='Online na sala: '+entries.length;
+}
+function showTagMessage(){const el=document.querySelector('#tagNote');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),850)}
+function publishState(now){
+ if(!multiplayerReady||now-lastPublish<100)return;lastPublish=now;
+ set(myPlayerRef,{x:Number(player.pos.x.toFixed(2)),y:Number(player.pos.y.toFixed(2)),z:Number(player.pos.z.toFixed(2)),rotY:player.yaw,nick,score,updatedAt:Date.now()}).catch(e=>{statusEl.textContent='Falha ao sincronizar: '+e.message});
+}
+function checkTag(now,players){
+ for(const [id,p] of Object.entries(players||{})){
+  if(id===playerId||typeof p.x!=='number')continue;
+  const dx=player.pos.x-p.x,dy=player.pos.y-p.y,dz=player.pos.z-p.z;
+  if(dx*dx+dy*dy+dz*dz<2.25&&(now-(lastTagByTarget.get(id)||0))>2500){
+   lastTagByTarget.set(id,now);score++;showTagMessage();
+   set(myPlayerRef,{x:Number(player.pos.x.toFixed(2)),y:Number(player.pos.y.toFixed(2)),z:Number(player.pos.z.toFixed(2)),rotY:player.yaw,nick,score,updatedAt:Date.now()}).catch(()=>{});
+   break;
+  }
+ }
+}
+onDisconnect(myPlayerRef).remove().catch(()=>{});
+onValue(roomPlayersRef,snapshot=>{
+ const players=snapshot.val()||{};
+ for(const [id,mesh] of remotePlayers){if(!players[id]){scene.remove(mesh);remotePlayers.delete(id)}}
+ for(const [id,p] of Object.entries(players)){
+  if(id===playerId||!p||typeof p.x!=='number')continue;
+  if(!remotePlayers.has(id)){
+   const hue=Math.abs(id.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*37)%360;
+   const color=new THREE.Color().setHSL(hue/360,.65,.5);
+   remotePlayers.set(id,makeAvatar(p.nick||'Jogador',color));
+  }
+  const mesh=remotePlayers.get(id);mesh.position.set(p.x,p.y-0.9,p.z);mesh.rotation.y=Number(p.rotY)||0;
+ }
+ updateScoreboard(players);multiplayerReady=true;statusEl.textContent='Multiplayer conectado';
+},error=>{statusEl.textContent='Multiplayer indisponível: '+error.message});
+function cleanup(){remove(myPlayerRef).catch(()=>{})}
+addEventListener('pagehide',cleanup);addEventListener('beforeunload',cleanup);
+
 let last=performance.now();
 function loop(now){const dt=Math.min((now-last)/1000,.05);last=now;
-const forward=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),right=new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));let move=new THREE.Vector3();if(keys.KeyW)move.add(forward);if(keys.KeyS)move.sub(forward);if(keys.KeyD)move.add(right);if(keys.KeyA)move.sub(right);if(move.length())move.normalize().multiplyScalar(5.5*dt);
-player.pos.x+=move.x;player.pos.z+=move.z;
-player.vel.y-=18*dt;if(keys.Space&&player.ground){player.vel.y=7;player.ground=false}player.pos.y+=player.vel.y*dt;
-if(collide(player.pos)){player.pos.y=Math.ceil(player.pos.y);player.vel.y=0;player.ground=true}if(player.pos.y<-12){player.pos.set(0,5,0);player.vel.set(0,0,0)}
-camera.position.copy(player.pos).add(new THREE.Vector3(0,1.1,0));camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
-document.querySelector('#status').textContent='Blocos: '+blocks.size+' • '+items[selected];
-renderer.render(scene,camera);requestAnimationFrame(loop)}
+ const forward=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),right=new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));let move=new THREE.Vector3();if(keys.KeyW)move.add(forward);if(keys.KeyS)move.sub(forward);if(keys.KeyD)move.add(right);if(keys.KeyA)move.sub(right);if(move.length())move.normalize().multiplyScalar(5.5*dt);
+ player.pos.x+=move.x;player.pos.z+=move.z;player.vel.y-=18*dt;if(keys.Space&&player.ground){player.vel.y=7;player.ground=false}player.pos.y+=player.vel.y*dt;
+ if(collide(player.pos)){player.pos.y=Math.ceil(player.pos.y);player.vel.y=0;player.ground=true}if(player.pos.y<-12){player.pos.set(0,5,0);player.vel.set(0,0,0)}
+ camera.position.copy(player.pos).add(new THREE.Vector3(0,1.1,0));camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
+ document.querySelector('#status').textContent='Blocos: '+blocks.size+' • '+items[selected]+' • Pontos: '+score;
+ publishState(now);
+ const currentPlayers={};for(const [id,mesh] of remotePlayers){currentPlayers[id]={x:mesh.position.x,y:mesh.position.y+.9,z:mesh.position.z}}
+ if(multiplayerReady)checkTag(now,currentPlayers);
+ renderer.render(scene,camera);requestAnimationFrame(loop)}
 document.querySelector('#startBtn').onclick=()=>{document.querySelector('#start').classList.add('hidden');canvas.requestPointerLock();requestAnimationFrame(loop)};
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script><script src="../goblox-overlay.js"></script>
